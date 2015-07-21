@@ -16,7 +16,7 @@ AS
 	else
 	begin
 
-		select [Value], [Timestamp] from data where [Namespace] = @Namespace and [Key] = @Key and [Timestamp] >= cast(@Start as datetime) and [Timestamp] <= cast(@End as datetime) order by [Timestamp] desc;
+		select [Value], [Timestamp] from data where [Namespace] = @Namespace and [Key] = @Key and ([Timestamp] >= cast(@Start as datetime) and [Timestamp] <= cast(@End as datetime)) order by [Timestamp] desc;
 
 	end
 

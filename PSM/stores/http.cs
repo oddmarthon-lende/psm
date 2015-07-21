@@ -112,16 +112,15 @@ namespace PSMonitor.Stores
 
         }
 
+        private static DateTime t = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public static DateTime FromUnixTimestamp(long seconds)
-        {
-            DateTime t = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        {            
             return t.AddSeconds(seconds).ToLocalTime();
         }
 
         public static long ToUnixTimestamp(DateTime time)
         {
-            DateTime t = new DateTime(1970, 1, 1);
-            return (long)time.Subtract(t).TotalSeconds;
+            return (long)time.ToUniversalTime().Subtract(t).TotalSeconds;
         }
         
         public IEnumerable<Entry> Get(string path, DateTime start, DateTime end)
@@ -143,7 +142,7 @@ namespace PSMonitor.Stores
             using (HttpClient client = CreateClient())
             {
 
-                string uri = start != null && end != null && typeof(DateTime).Equals(start.GetType().BaseType) && typeof(DateTime).Equals(end.GetType().BaseType) ?
+                string uri = start != null && end != null && typeof(DateTime).Equals(start.GetType()) && typeof(DateTime).Equals(end.GetType()) ?
                     String.Format("/data/{0}/{1}/{2}/time", path, ToUnixTimestamp((DateTime)start) * 1000, ToUnixTimestamp((DateTime)end) * 1000) : start != null && end != null && typeof(long).Equals(start.GetType()) && typeof(long).Equals(end.GetType()) ?
                     String.Format("/data/{0}/{1}/{2}/index", path, (long)start, (long)end) :
                     String.Format("/data/{0}/", path);

@@ -56,13 +56,13 @@
     <Compile Include="envelope.cs" />
     <Compile Include="execution_context.cs" />
     <Compile Include="commands.cs" />
-    <Compile Include="stores\db.cs" />
-    <Compile Include="stores\istore.cs" />
+    <Compile Include="Stores\db.cs" />
+    <Compile Include="Stores\istore.cs" />
     <Compile Include="logger.cs" />
     <Compile Include="master.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="script.cs" />
-    <Compile Include="stores\http.cs" />
+    <Compile Include="Stores\http.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="psm.config">
