@@ -106,5 +106,16 @@ namespace PSMViewer.Properties {
                 this["endTime"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection chartType {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["chartType"]));
+            }
+            set {
+                this["chartType"] = value;
+            }
+        }
     }
 }

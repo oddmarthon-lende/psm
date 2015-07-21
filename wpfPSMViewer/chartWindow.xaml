@@ -6,8 +6,6 @@
         xmlns:local="clr-namespace:PSMViewer"
         xmlns:charting="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit"
         mc:Ignorable="d"
-        Title="Plot" Height="800" Width="1066">
-    <Grid>
-        <charting:Chart x:Name="chartHost" BorderBrush="{x:Null}" />
-    </Grid>
+        Title="" Height="800" Width="1066" Icon="icons\application_view_tile.png">
+    <UniformGrid x:Name="grid" />
 </Window>

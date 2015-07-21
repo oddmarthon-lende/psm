@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PSMViewer"
         xmlns:ViewModels="clr-namespace:PSMViewer.ViewModels"        
+        xmlns:Models="clr-namespace:PSMViewer.Models"        
         xmlns:prop="clr-namespace:PSMViewer.Properties"
         xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:charting="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit"
@@ -21,9 +22,6 @@
         <CommandBinding Command="local:Commands.Refresh" CanExecute="CanExecute" Executed="RefreshTable"/>
         <CommandBinding Command="local:Commands.Exit" CanExecute="CanExecute" Executed="Exit" />
         <CommandBinding Command="local:Commands.About" CanExecute="CanExecute" Executed="About" />
-        <CommandBinding Command="local:Commands.ChangeChartType" Executed="ChangeChartType" CanExecute="CanExecute" />
-        <CommandBinding Command="local:Commands.AddChart" Executed="AddChart" CanExecute="CanExecute" />
-        <CommandBinding Command="local:Commands.RemoveChart" Executed="RemoveChart" CanExecute="CanExecute" />
 
     </Window.CommandBindings>
 
@@ -182,6 +180,138 @@
         <ViewModels:Main/>
     </Window.DataContext>
 
+    <Window.ContextMenu>
+
+        <ContextMenu x:Name="treeContextMenu">
+
+            <ContextMenu.CommandBindings>
+                <CommandBinding Command="local:Commands.ContextMenuClick" Executed="ContextMenuClick" CanExecute="ContextMenu_CanExecute" />
+            </ContextMenu.CommandBindings>
+
+            <ContextMenu.Resources>
+
+                <Style TargetType="{x:Type MenuItem}">
+                    <Setter Property="Command" Value="local:Commands.ContextMenuClick"/>
+                </Style>
+
+                <Style TargetType="{x:Type MenuItem}" x:Key="WindowsItemStyle">
+                    <Setter Property="DataContext" Value="{Binding}"/>
+                    <Setter Property="Header" Value="{Binding Title}"/>
+                </Style>
+
+                <ControlTemplate x:Key="NewWindowControlTemplate" TargetType="{x:Type MenuItem}">
+                    <Grid SnapsToDevicePixels="True">
+                        <Rectangle x:Name="Bg" Fill="{TemplateBinding Background}" RadiusY="2" RadiusX="2" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1"/>
+                        <Rectangle x:Name="InnerBorder" Margin="1" RadiusY="2" RadiusX="2"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition MinWidth="24" SharedSizeGroup="MenuItemIconColumnGroup" Width="Auto"/>
+                                <ColumnDefinition Width="4"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="37"/>
+                                <ColumnDefinition SharedSizeGroup="MenuItemIGTColumnGroup" Width="Auto"/>
+                                <ColumnDefinition Width="17"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter x:Name="Icon" Content="{TemplateBinding Icon}" ContentSource="Icon" Margin="1" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
+                            <Border x:Name="GlyphPanel" BorderBrush="#FFCDD3E6" BorderThickness="1" Background="#FFE6EFF4" CornerRadius="3" Height="22" Margin="1" Visibility="Hidden" Width="22">
+                                <Path x:Name="Glyph" Data="M0,5.1L1.7,5.2 3.4,7.1 8,0.4 9.2,0 3.3,10.8z" Fill="#FF0C12A1" FlowDirection="LeftToRight" Height="11" Width="9"/>
+                            </Border>
+                            <ContentPresenter ContentTemplate="{TemplateBinding HeaderTemplate}" Content="{TemplateBinding Header}" Grid.Column="2" ContentStringFormat="{TemplateBinding HeaderStringFormat}" ContentSource="Header" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            <TextBlock Grid.Column="4" Margin="{TemplateBinding Padding}" Text="{TemplateBinding InputGestureText}"/>
+                            <TextBox Text="{Binding Windows.Count, ElementName=window, Mode=OneWay}" Grid.Column="4"></TextBox>
+                        </Grid>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Icon" Value="{x:Null}">
+                            <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Visibility" TargetName="GlyphPanel" Value="Visible"/>
+                            <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter Property="Fill" TargetName="Bg">
+                                <Setter.Value>
+                                    <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
+                                        <GradientStop Color="#34C5EBFF" Offset="0"/>
+                                        <GradientStop Color="#3481D8FF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Stroke" TargetName="Bg" Value="#8071CBF1"/>
+                            <Setter Property="Stroke" TargetName="InnerBorder" Value="#40FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="#FF9A9A9A"/>
+                            <Setter Property="Background" TargetName="GlyphPanel" Value="#FFEEE9E9"/>
+                            <Setter Property="BorderBrush" TargetName="GlyphPanel" Value="#FFDBD6D6"/>
+                            <Setter Property="Fill" TargetName="Glyph" Value="#FF848589"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+
+            </ContextMenu.Resources>
+
+            <MenuItem Header="Chart Type" DataContext="{Binding ElementName=window}" IsVisibleChanged="ChartTypeMenuItem_IsVisibleChanged"  >
+
+                <MenuItem Header="Area" DataContext="{x:Type charting:AreaSeries}">
+                    <MenuItem.Icon>
+                        <Image  />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Line" DataContext="{x:Type charting:LineSeries}">
+                    <MenuItem.Icon>
+                        <Image Source="icons\chart_curve.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Bar" DataContext="{x:Type charting:BarSeries}">
+                    <MenuItem.Icon>
+                        <Image Source="icons\chart_bar.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Column" DataContext="{x:Type charting:ColumnSeries}">
+                    <MenuItem.Icon>
+                        <Image  />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Scatter" DataContext="{x:Type charting:ScatterSeries}">
+                    <MenuItem.Icon>
+                        <Image  />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Pie" DataContext="{x:Type charting:PieSeries}">
+                    <MenuItem.Icon>
+                        <Image Source="icons\chart_pie.png" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Bubble" DataContext="{x:Type charting:BubbleSeries}">
+                    <MenuItem.Icon>
+                        <Image />
+                    </MenuItem.Icon>
+                </MenuItem>
+
+            </MenuItem>
+
+            <MenuItem Header="Add Chart">
+                
+                <MenuItem Header="To New Window" Template="{StaticResource NewWindowControlTemplate}" />
+                <MenuItem Header="To Existing Window" ItemsSource="{Binding Windows, ElementName=window}" >
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="{x:Type MenuItem}">
+                            <Setter Property="Header" Value="{Binding Title}" />
+                            <Setter Property="Command" Value="local:Commands.ContextMenuClick"/>
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+
+                </MenuItem>
+
+            </MenuItem>
+
+
+        </ContextMenu>
+
+    </Window.ContextMenu>
+    
     <Grid>
 
         <Grid.RowDefinitions>
@@ -195,9 +325,18 @@
             <MenuItem Header="File" >
                 <MenuItem Header="Exit" Command="local:Commands.Exit"/>
             </MenuItem>
+            <MenuItem Header="Windows" ItemsSource="{Binding Windows, ElementName=window}" >
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="{x:Type MenuItem}">
+                        <Setter Property="Header" Value="{Binding Title}" />
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+
+            </MenuItem>
             <MenuItem Header="Help">
                 <MenuItem Header="About" Command="local:Commands.About"/>
             </MenuItem>
+            
 
         </Menu>
 
@@ -208,111 +347,11 @@
                 <ColumnDefinition Width="150*"/>
             </Grid.ColumnDefinitions>
 
-            <TreeView x:Name="treeView" Grid.Column="0" Background="{x:Null}" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" >
-
-                <TreeView.ContextMenu>
-
-                    <ContextMenu x:Name="treeContextMenu">
-
-                        <ContextMenu.CommandBindings>
-                            <CommandBinding Command="local:Commands.ContextMenuClick" Executed="ContextMenuClick" CanExecute="CanExecute" />
-                        </ContextMenu.CommandBindings>
-                        
-                        <ContextMenu.Resources>
-
-                            <Style TargetType="{x:Type MenuItem}">
-                                <Setter Property="Command" Value="local:Commands.ContextMenuClick"/>
-                            </Style>
-
-                            <DataTemplate x:Key="WindowsItemTemplate" >
-                                <TextBlock Text="{Binding Title}" />
-                            </DataTemplate>
-
-                            <ControlTemplate x:Key="NewWindowControlTemplate" TargetType="{x:Type MenuItem}">
-                                <Grid SnapsToDevicePixels="True">
-                                    <Rectangle x:Name="Bg" Fill="{TemplateBinding Background}" RadiusY="2" RadiusX="2" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="1"/>
-                                    <Rectangle x:Name="InnerBorder" Margin="1" RadiusY="2" RadiusX="2"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition MinWidth="24" SharedSizeGroup="MenuItemIconColumnGroup" Width="Auto"/>
-                                            <ColumnDefinition Width="4"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="37"/>
-                                            <ColumnDefinition SharedSizeGroup="MenuItemIGTColumnGroup" Width="Auto"/>
-                                            <ColumnDefinition Width="17"/>
-                                        </Grid.ColumnDefinitions>
-                                        <ContentPresenter x:Name="Icon" Content="{TemplateBinding Icon}" ContentSource="Icon" Margin="1" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center"/>
-                                        <Border x:Name="GlyphPanel" BorderBrush="#FFCDD3E6" BorderThickness="1" Background="#FFE6EFF4" CornerRadius="3" Height="22" Margin="1" Visibility="Hidden" Width="22">
-                                            <Path x:Name="Glyph" Data="M0,5.1L1.7,5.2 3.4,7.1 8,0.4 9.2,0 3.3,10.8z" Fill="#FF0C12A1" FlowDirection="LeftToRight" Height="11" Width="9"/>
-                                        </Border>
-                                        <ContentPresenter ContentTemplate="{TemplateBinding HeaderTemplate}" Content="{TemplateBinding Header}" Grid.Column="2" ContentStringFormat="{TemplateBinding HeaderStringFormat}" ContentSource="Header" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                                        <TextBlock Grid.Column="4" Margin="{TemplateBinding Padding}" Text="{TemplateBinding InputGestureText}"/>
-                                        <TextBox Text="{Binding Windows.Count, ElementName=window, Mode=OneWay}" Grid.Column="4"></TextBox>
-                                    </Grid>
-                                </Grid>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="Icon" Value="{x:Null}">
-                                        <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
-                                    </Trigger>
-                                    <Trigger Property="IsChecked" Value="True">
-                                        <Setter Property="Visibility" TargetName="GlyphPanel" Value="Visible"/>
-                                        <Setter Property="Visibility" TargetName="Icon" Value="Collapsed"/>
-                                    </Trigger>
-                                    <Trigger Property="IsHighlighted" Value="True">
-                                        <Setter Property="Fill" TargetName="Bg">
-                                            <Setter.Value>
-                                                <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
-                                                    <GradientStop Color="#34C5EBFF" Offset="0"/>
-                                                    <GradientStop Color="#3481D8FF" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="Stroke" TargetName="Bg" Value="#8071CBF1"/>
-                                        <Setter Property="Stroke" TargetName="InnerBorder" Value="#40FFFFFF"/>
-                                    </Trigger>
-                                    <Trigger Property="IsEnabled" Value="False">
-                                        <Setter Property="Foreground" Value="#FF9A9A9A"/>
-                                        <Setter Property="Background" TargetName="GlyphPanel" Value="#FFEEE9E9"/>
-                                        <Setter Property="BorderBrush" TargetName="GlyphPanel" Value="#FFDBD6D6"/>
-                                        <Setter Property="Fill" TargetName="Glyph" Value="#FF848589"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-
-                        </ContextMenu.Resources>                        
-
-                        <MenuItem Header="Chart" >
-
-                            <MenuItem Header="Line"  >
-                                <MenuItem.Icon>
-                                    <Image Source="icons\chart_curve.png" />
-                                </MenuItem.Icon>
-                            </MenuItem>
-                            <MenuItem Header="Bar"  >
-                                <MenuItem.Icon>
-                                    <Image Source="icons\chart_bar.png" />
-                                </MenuItem.Icon>
-                            </MenuItem>
-                            <MenuItem Header="Scatter"  >
-                                <MenuItem.Icon>
-                                    <Image Source="icons\chart_line.png" />
-                                </MenuItem.Icon>
-                            </MenuItem>
-
-                        </MenuItem>
-
-                        <MenuItem Header="Add Chart">
-                            <MenuItem Header="New Window" Template="{StaticResource NewWindowControlTemplate}" />
-                            <MenuItem Header="Existing" ItemTemplate="{DynamicResource WindowsItemTemplate}" ItemsSource="{Binding Windows, ElementName=window}" />
-                        </MenuItem>
-
-                    </ContextMenu>
-
-                </TreeView.ContextMenu>
+            <TreeView x:Name="treeView" Grid.Column="0" Background="{x:Null}" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" >                
 
                 <TreeViewItem Header="Top Level Keys" x:Name="rootItem" ItemTemplate="{DynamicResource KeyItemTemplate}" IsExpanded="True" >
                     <TreeViewItem.DataContext>
-                        <ViewModels:KeyItem/>
+                        <Models:KeyItem/>
                     </TreeViewItem.DataContext>
                 </TreeViewItem>
                 
@@ -321,6 +360,7 @@
             <Grid Grid.Column="1">
 
                 <Grid.Resources>
+
                     <Style TargetType="{x:Type Button}">
                         <Setter Property="Margin" Value="5,5" />
                     </Style>
@@ -340,7 +380,7 @@
 
                     <ToolBarTray DockPanel.Dock="Top">
 
-                        <ToolBar  HorizontalAlignment="Right" DataContext="{Binding Indexbased}">
+                        <ToolBar  HorizontalAlignment="Right" DataContext="{Binding Indexbased}" MouseEnter="ToolBar_MouseEnter">
                             
                             <Button ToolTip="Previous" Command="local:Commands.Previous" >
                                 <Image Source="icons\resultset_previous.png"/>
@@ -359,7 +399,7 @@
 
                         </ToolBar>
 
-                        <ToolBar DataContext="{Binding Timebased}">
+                        <ToolBar DataContext="{Binding Timebased}" MouseEnter="ToolBar_MouseEnter">
 
                             <ToolBar.Resources>
                                 <Style TargetType="{x:Type DatePicker}">
@@ -382,20 +422,21 @@
 
                             <Label Content="From"/>
                             <toolkit:DateTimePicker Value="{Binding Start, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Label Content="To"/>
+                            <toolkit:DateTimePicker Value="{Binding End, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                             <Label Content="Count"/>
                             <toolkit:TimeSpanUpDown Value="{Binding Count, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                            <TextBlock Text="{Binding End, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"/>
                         </ToolBar>
 
                     </ToolBarTray>
 
                 </DockPanel>
 
-                <DataGrid x:Name="dataGrid" ItemsSource="{Binding Entries}" AutoGenerateColumns="True" Grid.RowSpan="1" Grid.Row="1" Background="{x:Null}" BorderThickness="0"/>
+                <DataGrid x:Name="dataGrid" CanUserAddRows="False" CanUserDeleteRows="False" ItemsSource="{Binding Entries}" AutoGenerateColumns="True" Grid.RowSpan="1" Grid.Row="1" Background="{x:Null}" BorderThickness="0" />
 
-                <StackPanel Grid.Row="2" Grid.RowSpan="1" x:Name="chartPanel" DataContext="{Binding ElementName=dataGrid, Mode=OneTime}" >
+                <StackPanel Grid.Row="2" Grid.RowSpan="1" x:Name="chartPanel" >
 
-                    <charting:Chart Title="{Binding Selected.Parent.Path}" Height="{Binding ActualHeight}" x:Name="chartHost" BorderBrush="{x:Null}" DataContext="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}"/>
+                    <local:Chart Title="{Binding Selected.Parent.Path}" Height="{Binding ActualHeight, ElementName=dataGrid}" x:Name="chartHost" BorderBrush="{x:Null}" DataContext="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:MainWindow}}}" />
 
                 </StackPanel>
 

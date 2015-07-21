@@ -6,24 +6,36 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Globalization;
-using System.Windows.Controls.DataVisualization.Charting;
-using PSMonitor;
 using System.Collections.ObjectModel;
+using PSMViewer.Models;
 
 namespace PSMViewer
 {
+
+    static class Extensions
+    {
+
+        public static T GetTemplatedParent<T>(this FrameworkElement o)
+        where T : DependencyObject
+        {
+            DependencyObject child = o, parent = null;
+
+            while (child != null && (parent = LogicalTreeHelper.GetParent(child)) == null)
+            {
+                child = VisualTreeHelper.GetParent(child);
+            }
+
+            FrameworkElement frameworkParent = parent as FrameworkElement;
+
+            return frameworkParent != null ? frameworkParent.TemplatedParent as T : null;
+        }
+    }
 
     public enum Status
     {
@@ -37,7 +49,7 @@ namespace PSMViewer
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -69,8 +81,8 @@ namespace PSMViewer
         }
 
         public MainWindow()
-        {           
-            
+        {
+
             InitializeComponent();
 
             AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(Reload));
@@ -82,7 +94,7 @@ namespace PSMViewer
             NameScope.SetNameScope(treeContextMenu, NameScope.GetNameScope(this));
 
             RefreshTree(null, null);
-           
+
         }
 
         private KeyItem GetDataContext(RoutedEventArgs e)
@@ -94,29 +106,29 @@ namespace PSMViewer
             try {
                 item = (FrameworkElement)e.OriginalSource;
             }
-            catch(Exception) { }
+            catch (Exception) { }
 
             if (item == null) return null;
 
             try {
                 key = (KeyItem)item.DataContext;
             }
-            catch(Exception) { }
+            catch (Exception) { }
 
             if (key == null) return null;
 
             return key;
         }
-        
+
         private void Reload(object sender, RoutedEventArgs e)
         {
-            
+
             KeyItem key = GetDataContext(e);
 
             if (key == null) return;
-            else if(e != null)
+            else if (e != null)
             {
-                switch(e.RoutedEvent.Name)
+                switch (e.RoutedEvent.Name)
                 {
 
                     case "Expanded":
@@ -129,18 +141,20 @@ namespace PSMViewer
                         Main context = (Main)this.DataContext;
 
                         if (key.Type == null) return;
-                        
+
                         context.Selected = key;
                         Reload(context);
 
                         dock.IsEnabled = true;
 
-                        return;
+                        AddChart(key);
+
+                        break;
 
                 }
             }
         }
-        
+
         private void Reload(IReload obj)
         {
 
@@ -151,19 +165,23 @@ namespace PSMViewer
             Dispatcher.InvokeAsync(obj.Reload).Task.ContinueWith(task =>
             {
 
-                switch(task.Status)
+                switch (task.Status)
                 {
 
                     case TaskStatus.Faulted:
 
                         Status = Status.Error;
 
-                        MessageBox.Show(String.Format("{0}\n{1}", task.Exception.Message, String.Join("\n", task.Exception.InnerExceptions.Select(e => { return e.Message; }).ToArray<string>()), "Something went wrong", MessageBoxButton.OK, MessageBoxImage.Error));
+                        MessageBox.Show(task.Exception.GetBaseException().Message, task.Exception.Message, MessageBoxButton.OK, MessageBoxImage.Error);
 
+                        break;
+
+                    default:
+                        Status = Status.Idle;
                         break;
                 }
 
-                Status = Status.Idle;
+                
 
             });
 
@@ -210,70 +228,118 @@ namespace PSMViewer
             ), "About", MessageBoxButton.OK, MessageBoxImage.Information);
 
         }
-        private void ChangeChartType(object sender, ExecutedRoutedEventArgs e)
+        
+        private void AddChart(KeyItem key)
         {
-            KeyItem key = (KeyItem)((FrameworkElement)e.OriginalSource).DataContext;
-        }
-
-        private void RemoveChart(object sender, ExecutedRoutedEventArgs e)
-        {
-            KeyItem key = (KeyItem)((FrameworkElement)e.OriginalSource).DataContext;
-        }
-
-        private void AddChart(object sender, ExecutedRoutedEventArgs e)
-        {
-
-            KeyItem key = (KeyItem)((FrameworkElement)e.OriginalSource).DataContext;
-
+           
             if (key != null && key.Type != null)
             {
-
-                DataPointSeries chart = (DataPointSeries)Activator.CreateInstance(key.ChartType);
-                
-                chart.SetBinding(DataPointSeries.DataContextProperty, new Binding("DataContext") { Source = this });
-                chart.SetBinding(DataPointSeries.TitleProperty, new Binding("Name") { Source = key });
-                
-                chart.ItemsSource = ((Main)this.DataContext).Reload(key);
-
-                chart.DependentValuePath = "Value";
-                chart.IndependentValuePath = "Timestamp";
-
-                if (key.Chart != null)
-                {
-
-                    chartHost.Series.Remove(key.Chart);
-                    chartHost.UpdateLayout();
-                   
-                }
-
-                key.Chart = chart;
-                
-                chartHost.Series.Add(chart);
-                chartHost.UpdateLayout();
-
+                chartHost.Series.Clear();
+                chartHost.Add(key).SetBinding(System.Windows.Controls.DataVisualization.Charting.DataPointSeries.ItemsSourceProperty, new Binding("Entries") { Source = this.DataContext, Mode = BindingMode.OneWay });
             }
+
         }
 
         private void Reload(object sender, KeyEventArgs e)
         {
             RefreshTable(sender, null);
-        }
+        }       
 
         private void ContextMenuClick(object sender, ExecutedRoutedEventArgs e)
         {
-            MenuItem item = (MenuItem) e.OriginalSource;
             
-            switch((string)item.Header)
+            Main context  = (Main)this.DataContext;
+            MenuItem item = (MenuItem) e.OriginalSource;
+            ChartWindow cw = null;
+            KeyItem key = (KeyItem)treeView.SelectedValue;
+
+            switch ( ((HeaderedItemsControl)(item.Parent??e.Source)).Header.ToString() )
             {
-                case "New Window" :
-                    Windows.Add(new ChartWindow() { Title = "Hello" });
+
+                case "To Existing Window":
+
+                    cw = (from ChartWindow w in Windows where w.Title == (string)item.Header select w).ElementAtOrDefault(0);
+                    cw.Add(context.Selected.Parent.Path).Add(key);
+
                     break;
-                case "Existing" :                    
+
+                case "Chart Type":
+
+                    switch ((string)item.Header)
+                    {
+                        default:
+                            Chart.SetChartType(key, (Type)item.DataContext);
+                            break;
+                    }
+
+                    foreach(MenuItem item_ in ((MenuItem)item.Parent).Items)
+                    {
+                        item_.IsChecked = false;
+                    }
+
+                    item.IsChecked = true;
+
+                    AddChart(key);
+
+                    return;
+
+                default:
                     break;
+            }
+
+            switch( (string) item.Header )
+            {
+
+                case "To New Window" :
+                    
+                    Windows.Add(new ChartWindow() { Title = Guid.NewGuid().ToString() });
+
+                    ( (ChartWindow) Windows.Last() ).Add(key.Type == null ? key.Path : key.Parent.Path).Add(key);
+
+                    Windows.Last().Show();
+                    Windows.Last().Closed += ChartWindow_Closed;
+
+                    break;
+
                 default:
                     break;
             }
 
         }
+
+        private void ChartWindow_Closed(object sender, EventArgs e)
+        {
+            ChartWindow w = (ChartWindow)sender;
+
+            w.Dispose();
+            Windows.Remove(w);
+        }
+
+        private void ContextMenu_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            try {
+                e.CanExecute = treeView.SelectedValue != null;
+            }
+            catch(NullReferenceException) {
+                e.CanExecute = false;
+            }
+        }
+
+        private void ChartTypeMenuItem_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            
+            KeyItem key = ((Main)this.DataContext).Selected;
+
+            foreach (MenuItem item_ in ((MenuItem)sender).Items)
+            {
+                item_.IsChecked = key != null && Chart.GetChartType(key).Equals(item_.DataContext);
+            }
+
+        }
+
+        private void ToolBar_MouseEnter(object sender, MouseEventArgs e)
+        {
+            ((Controls)(((ToolBar)sender).DataContext)).Activate();
+        }    
     }
 }

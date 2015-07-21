@@ -23,5 +23,8 @@
     <Setting Name="endTime" Type="System.DateTime" Scope="User">
       <Value Profile="(Default)">2015-07-01</Value>
     </Setting>
+    <Setting Name="chartType" Type="System.Collections.Specialized.StringCollection" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

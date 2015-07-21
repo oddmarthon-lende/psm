@@ -7,9 +7,11 @@ using PSMonitor.Stores;
 using System.Collections.ObjectModel;
 using PSMonitor;
 using System.Windows.Controls.DataVisualization.Charting;
+using PSMViewer.ViewModels;
 
-namespace PSMViewer.ViewModels
+namespace PSMViewer.Models
 {
+    
     public class KeyItem : Key, IReload
     {
         
@@ -26,10 +28,7 @@ namespace PSMViewer.ViewModels
             }
 
         }
-
-        public Type ChartType { get; private set; } = typeof(LineSeries);
-        public ISeries Chart { get; set; }
-
+        
         private string _path = null;
         public string Path
         {

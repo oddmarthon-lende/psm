@@ -8,6 +8,7 @@ using System.Windows.Data;
 using System.Globalization;
 using System.Collections;
 using System.Linq;
+using PSMViewer.Models;
 
 namespace PSMViewer.ViewModels
 {
@@ -38,8 +39,16 @@ namespace PSMViewer.ViewModels
             Timebased.PropertyChanged += Changed;
             Indexbased.PropertyChanged += Changed;
 
+            Timebased.ActivationRequested += Activate;
+            Indexbased.ActivationRequested += Activate;
+
             Control = Indexbased;
 
+        }
+
+        private void Activate(Controls sender)
+        {
+            Control = sender;
         }
 
         private void Changed(object sender, PropertyChangedEventArgs e)
@@ -52,7 +61,7 @@ namespace PSMViewer.ViewModels
             }
             else if (typeof(Controls).IsInstanceOfType(sender))
             {
-                Control = (Controls)sender;
+                ((Controls)sender).Activate();
             }
         }
 

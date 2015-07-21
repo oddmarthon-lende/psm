@@ -86,9 +86,11 @@
     <Compile Include="chartWindow.xaml.cs">
       <DependentUpon>chartWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\chart.cs" />
     <Compile Include="Models\entryitem.cs" />
     <Compile Include="Models\keyitem.cs" />
     <Compile Include="commands.cs" />
+    <Compile Include="Charting\textseries.cs" />
     <Compile Include="ViewModels\controls.cs" />
     <Compile Include="ViewModels\main.cs" />
     <Page Include="chartWindow.xaml">
@@ -1146,6 +1148,9 @@
     <Resource Include="icons\zoom.png" />
     <Resource Include="icons\zoom_in.png" />
     <Resource Include="icons\zoom_out.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <SplashScreen Include="splash.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

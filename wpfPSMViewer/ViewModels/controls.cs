@@ -1,4 +1,5 @@
 ﻿using PSMonitor;
+using PSMViewer.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,8 +12,12 @@ using System.Threading.Tasks;
 
 namespace PSMViewer.ViewModels
 {
+    public delegate void RequestedActivationEventHandler(Controls sender);
+
     public abstract class Controls : IReload
     {
+
+        public event RequestedActivationEventHandler ActivationRequested;
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -51,7 +56,17 @@ namespace PSMViewer.ViewModels
                 SetField(ref _start, value);
             }
         }
-        public virtual object End { get; }
+
+        private object _end = null;
+        public virtual object End {
+            get
+            {
+                return _end;
+            }
+            set {
+                SetField(ref _end, value);
+            }
+        }
 
         private object _count = null;
         public virtual object Count
@@ -67,6 +82,11 @@ namespace PSMViewer.ViewModels
         public abstract void Reload();
         public abstract bool Next();
         public abstract bool Previous();
+
+        public virtual void Activate() {
+            if (ActivationRequested != null)
+                ActivationRequested(this);
+        }
     }
 
     public class Controls<T, TCount> : Controls, INotifyPropertyChanged
@@ -109,6 +129,35 @@ namespace PSMViewer.ViewModels
                 return default(T);
 
             }
+
+            set
+            {
+                
+                switch (typeof(T).Name.ToLower())
+                {
+
+                    case "datetime":
+
+                        switch(typeof(TCount).Name.ToLower())
+                        {
+                            case "timespan":
+                                Count = ((DateTime)value) - ((DateTime)Start);
+                                break;
+                        }
+                        break;               
+
+                    case "int64":
+
+                        switch (typeof(TCount).Name.ToLower())
+                        {
+                            case "int64":
+                                Count = (long)value - (long)Start;
+                                break;
+                        }
+                        break;
+
+                }                
+            }
         }
 
         private TCount _count;
@@ -126,11 +175,18 @@ namespace PSMViewer.ViewModels
             }
         }
 
-        private ObservableCollection<EntryItem> Entries;
+        private ObservableCollection<EntryItem> entries;
+        public ObservableCollection<EntryItem> Entries
+        {
+            get
+            {
+                return entries;
+            }
+        }
 
         public Controls(ObservableCollection<EntryItem> Entries, object Start, object Count)
         {
-            this.Entries = Entries;
+            this.entries = Entries;
             this.Start = Start;
             this.Count = Count;
         }
