@@ -1,19 +1,24 @@
-﻿using PSMViewer.ViewModels;
+﻿using PSMViewer.Models;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
+using PSMViewer.Visualizations;
+using System.Reflection;
+using PSMViewer.Properties;
+using System.Collections.Specialized;
 
 namespace PSMViewer
 {
     /// <summary>
     /// Interaction logic for chartWindow.xaml
     /// </summary>
-    public partial class ChartWindow : Window, IDisposable
+    public partial class VisualizationWindow : Window, IDisposable
     {
+
+        
+
         public UIElementCollection Charts
         {
             get
@@ -36,12 +41,13 @@ namespace PSMViewer
             }
         }
 
-        public ChartWindow()
+        public VisualizationWindow()
         {
             InitializeComponent();
             
             timer.Elapsed += Reload;
             timer.Start();
+            
         }
 
         public void Dispose()
@@ -50,18 +56,19 @@ namespace PSMViewer
             timer.Dispose();
         }
 
-        public Chart Get(string title)
+        public VisualizationControl Get(string title)
         {
 
-            Chart[] elements = new Chart[Charts.Count];
+            VisualizationControl[] elements = new VisualizationControl[Charts.Count];
             Charts.CopyTo(elements, 0);
 
             return (from c in elements where (string)c.Title == title select c).ElementAtOrDefault(0);
         }
-
-        public Chart Add(string title)
+        
+        public VisualizationControl Add(string title)
         {
-             Chart chart = Get(title) ?? new Chart() { Title = title };
+
+            VisualizationControl chart = Get(title) ?? new Text() { Title = title };
 
             if(!Charts.Contains(chart))
                 Charts.Add(chart);
@@ -71,12 +78,12 @@ namespace PSMViewer
 
         public void Reload(object sender, ElapsedEventArgs e)
         {
-            Dispatcher.Invoke(Reload);
+            Reload();
         }
 
         public void Reload()
         {
-            foreach(Chart chart in Charts)
+            foreach(VisualizationControl chart in Charts)
             {
                 chart.Reload();
             }

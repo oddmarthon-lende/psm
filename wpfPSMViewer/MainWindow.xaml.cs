@@ -14,6 +14,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections.ObjectModel;
 using PSMViewer.Models;
+using PSMViewer.Visualizations;
+using System.Collections.Specialized;
 
 namespace PSMViewer
 {
@@ -125,8 +127,7 @@ namespace PSMViewer
 
             KeyItem key = GetDataContext(e);
 
-            if (key == null) return;
-            else if (e != null)
+            if (e != null)
             {
                 switch (e.RoutedEvent.Name)
                 {
@@ -140,15 +141,20 @@ namespace PSMViewer
 
                         Main context = (Main)this.DataContext;
 
-                        if (key.Type == null) return;
+                        if (key == null || key.Type == null) return;
 
                         context.Selected = key;
+
                         Reload(context);
 
                         dock.IsEnabled = true;
 
-                        AddChart(key);
+                        Visualize(key);
 
+                        break;
+
+                    default:
+                        RefreshTable(sender, null);
                         break;
 
                 }
@@ -229,17 +235,6 @@ namespace PSMViewer
 
         }
         
-        private void AddChart(KeyItem key)
-        {
-           
-            if (key != null && key.Type != null)
-            {
-                chartHost.Series.Clear();
-                chartHost.Add(key).SetBinding(System.Windows.Controls.DataVisualization.Charting.DataPointSeries.ItemsSourceProperty, new Binding("Entries") { Source = this.DataContext, Mode = BindingMode.OneWay });
-            }
-
-        }
-
         private void Reload(object sender, KeyEventArgs e)
         {
             RefreshTable(sender, null);
@@ -250,7 +245,7 @@ namespace PSMViewer
             
             Main context  = (Main)this.DataContext;
             MenuItem item = (MenuItem) e.OriginalSource;
-            ChartWindow cw = null;
+            VisualizationWindow cw = null;
             KeyItem key = (KeyItem)treeView.SelectedValue;
 
             switch ( ((HeaderedItemsControl)(item.Parent??e.Source)).Header.ToString() )
@@ -258,7 +253,7 @@ namespace PSMViewer
 
                 case "To Existing Window":
 
-                    cw = (from ChartWindow w in Windows where w.Title == (string)item.Header select w).ElementAtOrDefault(0);
+                    cw = (from VisualizationWindow w in Windows where w.Title == (string)item.Header select w).ElementAtOrDefault(0);
                     cw.Add(context.Selected.Parent.Path).Add(key);
 
                     break;
@@ -268,18 +263,16 @@ namespace PSMViewer
                     switch ((string)item.Header)
                     {
                         default:
-                            Chart.SetChartType(key, (Type)item.DataContext);
+                            VisualizationControl.SetChartType(key, ((VisualizationControl.InheritorInfo)item.DataContext).Type);
                             break;
                     }
 
-                    foreach(MenuItem item_ in ((MenuItem)item.Parent).Items)
+                    foreach(VisualizationControl.InheritorInfo info in ((MenuItem)(item.Parent ?? e.Source)).Items)
                     {
-                        item_.IsChecked = false;
+                        info.IsSelected = info == item.DataContext;
                     }
-
-                    item.IsChecked = true;
-
-                    AddChart(key);
+                    
+                    Visualize(key);
 
                     return;
 
@@ -292,9 +285,9 @@ namespace PSMViewer
 
                 case "To New Window" :
                     
-                    Windows.Add(new ChartWindow() { Title = Guid.NewGuid().ToString() });
+                    Windows.Add(new VisualizationWindow() { Title = Guid.NewGuid().ToString() });
 
-                    ( (ChartWindow) Windows.Last() ).Add(key.Type == null ? key.Path : key.Parent.Path).Add(key);
+                    ( (VisualizationWindow) Windows.Last() ).Add(key.Type == null ? key.Path : key.Parent.Path).Add(key);
 
                     Windows.Last().Show();
                     Windows.Last().Closed += ChartWindow_Closed;
@@ -307,9 +300,38 @@ namespace PSMViewer
 
         }
 
+        private void Visualize(KeyItem key)
+        {
+
+            Main context = (Main)this.DataContext;
+
+            if (key != null && key.Type != null)
+            {
+
+                VisualizationControl instance = VisualizationControl.Restore(key);
+                
+                foreach(VisualizationControl v in visualizationGrid.Children)
+                {
+                    v.Dispose();
+                }
+
+                visualizationGrid.Children.Clear();
+
+                if (instance != null)
+                {
+
+                    instance.Title = key.Parent.Path;
+                    instance.Add(key, context.Entries);
+                    
+                    visualizationGrid.Children.Add(instance);
+
+                }
+            }
+        }
+        
         private void ChartWindow_Closed(object sender, EventArgs e)
         {
-            ChartWindow w = (ChartWindow)sender;
+            VisualizationWindow w = (VisualizationWindow)sender;
 
             w.Dispose();
             Windows.Remove(w);
@@ -327,19 +349,35 @@ namespace PSMViewer
 
         private void ChartTypeMenuItem_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            
+
             KeyItem key = ((Main)this.DataContext).Selected;
 
-            foreach (MenuItem item_ in ((MenuItem)sender).Items)
+            if (key == null) return;
+            
+            foreach (VisualizationControl.InheritorInfo info in ((MenuItem)sender).Items)
             {
-                item_.IsChecked = key != null && Chart.GetChartType(key).Equals(item_.DataContext);
+                Type t = VisualizationControl.GetChartType(key);
+                info.IsSelected = t != null && key != null && t.Equals(info.Type);
             }
 
         }
-
-        private void ToolBar_MouseEnter(object sender, MouseEventArgs e)
+        
+        private void ToolBarTray_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            ((Controls)(((ToolBar)sender).DataContext)).Activate();
-        }    
+
+            ToolBarTray tray = (ToolBarTray)sender;
+            
+            foreach (ToolBar toolbar in tray.ToolBars)
+            {
+
+                if (VisualTreeHelper.GetDescendantBounds(toolbar).Contains(e.GetPosition(toolbar)))
+                {
+                    ((Controls)toolbar.DataContext).Activate();
+                }
+
+
+            }
+        }
+
     }
 }

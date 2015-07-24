@@ -16,12 +16,6 @@ namespace PSMViewer.ViewModels
     public class Main : Controls, INotifyPropertyChanged
     {
         
-        private ObservableCollection<EntryItem> _entries = new ObservableCollection<EntryItem>();        
-        public ObservableCollection<EntryItem> Entries
-        {
-            get { return _entries; }
-        }
-        
         public object this[string key]
         {
             get { return Properties.Settings.Default[key]; }
@@ -35,20 +29,17 @@ namespace PSMViewer.ViewModels
             Indexbased = new Controls<long, long>(Entries, 0L, 100L);
 
             this.PropertyChanged += Changed;
-
-            Timebased.PropertyChanged += Changed;
-            Indexbased.PropertyChanged += Changed;
-
+            
             Timebased.ActivationRequested += Activate;
             Indexbased.ActivationRequested += Activate;
 
-            Control = Indexbased;
+            Indexbased.Activate();
 
         }
 
         private void Activate(Controls sender)
         {
-            Control = sender;
+            Control = sender;            
         }
 
         private void Changed(object sender, PropertyChangedEventArgs e)
@@ -59,10 +50,7 @@ namespace PSMViewer.ViewModels
                 if(sender == this)
                     Timebased.Selected = Indexbased.Selected = this.Selected;
             }
-            else if (typeof(Controls).IsInstanceOfType(sender))
-            {
-                ((Controls)sender).Activate();
-            }
+
         }
 
         private Controls Control = null;

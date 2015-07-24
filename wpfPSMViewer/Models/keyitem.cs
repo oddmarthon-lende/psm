@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using PSMonitor.Stores;
 using System.Collections.ObjectModel;
 using PSMonitor;
-using System.Windows.Controls.DataVisualization.Charting;
 using PSMViewer.ViewModels;
 
 namespace PSMViewer.Models

@@ -4,27 +4,81 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace PSMViewer.ViewModels
 {
-    public delegate void RequestedActivationEventHandler(Controls sender);
 
-    public abstract class Controls : IReload
+    public delegate void RequestedActivationEventHandler(Controls sender);
+    public delegate void DataChangedEventHandler(object sender);
+
+    public abstract class Controls : IReload, IDisposable, INotifyPropertyChanged
     {
 
+        private static List<Controls> Instances = new List<Controls>();
+
         public event RequestedActivationEventHandler ActivationRequested;
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler     PropertyChanged;
+        public event DataChangedEventHandler         DataChanged;
+
+        public Controls()
+        {
+            Instances.Add(this);
+        }
+
+        ~Controls()
+        {
+            Dispose();
+        }
+
+        public virtual void Dispose()
+        {
+
+            Instances.Remove(this);
+
+            if(entries != null)
+                entries.CollectionChanged -= OnDataChanged;
+
+            GC.SuppressFinalize(this);
+        }
+
+        #region Data Changed Eventemitter
+        
+        private DispatcherOperation OnDataChangedDispatcherOperation = null;
+
+        private void InvokeDataChanged ()
+        {
+            DataChangedEventHandler handler = DataChanged;
+
+            if(handler != null)
+                handler(this);
+
+            OnDataChangedDispatcherOperation = null;
+        }
+
+        protected virtual void OnDataChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            Dispatcher Dispatcher = Dispatcher.CurrentDispatcher;
+
+            if ( OnDataChangedDispatcherOperation == null)
+                OnDataChangedDispatcherOperation = Dispatcher.InvokeAsync(InvokeDataChanged);
+
+        }
+        #endregion
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
+
         protected bool SetField<TField>(ref TField field, TField value, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<TField>.Default.Equals(field, value)) return false;
@@ -84,8 +138,46 @@ namespace PSMViewer.ViewModels
         public abstract bool Previous();
 
         public virtual void Activate() {
+
+            Instances.ForEach(c => { c.isActive = c == this; });
+
             if (ActivationRequested != null)
                 ActivationRequested(this);
+
+        }
+
+        private bool _active = false;
+        public virtual bool isActive
+        {
+            get
+            {
+                return _active;
+            }
+            set
+            {
+                SetField(ref _active, value);
+            }
+        }
+
+        private ObservableCollection<EntryItem> entries = new ObservableCollection<EntryItem>();
+        public ObservableCollection<EntryItem> Entries
+        {
+            get
+            {
+                return entries;
+            }
+            set
+            {
+                if(entries != null)
+                {
+                    entries.CollectionChanged -= OnDataChanged;
+                }
+
+                entries = value;
+
+                if(entries != null)
+                    entries.CollectionChanged += OnDataChanged;
+            }
         }
     }
 
@@ -175,18 +267,9 @@ namespace PSMViewer.ViewModels
             }
         }
 
-        private ObservableCollection<EntryItem> entries;
-        public ObservableCollection<EntryItem> Entries
-        {
-            get
-            {
-                return entries;
-            }
-        }
-
         public Controls(ObservableCollection<EntryItem> Entries, object Start, object Count)
         {
-            this.entries = Entries;
+            this.Entries = Entries??this.Entries;
             this.Start = Start;
             this.Count = Count;
         }
@@ -216,7 +299,7 @@ namespace PSMViewer.ViewModels
                 }
             }
 
-            return enumerable.Select(entry => {
+            return enumerable == null ? null : enumerable.Select(entry => {
                 return (EntryItem)entry;
             });
         }
@@ -226,7 +309,7 @@ namespace PSMViewer.ViewModels
 
             Entries.Clear();
 
-            foreach (EntryItem entry in Reload(Selected))
+            foreach (EntryItem entry in Reload(Selected)??Entries)
             {
                 Entries.Add(entry);
             }

@@ -36,11 +36,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="OxyPlot, Version=2015.1.976.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
+      <HintPath>..\packages\OxyPlot.Core.2015.1.976-alpha\lib\net45\OxyPlot.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="OxyPlot.Wpf, Version=2015.1.976.0, Culture=neutral, PublicKeyToken=75e952ba404cdbb0, processorArchitecture=MSIL">
+      <HintPath>..\packages\OxyPlot.Wpf.2015.1.976-alpha\lib\net45\OxyPlot.Wpf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="OxyPlot.Xps, Version=2015.1.976.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OxyPlot.Wpf.2015.1.976-alpha\lib\net45\OxyPlot.Xps.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Windows.Controls.DataVisualization.Toolkit">
-      <HintPath>..\packages\System.Windows.Controls.DataVisualization.Toolkit.4.0.0.0\lib\net40-Client\System.Windows.Controls.DataVisualization.Toolkit.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -83,17 +92,49 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="chartWindow.xaml.cs">
-      <DependentUpon>chartWindow.xaml</DependentUpon>
+    <Compile Include="Visualizations\area.xaml.cs">
+      <DependentUpon>area.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Models\chart.cs" />
+    <Compile Include="Visualizations\stairstep.xaml.cs">
+      <DependentUpon>stairstep.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\line.xaml.cs">
+      <DependentUpon>line.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\base.cs" />
+    <Compile Include="Visualizations\oxyBase.cs" />
+    <Compile Include="Visualizations\text.xaml.cs">
+      <DependentUpon>text.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="visualizationWindow.xaml.cs">
+      <DependentUpon>visualizationWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Models\entryitem.cs" />
     <Compile Include="Models\keyitem.cs" />
     <Compile Include="commands.cs" />
-    <Compile Include="Charting\textseries.cs" />
     <Compile Include="ViewModels\controls.cs" />
     <Compile Include="ViewModels\main.cs" />
-    <Page Include="chartWindow.xaml">
+    <Page Include="styles.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Visualizations\area.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\stairstep.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\line.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Visualizations\text.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="visualizationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
