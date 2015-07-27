@@ -11,6 +11,7 @@ namespace PSMonitor.Stores
 {
     public class DB : IStore
     {
+        public event DataReceivedHandler DataReceived;
 
         private ConcurrentQueue<Envelope> queue;
         private List<Thread> threads;
@@ -174,10 +175,10 @@ namespace PSMonitor.Stores
                 return new Entry
                 {
 
-                    key = this.Key,
-                    value = v,
-                    timestamp = record.GetDateTime(record.GetOrdinal("Timestamp")),
-                    type = v.GetType()
+                    Key = this.Key,
+                    Value = v,
+                    Timestamp = record.GetDateTime(record.GetOrdinal("Timestamp")),
+                    Type = v.GetType()
 
                 };
 
@@ -436,7 +437,7 @@ namespace PSMonitor.Stores
 
                                     while (!context.queue.TryDequeue(out envelope));
 
-                                    foreach (Entry entry in envelope.entries)
+                                    foreach (Entry entry in envelope.Entries)
                                     {
 
                                         command.Parameters.Clear();
@@ -446,7 +447,7 @@ namespace PSMonitor.Stores
                                             ParameterName = "@Namespace",
                                             Direction = ParameterDirection.Input,
                                             SqlDbType = SqlDbType.VarChar,
-                                            SqlValue = envelope.path
+                                            SqlValue = envelope.Path
 
                                         });
 
@@ -454,7 +455,7 @@ namespace PSMonitor.Stores
                                         {
                                             ParameterName = "@Key",
                                             Direction = ParameterDirection.Input,
-                                            SqlValue = entry.key
+                                            SqlValue = entry.Key
 
                                         });
 
@@ -462,7 +463,7 @@ namespace PSMonitor.Stores
                                         {
                                             ParameterName = "@Value",
                                             Direction = ParameterDirection.Input,
-                                            SqlValue = entry.value
+                                            SqlValue = entry.Value
 
                                         });
 
@@ -471,7 +472,7 @@ namespace PSMonitor.Stores
 
                                             ParameterName = "@Timestamp",
                                             Direction = ParameterDirection.Input,
-                                            SqlValue = entry.timestamp
+                                            SqlValue = entry.Timestamp
 
                                         });
 

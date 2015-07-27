@@ -65,7 +65,8 @@ namespace PSMonitor.Stores
 
     public interface IStore : IDisposable
     {
-        
+        event DataReceivedHandler DataReceived;
+
         Entry Get(string path);
 
         IEnumerable<Entry> Get(string path, DateTime start, DateTime end);

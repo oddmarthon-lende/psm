@@ -9,7 +9,7 @@ using System.Collections.Concurrent;
 namespace PSMonitor
 {
 
-    delegate void DataAvailable(Envelope data);
+    public delegate void DataReceivedHandler(Envelope data);
     
     class ScriptExecutionContext : IDisposable
     {
@@ -21,7 +21,7 @@ namespace PSMonitor
         private volatile PowerShell   powerShell;
         private volatile ConcurrentQueue<Entry> queue;
         private List<Thread> threads;
-        private DataAvailable OnData;
+        private DataReceivedHandler OnData;
 
         private bool disposed = false;
         
@@ -110,10 +110,10 @@ namespace PSMonitor
                 queue.Enqueue(new Entry()
                 {
 
-                    key       = sender.key,
-                    value     = sender.data.BaseObject,
-                    type      = sender.data.BaseObject.GetType(),
-                    timestamp = DateTime.Now
+                    Key       = sender.key,
+                    Value     = sender.data.BaseObject,
+                    Type      = sender.data.BaseObject.GetType(),
+                    Timestamp = DateTime.Now
 
                 });
 
@@ -128,9 +128,9 @@ namespace PSMonitor
             Entry entry;            
             Envelope env = new Envelope()
             {
-                path = script.path,
-                entries = new Entry[all ? count : 1],
-                timestamp = DateTime.Now
+                Path = script.path,
+                Entries = new Entry[all ? count : 1],
+                Timestamp = DateTime.Now
             };
 
             for(int i = 0; i < count; i++)
@@ -138,7 +138,7 @@ namespace PSMonitor
 
                 while(!queue.TryDequeue(out entry));
 
-                env.entries[i] = entry;
+                env.Entries[i] = entry;
 
                 if (!all)
                     break;
@@ -256,7 +256,7 @@ namespace PSMonitor
             while (queue.Count > 0 && !queue.TryDequeue(out entry));
         }
 
-        public void Execute(DataAvailable handler)
+        public void Execute(DataReceivedHandler handler)
         {
 
             OnData = handler;

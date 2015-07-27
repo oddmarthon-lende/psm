@@ -9,12 +9,15 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using Microsoft.AspNet.SignalR.Client;
+
 namespace PSMonitor.Stores
 {
 
     public class HTTP : IStore
     {
-        
+        public event DataReceivedHandler DataReceived;
+
         private static DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Envelope[]));
 
         private ConcurrentQueue<Envelope> queue;
@@ -23,9 +26,11 @@ namespace PSMonitor.Stores
 
         public Uri Uri { get; private set; }
 
+        private HubConnection hub;
+
         public HTTP()
         {
-
+            
             Uri = new Uri(Setup.Get<HTTP, string>("url") ?? @"http://localhost:54926/");
             queue = new ConcurrentQueue<Envelope>();
 
@@ -37,6 +42,19 @@ namespace PSMonitor.Stores
                 thread.Start(this);
             });
 
+            hub = new HubConnection(Uri.ToString());
+
+            hub.CreateHubProxy("DataReceivedHub").On<Envelope>("OnData",
+                (data) => {
+
+                    DataReceivedHandler handler = DataReceived;
+
+                    if (handler != null)
+                        handler(data);
+
+                });
+            
+            hub.Start();
         }
         
         public long Delete(string path)
@@ -93,6 +111,8 @@ namespace PSMonitor.Stores
 
         public void Dispose()
         {
+            hub.Dispose();
+
             disposed = true;
             threads.ForEach(thread => {
                 thread.Interrupt();
@@ -196,7 +216,7 @@ namespace PSMonitor.Stores
         }
 
         private int sleepTime = 1000;
-
+        
         private static void Dispatch(object ctx)
         {
 
@@ -244,7 +264,7 @@ namespace PSMonitor.Stores
 
                                     foreach (Envelope envelope in data)
                                     {
-                                        envelope.retry = envelope.retry == 0 ? 2 : envelope.retry;
+                                        envelope.Retry = envelope.Retry == 0 ? 2 : envelope.Retry;
                                     }
 
                                     if (task.Exception != null)
@@ -280,7 +300,7 @@ namespace PSMonitor.Stores
 
                                     while (!context.queue.TryDequeue(out envelope)) ;
 
-                                    if (--envelope.retry > 0)
+                                    if (--envelope.Retry > 0)
                                     {
                                         context.queue.Enqueue(envelope);
                                     }

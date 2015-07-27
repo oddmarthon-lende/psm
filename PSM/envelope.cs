@@ -11,35 +11,35 @@ namespace PSMonitor
     public sealed class Envelope : ISerializable
     {
 
-        public string path;
-        public Entry[] entries;
-        public DateTime timestamp;
+        public string Path;
+        public Entry[] Entries;
+        public DateTime Timestamp;
 
         [NonSerialized]
-        public int retry = 0;
+        public int Retry = 0;
 
         public Envelope()
         {
-            path = "";
-            entries = new Entry[0];
-            timestamp = DateTime.Now;
+            Path = "";
+            Entries = new Entry[0];
+            Timestamp = DateTime.Now;
         }
 
         public Envelope(SerializationInfo info, StreamingContext context)
         {
 
-            path      = info.GetString("path");
-            timestamp = (DateTime)info.GetValue("timestamp", typeof(DateTime));
-            entries   = (Entry[])info.GetValue("entries", typeof(Entry[]));
+            Path      = info.GetString("path");
+            Timestamp = (DateTime)info.GetValue("timestamp", typeof(DateTime));
+            Entries   = (Entry[])info.GetValue("entries", typeof(Entry[]));
             
         }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             
-            info.AddValue("path", path);
-            info.AddValue("entries", entries, typeof(Entry[]));
-            info.AddValue("timestamp", timestamp, typeof(DateTime));
+            info.AddValue("path", Path);
+            info.AddValue("entries", Entries, typeof(Entry[]));
+            info.AddValue("timestamp", Timestamp, typeof(DateTime));
         }
 
         public override string ToString()
@@ -47,9 +47,9 @@ namespace PSMonitor
 
             StringBuilder str = new StringBuilder();
 
-            str.Append(path);            
+            str.Append(Path);            
 
-            foreach(Entry entry in entries)
+            foreach(Entry entry in Entries)
             {
                 str.AppendLine();
                 str.Append("\t");

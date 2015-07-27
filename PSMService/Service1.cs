@@ -18,15 +18,15 @@ namespace PSMonitor
             PSM.Store.Put(new Envelope()
             {
 
-                path = "@errors",
-                entries = new Entry[1] {
+                Path = "@errors",
+                Entries = new Entry[1] {
 
                     new Entry {
 
-                        key = Environment.MachineName,
-                        type = typeof(string),
-                        value = message,
-                        timestamp = DateTime.Now
+                        Key = Environment.MachineName,
+                        Type = typeof(string),
+                        Value = message,
+                        Timestamp = DateTime.Now
 
                     }
                 }

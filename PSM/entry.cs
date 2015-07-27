@@ -10,36 +10,36 @@ namespace PSMonitor
     public struct Entry : ISerializable
     {
 
-        public string key;
-        public object value;
-        public Type type;
-        public DateTime timestamp;
+        public string Key;
+        public object Value;
+        public Type Type;
+        public DateTime Timestamp;
 
         [NonSerialized]
-        public int retry;
+        public int Retry;
 
         public Entry(SerializationInfo info, StreamingContext context)
         {
 
-            key = info.GetString("key");
-            type = Type.GetType(info.GetString("type"));
-            value = info.GetValue("value", type);
-            timestamp = info.GetDateTime("timestamp").ToLocalTime();
-            retry = 0;
+            Key = info.GetString("key");
+            Type = Type.GetType(info.GetString("type"));
+            Value = info.GetValue("value", Type);
+            Timestamp = info.GetDateTime("timestamp").ToLocalTime();
+            Retry = 0;
 
         }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            info.AddValue("key", key);
-            info.AddValue("value", value, type);
-            info.AddValue("type", type.FullName);
-            info.AddValue("timestamp", timestamp.ToUniversalTime().ToString("o"));
+            info.AddValue("key", Key);
+            info.AddValue("value", Value, Type);
+            info.AddValue("type", Type.FullName);
+            info.AddValue("timestamp", Timestamp.ToUniversalTime().ToString("o"));
         }
 
         public override string ToString()
         {
-            return String.Format("{0} = {1}", key, value);
+            return String.Format("{0} = {1}", Key, Value);
         }
     }
 
