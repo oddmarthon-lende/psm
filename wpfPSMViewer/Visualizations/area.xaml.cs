@@ -3,12 +3,12 @@
 namespace PSMViewer.Visualizations
 {
 
-    public sealed partial class Line : OxyBase<TwoColorLineSeries>
+    public sealed partial class Area : OxyBase<TwoColorAreaSeries>
     {
-        public static string DisplayName { get { return typeof(Line).Name; } }
-        public static string Icon { get { return @"..\icons\chart_curve.png"; } }
+        public static string DisplayName { get { return typeof(Area).Name; } }
+        public static string Icon { get; private set; } = null;
 
-        public Line()
+        public Area()
         {
             InitializeComponent();
         }

@@ -5,25 +5,254 @@ using OxyPlot;
 using OxyPlot.Series;
 using OxyPlot.Axes;
 using PSMViewer.Models;
-using PSMViewer.ViewModels;
 using System.Collections;
+using System.Windows.Media;
+using Xceed.Wpf.Toolkit.PropertyGrid;
+using System.Windows.Data;
+using PSMViewer.Converters;
+using System.Windows;
+using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace PSMViewer.Visualizations
 {
     
+    public class SolidColorBrushList : IList<SolidColorBrush>, ICollection<SolidColorBrush>, ICollection, IList {
+
+        private IList<OxyColor> OxyColors;
+        private IValueConverter Converter = new SolidColorBrushToOxyColorConverter();
+        private IList<OxyColor> DefaultColors;
+
+        public SolidColorBrushList()
+        {
+            OxyColors = new List<OxyColor>();
+        }
+
+        public SolidColorBrushList(IList<OxyColor> OxyColors, IList<OxyColor> DefaultColors, SolidColorBrushList list)
+        {            
+
+            this.OxyColors = OxyColors;
+            this.DefaultColors = DefaultColors;
+
+            foreach (OxyColor color in list.OxyColors)
+            {
+                this.OxyColors.Add(color);
+            }
+            
+        }
+
+        public SolidColorBrushList(IList<OxyColor> OxyColors) {
+
+            this.DefaultColors = OxyColors.ToList();
+
+            OxyColors.Clear();
+
+            this.OxyColors = OxyColors;
+        }
+
+        public SolidColorBrush this[int index]
+        {
+            get
+            {
+                return (SolidColorBrush)Converter.Convert(OxyColors[index], typeof(SolidColorBrush), null, null);
+            }
+
+            set
+            {
+                OxyColors[index] = (OxyColor)Converter.ConvertBack(value, typeof(OxyColor), null, null);
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                return OxyColors.Count;
+            }
+        }
+
+        public bool IsReadOnly
+        {
+            get
+            {
+                return OxyColors.IsReadOnly;
+            }
+        }
+
+        public object SyncRoot
+        {
+            get
+            {
+                return OxyColors;
+            }
+        }
+
+        public bool IsSynchronized
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public bool IsFixedSize
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        object IList.this[int index]
+        {
+            get
+            {
+                return this[index];
+            }
+
+            set
+            {
+                this[index] = (SolidColorBrush)value;
+            }
+        }
+
+        public void Add(SolidColorBrush item)
+        {
+            OxyColors.Add((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
+        }
+
+        public void Clear()
+        {
+            OxyColors.Clear();
+        }
+
+        public bool Contains(SolidColorBrush item)
+        {
+            return OxyColors.Contains((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
+        }
+
+        public void CopyTo(SolidColorBrush[] array, int arrayIndex)
+        {
+            foreach(SolidColorBrush color in this)
+            {
+                array[++arrayIndex] = color;
+            }
+        }
+
+        public IEnumerator<SolidColorBrush> GetEnumerator()
+        {
+
+            if (OxyColors.Count == 0)
+            {
+                foreach (OxyColor color in DefaultColors)
+                    OxyColors.Add(color);
+            }
+
+            return OxyColors.Select(color =>
+            {
+                return (SolidColorBrush)Converter.Convert(color, typeof(SolidColorBrush), null, null);
+            }).GetEnumerator();
+        }
+
+        public int IndexOf(SolidColorBrush item)
+        {
+            return OxyColors.IndexOf((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
+        }
+
+        public void Insert(int index, SolidColorBrush item)
+        {
+            OxyColors.Insert(index, (OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
+        }
+
+        public bool Remove(SolidColorBrush item)
+        {
+            return OxyColors.Remove((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
+        }
+
+        public void RemoveAt(int index)
+        {
+            OxyColors.RemoveAt(index);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+        public void CopyTo(Array array, int index)
+        {
+            this.CopyTo((SolidColorBrush[])array, index);
+        }
+
+        public int Add(object value)
+        {
+            this.Add((SolidColorBrush)value);
+            return 1;
+        }
+
+        public bool Contains(object value)
+        {
+            return this.Contains((SolidColorBrush)value);
+        }
+
+        public int IndexOf(object value)
+        {
+            return this.IndexOf((SolidColorBrush)value);
+        }
+
+        public void Insert(int index, object value)
+        {
+            this.Insert(index, (SolidColorBrush)value);
+        }
+
+        public void Remove(object value)
+        {
+            this.Remove((SolidColorBrush)value);
+        }
+    }
+
     public class OxyBase<T> : VisualizationControl, IDisposable
     {
+        
+        public delegate void SeriesAddedEventHandler(KeyItem key, MultiControl control, T series);
+        public delegate void SeriesRemovedEventHandler(KeyItem key, MultiControl control, T series);
 
-        public static bool isVisible { get { return false; } }
+        public event SeriesAddedEventHandler SeriesAdded;
+        public event SeriesRemovedEventHandler SeriesRemoved;
+        
+        protected void OnSeriesRemoved(KeyItem key, MultiControl control, T series)
+        {
+            if (SeriesRemoved != null)
+                SeriesRemoved(key, control, series);
+        }
+
+        protected void OnSeriesAdded(KeyItem key, MultiControl control, T series)
+        {
+            if (SeriesAdded != null)
+                SeriesAdded(key, control, series);
+        }
 
         public PlotModel Model { get; private set; } = new PlotModel() { Title = "" };
         public PlotController Controller { get; private set; } = new PlotController();
+
+        private SolidColorBrushList _colors = null;
+        public SolidColorBrushList Colors
+        {
+            get
+            {
+                return _colors;
+            }
+            set
+            {
+                _colors = new SolidColorBrushList(Model.DefaultColors, (new PlotModel()).DefaultColors, value);
+            }
+        }
 
         public override string Title
         {
             get
             {
-                return Model.Title;
+                string title = Model.Title;
+                return (String.IsNullOrEmpty(title) || String.IsNullOrWhiteSpace(title) ? null : title) ?? base.Title;
             }
 
             set
@@ -43,35 +272,522 @@ namespace PSMViewer.Visualizations
             Refresh();
         }
 
-        public OxyBase()
-        {
 
+
+        #region Dependency Properties
+
+        public LineStyle MinorGridlineStyle
+        {
+            get { return (LineStyle)GetValue(MinorGridlineStyleProperty); }
+            set { SetValue(MinorGridlineStyleProperty, value); }
+        }
+        public static readonly DependencyProperty MinorGridlineStyleProperty =
+            DependencyProperty.Register("MinorGridlineStyle", typeof(LineStyle), typeof(OxyBase<T>), new PropertyMetadata(LineStyle.Dot));
+        
+        [ExpandableObject]
+        public SolidColorBrush MinorGridLineColor
+        {
+            get { return (SolidColorBrush)GetValue(MinorGridLineColorProperty); }
+            set { SetValue(MinorGridLineColorProperty, value); }
+        }
+        public static readonly DependencyProperty MinorGridLineColorProperty =
+            DependencyProperty.Register("MinorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 0))));
+        
+
+        public double MinorGridlineThickness
+        {
+            get { return (double)GetValue(MinorGridlineThicknessProperty); }
+            set { SetValue(MinorGridlineThicknessProperty, value); }
+        }
+        public static readonly DependencyProperty MinorGridlineThicknessProperty =
+            DependencyProperty.Register("MinorGridlineThickness", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(1D));
+
+
+        public double MinorStep
+        {
+            get { return (double)GetValue(MinorStepProperty); }
+            set { SetValue(MinorStepProperty, value); }
+        }
+        public static readonly DependencyProperty MinorStepProperty =
+            DependencyProperty.Register("MinorStep", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(double.NaN));
+        
+
+        public double MinorTickSize
+        {
+            get { return (double)GetValue(MinorTickSizeProperty); }
+            set { SetValue(MinorTickSizeProperty, value); }
+        }
+        public static readonly DependencyProperty MinorTickSizeProperty =
+            DependencyProperty.Register("MinorTickSize", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(4D));
+
+        
+        public LineStyle MajorGridlineStyle
+        {
+            get { return (LineStyle)GetValue(MajorGridlineStyleProperty); }
+            set { SetValue(MajorGridlineStyleProperty, value); }
+        }
+        public static readonly DependencyProperty MajorGridlineStyleProperty =
+            DependencyProperty.Register("MajorGridlineStyle", typeof(LineStyle), typeof(OxyBase<T>), new PropertyMetadata(LineStyle.Solid));
+
+        [ExpandableObject]
+        public SolidColorBrush MajorGridLineColor
+        {
+            get { return (SolidColorBrush)GetValue(MajorGridLineColorProperty); }
+            set { SetValue(MajorGridLineColorProperty, value); }
+        }
+        public static readonly DependencyProperty MajorGridLineColorProperty =
+            DependencyProperty.Register("MajorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0,0,0))));
+        
+
+        public double MajorGridlineThickness
+        {
+            get { return (double)GetValue(MajorGridlineThicknessProperty); }
+            set { SetValue(MajorGridlineThicknessProperty, value); }
+        }
+        public static readonly DependencyProperty MajorGridlineThicknessProperty =
+            DependencyProperty.Register("MajorGridlineThickness", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(1D));
+
+
+        public double MajorStep
+        {
+            get { return (double)GetValue(MajorStepProperty); }
+            set { SetValue(MajorStepProperty, value); }
+        }
+        public static readonly DependencyProperty MajorStepProperty =
+            DependencyProperty.Register("MajorStep", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(double.NaN));
+        
+
+        public double MajorTickSize
+        {
+            get { return (double)GetValue(MajorTickSizeProperty); }
+            set { SetValue(MajorTickSizeProperty, value); }
+        }
+        public static readonly DependencyProperty MajorTickSizeProperty =
+            DependencyProperty.Register("MajorTickSize", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(7D));
+
+
+        public OxyThickness PlotAreaBorderThickness
+        {
+            get { return (OxyThickness)GetValue(PlotAreaBorderThicknessProperty); }
+            set { SetValue(PlotAreaBorderThicknessProperty, value); }
+        }
+        public static readonly DependencyProperty PlotAreaBorderThicknessProperty =
+            DependencyProperty.Register("PlotAreaBorderThickness", typeof(OxyThickness), typeof(OxyBase<T>), new PropertyMetadata(new OxyThickness(0)));
+
+        [ExpandableObject]
+        public SolidColorBrush LegendBackground
+        {
+            get { return (SolidColorBrush)GetValue(LegendBackgroundProperty); }
+            set { SetValue(LegendBackgroundProperty, value); }
+        }
+        public static readonly DependencyProperty LegendBackgroundProperty =
+            DependencyProperty.Register("LegendBackground", typeof(SolidColorBrush), typeof(OxyBase<T>), new PropertyMetadata(null));
+
+
+        public LineStyle LineStyle
+        {
+            get { return (LineStyle)GetValue(LineStyleProperty); }
+            set { SetValue(LineStyleProperty, value); }
+        }
+        public static readonly DependencyProperty LineStyleProperty =
+            DependencyProperty.Register("LineStyle", typeof(LineStyle), typeof(OxyBase<T>), new PropertyMetadata(LineStyle.Solid));
+
+
+
+        public double StrokeThickness
+        {
+            get { return (double)GetValue(StrokeThicknessProperty); }
+            set { SetValue(StrokeThicknessProperty, value); }
+        }
+
+        public static readonly DependencyProperty StrokeThicknessProperty =
+            DependencyProperty.Register("StrokeThickness", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(1D));
+
+                
+        public double LegendBorderThickness
+        {
+            get { return (double)GetValue(LegendBorderThicknessProperty); }
+            set { SetValue(LegendBorderThicknessProperty, value); }
+        }
+        public static readonly DependencyProperty LegendBorderThicknessProperty =
+            DependencyProperty.Register("LegendBorderThickness", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(0D));
+
+
+
+        public LegendOrientation LegendOrientation
+        {
+            get { return (LegendOrientation)GetValue(LegendOrientationProperty); }
+            set { SetValue(LegendOrientationProperty, value); }
+        }
+        public static readonly DependencyProperty LegendOrientationProperty =
+            DependencyProperty.Register("LegendOrientation", typeof(LegendOrientation), typeof(OxyBase<T>), new PropertyMetadata(LegendOrientation.Vertical));
+
+
+
+        public LegendPlacement LegendPlacement
+        {
+            get { return (LegendPlacement)GetValue(LegendPlacementProperty); }
+            set { SetValue(LegendPlacementProperty, value); }
+        }
+        public static readonly DependencyProperty LegendPlacementProperty =
+            DependencyProperty.Register("LegendPlacement", typeof(LegendPlacement), typeof(OxyBase<T>), new PropertyMetadata(LegendPlacement.Inside));
+
+
+
+        public LegendPosition LegendPosition
+        {
+            get { return (LegendPosition)GetValue(LegendPositionProperty); }
+            set { SetValue(LegendPositionProperty, value); }
+        }
+        public static readonly DependencyProperty LegendPositionProperty =
+            DependencyProperty.Register("LegendPosition", typeof(LegendPosition), typeof(OxyBase<T>), new PropertyMetadata(LegendPosition.TopRight));
+
+        #endregion
+
+        public OxyBase() : base()
+        {
+            
+            Colors = new SolidColorBrushList(Model.DefaultColors);
             Controls.CollectionChanged += Controls_CollectionChanged;
 
-            Model.Axes.Add(new DateTimeAxis { Position = AxisPosition.Bottom, Angle = 45, Title = "Time" });
-            Model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "Value" });
+            Model.Axes.Add(new DateTimeAxis { Position = AxisPosition.Bottom, Angle = 45 });
+            Model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Angle = -45 });
+                                    
+            Model.InvalidatePlot(false);
+            Model.Background = OxyColor.FromArgb(0, 0, 0, 0);
 
-            foreach(Axis axis in Model.Axes)
+            #region Bindings
+
+            SetBinding(LegendBorderThicknessProperty, new Binding("Value")
             {
-                axis.MinorGridlineStyle = LineStyle.Dot;
-                axis.MajorGridlineStyle = LineStyle.Solid;
+                Source = new Utilities.BindingWrapper<double>(
+
+                thickness => {
+
+                    Model.LegendBorderThickness = thickness;
+                    return thickness;
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(LegendOrientationProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<LegendOrientation>(
+
+                orientation => {
+
+                    Model.LegendOrientation = orientation;
+                    return orientation;
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(LegendPlacementProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<LegendPlacement>(
+
+                placement => {
+
+                    Model.LegendPlacement = placement;
+                    return placement;
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(LegendPositionProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<LegendPosition>(
+
+                position => {
+
+                    Model.LegendPosition = position;
+                    return position;
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(LegendBackgroundProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<OxyColor>(
+
+                color => {
+
+                    Model.LegendBackground = color;
+                    return color;
+                }
+            ),
+                Mode = BindingMode.OneWayToSource,
+                Converter = OxyColorConverter
+            });
+
+            SetBinding(PlotAreaBorderThicknessProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<OxyThickness>(
+
+                thickness => {
+                    Model.PlotAreaBorderThickness = thickness;
+                    return thickness;
+                }
+
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+
+            SetBinding(FontSizeProperty, new Binding("Value") { Source = new Utilities.BindingWrapper<double>(
+                
+                size => {
+                    Model.DefaultFontSize = size;
+                    return size;
+                }
+
+            ), Mode = BindingMode.OneWayToSource });
+
+
+            SetBinding(ForegroundProperty, new Binding("Value") { Source = new Utilities.BindingWrapper<OxyColor>(
+
+                color => {
+
+                    Model.TextColor = Model.PlotAreaBorderColor = color;                                        
+                    return color;
+
+                }
+            ), Mode = BindingMode.OneWayToSource, Converter = OxyColorConverter });
+            
+
+            SetBinding(MajorGridlineStyleProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<LineStyle>(
+
+                    style => {
+                        
+                        foreach (Axis axis in Model.Axes)
+                            axis.MajorGridlineStyle = style;
+
+                        return style;
+                    }
+
+                ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MajorGridLineColorProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<OxyColor>(
+
+                color => {
+
+                    foreach (Axis axis in Model.Axes)
+                        axis.MajorGridlineColor = color;
+
+                    return color;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource,
+                Converter = OxyColorConverter
+            });
+
+            SetBinding(MajorGridlineThicknessProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                thickness => {
+
+                    foreach (Axis axis in Model.Axes)
+                        axis.MajorGridlineThickness = thickness;
+
+                    return thickness;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MajorStepProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                step => {
+
+                    foreach (Axis axis in Model.Axes)
+                        axis.MajorStep = step;
+
+                    return step;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MajorTickSizeProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                size => {
+
+                    foreach (Axis axis in Model.Axes)
+                        axis.MajorTickSize = size;
+
+                    return size;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MinorGridlineStyleProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<LineStyle>(
+
+                        style => {
+
+                            foreach (Axis axis in Model.Axes)
+                                axis.MinorGridlineStyle = style;
+
+                            return style;
+                        }
+
+                    ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MinorGridLineColorProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<OxyColor>(
+
+                        color => {
+
+                            foreach (Axis axis in Model.Axes)
+                                axis.MinorGridlineColor = color;
+
+                            return color;
+                        }
+
+                    ),
+                Mode = BindingMode.OneWayToSource,
+                Converter = OxyColorConverter
+            });
+
+            SetBinding(MinorGridlineThicknessProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                thickness => {
+
+                    foreach (Axis axis in Model.Axes)
+                        axis.MinorGridlineThickness = thickness;
+
+                    return thickness;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MinorStepProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                step => {
+
+                    foreach (Axis axis in Model.Axes)
+                        axis.MinorStep = step;
+
+                    return step;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MinorTickSizeProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                size => {
+
+                    foreach (Axis axis in Model.Axes)
+                        axis.MinorTickSize = size;
+
+                    return size;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });            
+            
+            #endregion
+
+            PropertyDefinitions.Add(new PropertyDefinition()
+            {
+               
+                Category = "Plot",
+                TargetProperties = new List<object>(new string[] {
+                    "Colors",
+                    "MinorGridlineStyle", "MinorGridLineColor", "MinorGridlineThickness", "MinorStep", "MinorTickSize",
+                    "MajorGridlineStyle", "MajorGridLineColor", "MajorGridlineThickness", "MajorStep", "MajorTickSize",
+                    "LegendBackground", "LegendBorderThickness", "LegendOrientation", "LegendPlacement", "LegendPosition"
+                })
+            });
+
+            PropertyDefinitions.Add(new PropertyDefinition()
+            {
+                IsExpandable = true,
+                Category = "Plot",
+                TargetProperties = new List<object>(new string[] {
+                    "PlotAreaBorderThickness"
+                })
+            });
+
+            this.PropertyChanged += delegate
+            {
+                Dispatcher.InvokeAsync(Refresh);
+            };
+
+            RegisterUserCommand();
+            RegisterUserCommand("Reset View", new RelayCommand(ExecuteCommand, canExecute, CommandType.RESET));
+
+        }
+                
+        private new enum CommandType
+        {
+            RESET = 100
+        }
+
+        protected override void ExecuteCommand(object sender, object parameter)
+        {
+
+            RelayCommand cmd = (RelayCommand)sender;
+
+            switch ((CommandType)cmd.Arguments[0].Value)
+            {
+                case CommandType.RESET:
+                    Model.ResetAllAxes();
+                    break;
             }
 
-            Model.InvalidatePlot(false);
+            base.ExecuteCommand(sender, parameter);
 
-
-            
-        }        
+        }
+                 
+        protected static SolidColorBrushToOxyColorConverter OxyColorConverter = new SolidColorBrushToOxyColorConverter();
+        protected static DoubleToOxyThicknessConverter OxyThicknessConverter = new DoubleToOxyThicknessConverter();
 
         public override void Dispose()
         {
 
             Controls.CollectionChanged -= Controls_CollectionChanged;
 
-            foreach (KeyValuePair<KeyItem, Controls> item in Controls)
+            foreach (MultiControl m in Controls)
             {
-                item.Value.DataChanged -= DataChanged;
-                item.Value.Dispose();
+
+                m.DataChanged -= DataChanged;
+                m.Dispose();
             }
 
             base.Dispose();
@@ -85,13 +801,17 @@ namespace PSMViewer.Visualizations
 
             if (items != null)
             {
-                foreach (KeyValuePair<KeyItem, Controls> item in items)
+                foreach (MultiControl m in items)
                 {
                     Series.RemoveAll(s => {
 
-                        if (s.Key.Path == item.Key.Path && Model.Series.Remove((Series)Convert.ChangeType(s.Value, typeof(Series))))
+                        if (s.Key.Path == m.Key.Path && Model.Series.Remove((Series)(object)s.Value))
                         {
-                            item.Value.DataChanged -= DataChanged;
+
+                            m.DataChanged  -= DataChanged;
+                            OnSeriesRemoved(m.Key, m, s.Value);
+
+                            return true;
                         }
 
                         return false;
@@ -105,44 +825,62 @@ namespace PSMViewer.Visualizations
             if (items != null)
             {
 
-                foreach (KeyValuePair<KeyItem, Controls> item in items)
+                foreach (MultiControl m in items)
                 {
 
-                    if (this.Series.Count(s => { return s.Key.Path == item.Key.Path; }) == 0)
+                    if (this.Series.Count(s => { return s.Key.Path == m.Key.Path; }) == 0)
                     {
+                        Series series = CreateInstance(m);
 
-                        var series = (XYAxisSeries)Activator.CreateInstance(typeof(T));
-
-                        series.ItemsSource = item.Value.Entries;
-
-                        if(typeof(T).IsSubclassOf(typeof(DataPointSeries)))
+                        if (series == null) return;
+                                      
+                        if (typeof(T).IsSubclassOf(typeof(DataPointSeries)))
                             ((DataPointSeries)series).Mapping = (obj) => {
 
                                 EntryItem entry = (EntryItem)obj;
 
-                                double value = 0D;
-
-                                switch (entry.Value.GetType().Name.ToLower())
-                                {
-                                    case "string":
-                                        value = Convert.ToDouble(((string)entry.Value).Length);
-                                        break;
-                                    default:
-                                        value = Convert.ToDouble(entry.Value);
-                                        break;
-                                }
-
-                                return new DataPoint(DateTimeAxis.ToDouble(entry.Timestamp), value);
+                                return new DataPoint(DateTimeAxis.ToDouble(entry.Timestamp), ConvertEntryValueToDouble(entry));
                             };
 
-                        this.Series.Add(new KeyValuePair<KeyItem, T>(item.Key, (T)(object)series));
+                        this.Series.Add(new KeyValuePair<KeyItem, T>(m.Key, (T)(object)series));
 
                         Model.Series.Add(series);
 
-                        item.Value.DataChanged += DataChanged;
+                        OnSeriesAdded(m.Key, m, (T)(object)series);
+
+                        m.DataChanged += DataChanged;
                     }
                 }
             }
+        }
+
+        protected virtual Series CreateInstance(MultiControl control)
+        {
+
+            XYAxisSeries s = (XYAxisSeries)Activator.CreateInstance(typeof(T));
+
+            s.Title = control.Key.Name;
+            s.ItemsSource = control.Entries;
+            s.Background = OxyColor.FromArgb(0, 0, 0, 0);
+
+            return s;
+        }
+
+        protected static double ConvertEntryValueToDouble(EntryItem entry)
+        {
+            double value = 0D;
+
+            switch (entry.Value.GetType().Name.ToLower())
+            {
+                case "string":
+                    value = Convert.ToDouble(((string)entry.Value).Length);
+                    break;
+                default:
+                    value = Convert.ToDouble(entry.Value);
+                    break;
+            }
+
+            return value;
         }
 
         

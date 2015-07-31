@@ -53,7 +53,7 @@ namespace PSMViewer.ViewModels
 
         }
 
-        private Controls Control = null;
+        public Controls Control { get; private set; } = null;
 
         public Controls<DateTime, TimeSpan> Timebased { get; private set; }
         public Controls<long, long> Indexbased { get; private set; }

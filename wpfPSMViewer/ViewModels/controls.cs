@@ -28,9 +28,39 @@ namespace PSMViewer.ViewModels
         public event PropertyChangedEventHandler     PropertyChanged;
         public event DataChangedEventHandler         DataChanged;
 
+        protected Dispatcher Dispatcher = Dispatcher.CurrentDispatcher;
+
         public Controls()
         {
             Instances.Add(this);
+            PSM.Store.DataReceived += Store_DataReceived;
+        }
+
+        private void Store_DataReceived(Envelope data)
+        {
+            if(Dispatcher.Thread != Thread.CurrentThread)
+            {
+                Dispatcher.Invoke(() => Store_DataReceived(data));
+
+                return;
+            }
+
+            if(this.Selected != null && this.Selected.Parent != null && this.Selected.Parent.Path == data.Path)
+            {
+                foreach (Entry entry in data.Entries)
+                {
+                    if(this.Selected.Name == entry.Key)
+                        Append((EntryItem)entry);
+                }
+            }
+        }
+
+        protected virtual void Append(EntryItem item) {
+
+            if (!isActive) return;
+            
+            Entries.Insert(0, item);            
+            OnDataChanged(null, null);
         }
 
         ~Controls()
@@ -43,7 +73,9 @@ namespace PSMViewer.ViewModels
 
             Instances.Remove(this);
 
-            if(entries != null)
+            PSM.Store.DataReceived -= Store_DataReceived;
+
+            if (entries != null)
                 entries.CollectionChanged -= OnDataChanged;
 
             GC.SuppressFinalize(this);
@@ -65,8 +97,6 @@ namespace PSMViewer.ViewModels
 
         protected virtual void OnDataChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            Dispatcher Dispatcher = Dispatcher.CurrentDispatcher;
-
             if ( OnDataChangedDispatcherOperation == null)
                 OnDataChangedDispatcherOperation = Dispatcher.InvokeAsync(InvokeDataChanged);
 
@@ -184,37 +214,78 @@ namespace PSMViewer.ViewModels
     public class Controls<T, TCount> : Controls, INotifyPropertyChanged
     {
 
-        private T _start;
+        private object _start = null;
         public override object Start
         {
             get
-            {
-                return _start;
-            }
+            {                
+                object default_value = null;
 
-            set
-            {
-
-                if (SetField<T>(ref _start, (T)Convert.ChangeType(value, typeof(T))))
-                    OnPropertyChanged("End");
-
-            }
-        }
-
-        public override object End
-        {
-
-            get
-            {
+                if (_start != null) return _start;
 
                 switch (typeof(T).Name.ToLower())
                 {
 
                     case "datetime":
-                        return (T)(object)((DateTime)(object)Start + (TimeSpan)(object)Count);
 
+                        switch (typeof(TCount).Name.ToLower())
+                        {
+
+                            case "timespan" :
+
+                                default_value = (DateTime.Now - (TimeSpan)Count);
+                                break;
+                        }
+
+                        break;
+
+                    case "byte":
+                    case "int16":
+                    case "int32":
                     case "int64":
-                        return (T)(object)((long)(object)Start + (long)(object)Count - 1L);
+
+                        default_value = 0D;
+                        break;
+
+                }
+
+                return default_value;
+            }
+
+            set
+            {
+                
+                if (SetField(ref _start, value == null ? null : Convert.ChangeType(value, typeof(T))))
+                    OnPropertyChanged("End");
+
+            }
+        }
+        
+        public override object End
+        {
+
+            get
+            {
+                
+                switch (typeof(T).Name.ToLower())
+                {
+
+                    case "datetime":
+
+                        switch (typeof(TCount).Name.ToLower())
+                        {
+                            case "timespan":
+
+                                return ((DateTime)Start + (TimeSpan)Count);
+                        }
+                        break;                        
+
+                    case "byte":
+                    case "int16":
+                    case "int32":
+                    case "int64":
+
+                        return (object)((long)Start + (long)Count - 1L);
 
                 }
 
@@ -236,8 +307,11 @@ namespace PSMViewer.ViewModels
                                 Count = ((DateTime)value) - ((DateTime)Start);
                                 break;
                         }
-                        break;               
+                        break;
 
+                    case "byte":
+                    case "int16":
+                    case "int32":
                     case "int64":
 
                         switch (typeof(TCount).Name.ToLower())
@@ -246,20 +320,21 @@ namespace PSMViewer.ViewModels
                                 Count = (long)value - (long)Start;
                                 break;
                         }
+
                         break;
 
                 }                
             }
         }
 
-        private TCount _count;
+        private object _count = default(TCount);
         public override object Count
         {
             get { return _count; }
             set
             {
 
-                if (SetField<TCount>(ref _count, (TCount)Convert.ChangeType(value, typeof(TCount))))
+                if (SetField(ref _count, Convert.ChangeType(value, typeof(TCount))))
                 {
                     OnPropertyChanged("End");
                 }
@@ -304,9 +379,41 @@ namespace PSMViewer.ViewModels
             });
         }
 
-        public override void Reload()
+        protected override void Append(EntryItem item)
         {
 
+            switch (typeof(T).Name.ToLower())
+            {
+
+                case "datetime":
+
+                    if (item.Timestamp >= (DateTime)Start && item.Timestamp <= (DateTime)End)
+                        break;
+                    else
+                        return;
+
+                case "byte":
+                case "int16":
+                case "int32":
+                case "int64":
+                    {
+
+                        if ((long)Start > 0) return;
+
+                        while (Entries.Count >= (long)Count)
+                            Entries.RemoveAt(Entries.Count - 1);
+
+                        break;
+
+                    }
+
+            }
+
+            base.Append(item);
+        }
+
+        public override void Reload()
+        {
             Entries.Clear();
 
             foreach (EntryItem entry in Reload(Selected)??Entries)

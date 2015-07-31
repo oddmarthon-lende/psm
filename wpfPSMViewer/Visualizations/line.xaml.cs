@@ -1,16 +1,62 @@
 ﻿using OxyPlot.Series;
+using System.Windows.Data;
+using OxyPlot;
+using System.Collections.Generic;
+using Xceed.Wpf.Toolkit.PropertyGrid;
+using System.Collections.Specialized;
+using System;
 
 namespace PSMViewer.Visualizations
 {
 
-    public sealed partial class Area : OxyBase<TwoColorAreaSeries>
+    public sealed partial class Line : OxyBase<TwoColorLineSeries>
     {
-        public static string DisplayName { get { return typeof(Area).Name; } }
-        public static string Icon { get { return @""; } }
 
-        public Area()
+        public static string DisplayName { get { return typeof(Line).Name; } }
+        public static string Icon { get; private set; } = "../icons/chart_line.png";
+                
+        public Line()
         {
-            InitializeComponent();
+            
+            InitializeComponent();        
+                
+            this.SeriesAdded += Line_SeriesAdded;
+
+            PropertyDefinitions.Add(new PropertyDefinition()
+            {
+                Category = "Line.Stroke",
+                TargetProperties = new List<object>(new string[] { "StrokeThickness", "LineStyle" })
+            });
+        }       
+
+        private void Line_SeriesAdded(Models.KeyItem key, MultiControl control, TwoColorLineSeries series)
+        {
+
+            SetBinding(LineStyleProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<LineStyle>(
+
+                    style => {
+                        series.LineStyle = style;                 
+                        return style;
+                    }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(StrokeThicknessProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                    thickness => {
+                        series.StrokeThickness = thickness;
+                        return thickness;
+                    }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
         }
+
     }
 }

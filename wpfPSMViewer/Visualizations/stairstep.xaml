@@ -8,7 +8,7 @@
              xmlns:oxy="http://oxyplot.org/wpf"
              xmlns:o="clr-namespace:OxyPlot.Series;assembly=OxyPlot"
              mc:Ignorable="d">
-    
-        <oxy:PlotView Model="{Binding Model}" Controller="{Binding Controller}" x:Name="plotView" />
+
+    <oxy:PlotView Model="{Binding Model}" Controller="{Binding Controller}" x:Name="plotView" Background="Transparent" />
 
 </local:OxyBase>

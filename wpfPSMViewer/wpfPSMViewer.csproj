@@ -50,6 +50,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -92,6 +93,29 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Converters\oxycolor_solidcolorbrush.cs" />
+    <Compile Include="Converters\oxythickness_double.cs" />
+    <Compile Include="Utilities\bindingwrapper.cs" />
+    <Compile Include="Dialogs\properties.xaml.cs">
+      <DependentUpon>properties.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Utilities\tracker.cs" />
+    <Compile Include="tree.xaml.cs">
+      <DependentUpon>tree.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\barBase.cs" />
+    <Compile Include="Visualizations\bar.xaml.cs">
+      <DependentUpon>bar.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\pie.xaml.cs">
+      <DependentUpon>pie.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\datagrid.xaml.cs">
+      <DependentUpon>datagrid.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\column.xaml.cs">
+      <DependentUpon>column.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Visualizations\area.xaml.cs">
       <DependentUpon>area.xaml</DependentUpon>
     </Compile>
@@ -106,7 +130,7 @@
     <Compile Include="Visualizations\text.xaml.cs">
       <DependentUpon>text.xaml</DependentUpon>
     </Compile>
-    <Compile Include="visualizationWindow.xaml.cs">
+    <Compile Include="Windows\visualizationWindow.xaml.cs">
       <DependentUpon>visualizationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Models\entryitem.cs" />
@@ -114,9 +138,33 @@
     <Compile Include="commands.cs" />
     <Compile Include="ViewModels\controls.cs" />
     <Compile Include="ViewModels\main.cs" />
+    <Page Include="Dialogs\properties.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="styles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="tree.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Visualizations\bar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\pie.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\datagrid.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\column.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Visualizations\area.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -134,11 +182,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="visualizationWindow.xaml">
+    <Page Include="Windows\visualizationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="MainWindow.xaml">
+    <Page Include="Windows\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -146,7 +194,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Windows\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
@@ -185,9 +233,7 @@
       <Name>PSM</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Converters\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Resource Include="icons\accept.png" />
     <Resource Include="icons\add.png" />

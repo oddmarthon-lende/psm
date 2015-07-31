@@ -14,16 +14,37 @@ namespace PSMViewer.Models
     public class KeyItem : Key, IReload
     {
         
-        private KeyItem _Parent = null;
-        public KeyItem Parent { get { return _Parent; } }
+        private KeyItem _parent = null;
+        public KeyItem Parent {
 
-        private ObservableCollection<KeyItem> _Children = new ObservableCollection<KeyItem>();
+            get {
+
+                if(_parent == null && _path != null)
+                {
+
+                    string[] s = Path.Split('.');
+                    string key = s.Last();
+
+                    Array.Resize(ref s, s.Length - 1);
+
+                    string p = String.Join(".", s);
+
+                    _parent = KeyItem.CreateFromPath(p);
+
+                }
+
+                return _parent;
+            }
+
+        }
+
+        private ObservableCollection<KeyItem> _children = new ObservableCollection<KeyItem>();
         public ObservableCollection<KeyItem> Children
         {
 
             get
             {
-                return _Children;
+                return _children;
             }
 
         }
@@ -44,6 +65,12 @@ namespace PSMViewer.Models
 
                     while (parent != null && parent.Name != null)
                     {
+                        if(parent._path != null)
+                        {
+                            names.Add(parent._path);
+                            break;
+                        }
+
                         names.Add(parent.Name);
                         parent = parent.Parent;
                     }
@@ -61,27 +88,51 @@ namespace PSMViewer.Models
         public KeyItem() : base(null, null) { }
         public KeyItem(Key key) : base(key.Name, key.Type) { }
         public KeyItem(string key, Type type) : base(key, type) { }
+                
+        public static KeyItem CreateFromPath(string Path)
+        {
+
+            string[] s = Path.Split('.');
+            string key = s.Last();
+
+            Array.Resize(ref s, s.Length - 1);
+
+            string p = String.Join(".", s);
+
+            foreach (Key k in PSM.Store.GetKeys(p))
+            {
+                if(k.Name == key)
+                    return new KeyItem(k) { _path = Path };
+            }
+
+            return null;
+        }
 
         public void Reload()
         {
 
-            _Children.Clear();
+            _children.Clear();
 
             foreach (Key k in PSM.Store.GetKeys(Path))
             {
-                _Children.Add(new KeyItem(k) { _Parent = this });
+                _children.Add(new KeyItem(k) { _parent = this });
             }
 
         }
 
         public bool Next()
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         public bool Previous()
         {
-            throw new NotImplementedException();
+            return false;
+        }
+
+        public override string ToString()
+        {
+            return Path;
         }
     }
 }

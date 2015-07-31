@@ -1,0 +1,226 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PSMViewer"
+        xmlns:ViewModels="clr-namespace:PSMViewer.ViewModels"        
+        xmlns:Models="clr-namespace:PSMViewer.Models"        
+        xmlns:prop="clr-namespace:PSMViewer.Properties"
+        xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:v="clr-namespace:PSMViewer.Visualizations"
+        xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
+        xmlns:dg="http://schemas.xceed.com/wpf/xaml/datagrid"
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        x:Class="PSMViewer.MainWindow"
+        mc:Ignorable="d"
+        Title="PSM Data Viewer" Height="{Binding [w_height], Mode=TwoWay}" Width="{Binding [w_width], Mode=TwoWay}" Left="{Binding [w_left], Mode=TwoWay}" Top="{Binding [w_top], Mode=TwoWay}"
+    x:Name="window" SnapsToDevicePixels="True" Icon="..\icons\database_table.png" Drop="window_Drop" AllowDrop="True">
+
+    <Window.Resources>
+
+    </Window.Resources>
+
+    <Window.InputBindings>
+        
+        <KeyBinding Modifiers="Ctrl" Key="S" Command="{Binding Commands[Save], ElementName=window}" />
+        <KeyBinding Modifiers="Ctrl" Key="I" Command="{Binding Commands[Import], ElementName=window}" />
+        <KeyBinding Key="F5" Command="{Binding Commands[RefreshTable], ElementName=window}"  />
+        <KeyBinding Modifiers="Ctrl" Key="F5" Command="{Binding Commands[RefreshTree], ElementName=window}"  />
+        <KeyBinding Modifiers="Alt" Key="Right" Command="{Binding Commands[Next], ElementName=window}"  />
+        <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding Commands[Previous], ElementName=window}"  />
+        <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding Commands[NewWindow], ElementName=window}"  />
+        
+    </Window.InputBindings>
+
+    <Window.DataContext>
+        <ViewModels:Main/>
+    </Window.DataContext>
+
+    <Window.ContextMenu>
+
+        <ContextMenu x:Name="treeContextMenu">
+
+            <ContextMenu.Resources>
+                
+                <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="SetChartTypeStyle" TargetType="{x:Type MenuItem}">
+                    <Setter Property="Command" Value="{Binding Commands[SetChartType], ElementName=window}"/>
+                </Style>
+
+                <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="ChartToNewWindowStyle" TargetType="{x:Type MenuItem}">
+                    <Setter Property="Command" Value="{Binding Commands[ChartToNewWindow], ElementName=window}"/>
+                </Style>
+                
+            </ContextMenu.Resources>
+
+            <MenuItem Header="Chart Type" ItemsSource="{x:Static v:VisualizationControl.List}" IsVisibleChanged="ChartTypeMenuItem_IsVisibleChanged" ItemContainerStyle="{DynamicResource SetChartTypeStyle}" />
+
+            <MenuItem Header="Add Chart">
+                <MenuItem Header="To New Window" ItemsSource="{x:Static v:VisualizationControl.List}" ItemContainerStyle="{DynamicResource ChartToNewWindowStyle}" />
+            </MenuItem>
+
+
+        </ContextMenu>
+
+    </Window.ContextMenu>
+
+    <Grid>
+
+        <Grid.Resources>
+            <dg:DataGridCollectionViewSource x:Key="viewSource"  Source="{Binding Entries}" />
+            <Style TargetType="{x:Type Button}">
+                <Setter Property="Margin" Value="5,5" />
+            </Style>
+            <Style TargetType="{x:Type TextBlock}" >
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Margin" Value="5,5" />
+            </Style>
+        </Grid.Resources>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="100*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel  Grid.Row="0" Grid.RowSpan="1">
+
+            <ToolBarTray DockPanel.Dock="Top" PreviewMouseMove="ToolBarTray_PreviewMouseMove" IsHitTestVisible="True">
+
+                <ToolBarTray.Resources>
+                    <Style TargetType="{x:Type ToolBar}">
+                        <Setter Property="IsEnabled" Value="{Binding isActive}" />
+                        <Setter Property="IsHitTestVisible" Value="True" />
+                    </Style>
+                </ToolBarTray.Resources>
+
+                <ToolBar>
+
+                    <Menu>
+
+                        <MenuItem Header="File" >
+                            <MenuItem Header="New" InputGestureText="Ctrl+N" Command="{Binding Commands[NewWindow], ElementName=window}" />
+                            <MenuItem Header="Save" InputGestureText="Ctrl+S" Command="{Binding Commands[Save], ElementName=window}" />
+                            <MenuItem Header="Import" InputGestureText="Ctrl+I" Command="{Binding Commands[Import], ElementName=window}" />
+                            <MenuItem Header="Exit" InputGestureText="Alt+F4" Command="{Binding Commands[Exit], ElementName=window}" />
+
+                        </MenuItem>
+
+                        <MenuItem Header="Tools" >
+                            <MenuItem Header="Refresh Table" InputGestureText="F5" Command="{Binding Commands[RefreshTable], ElementName=window}"  />
+                            <MenuItem Header="Refresh Tree" InputGestureText="Ctrl+F5" Command="{Binding Commands[RefreshTree], ElementName=window}"  />
+                            <Separator />
+                            <MenuItem Header="Next" InputGestureText="Alt+Right" Command="{Binding Commands[Next], ElementName=window}"  />
+                            <MenuItem Header="Previous" InputGestureText="Alt+Left" Command="{Binding Commands[Previous], ElementName=window}"  />
+                        </MenuItem>
+
+                        <MenuItem Header="Windows" ItemsSource="{Binding Windows, ElementName=window}">
+
+                            <MenuItem.ItemContainerStyle>
+                                <Style TargetType="{x:Type MenuItem}">
+                                    <Setter Property="Header" Value="{Binding Title}" />
+                                    <Setter Property="CommandParameter" Value="{Binding}"/>
+                                    <Setter Property="Command" Value="{Binding Commands[Windows], ElementName=window}" />
+                                </Style>
+                            </MenuItem.ItemContainerStyle>
+
+                        </MenuItem>
+                        <MenuItem Header="Help">
+                            <MenuItem Header="About" Command="{Binding Commands[About], ElementName=window}" />
+                        </MenuItem>
+                    </Menu>
+
+                </ToolBar>
+
+                <StaticResource ResourceKey="IndexNavigationToolBar" />
+                <StaticResource ResourceKey="TimeNavigationToolBar" />
+
+            </ToolBarTray>
+
+        </DockPanel>
+
+        <xcad:DockingManager Grid.RowSpan="1" Grid.Row="1" >
+
+            <xcad:LayoutRoot x:Name="_layoutRoot">
+
+                <xcad:LayoutPanel Orientation="Horizontal">
+
+                    <xcad:LayoutAnchorablePane DockWidth="20*">
+
+                        <xcad:LayoutAnchorable ContentId="navigation" Title="Tree" CanHide="False" CanClose="False" AutoHideWidth="240">
+
+                            <local:Tree x:Name="treeView" Grid.Column="0" />
+
+                        </xcad:LayoutAnchorable>
+
+                    </xcad:LayoutAnchorablePane>
+
+                    <xcad:LayoutPanel Orientation="Vertical" DockWidth="80*">
+
+                        <xcad:LayoutAnchorablePane>
+
+                            <xcad:LayoutAnchorable ContentId="datagrid" Title="List"  CanHide="False" CanClose="False">
+
+                                <Grid>
+                                    <Grid.Resources>
+
+                                        <Style TargetType="{x:Type Button}">
+                                            <Setter Property="Margin" Value="5,5" />
+                                        </Style>
+                                        <Style TargetType="{x:Type TextBlock}" >
+                                            <Setter Property="VerticalAlignment" Value="Center" />
+                                            <Setter Property="Margin" Value="5,5" />
+                                        </Style>
+
+                                    </Grid.Resources>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="100*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <dg:DataGridControl x:Name="dataGrid" ItemsSource="{Binding Source={StaticResource viewSource}}" Grid.RowSpan="1" Grid.Row="1" Background="{x:Null}" BorderThickness="0" AllowDrag="True" AutoCreateColumns="True">
+
+                                        <dg:DataGridControl.View>
+                                            <dg:TableflowView />
+                                        </dg:DataGridControl.View>
+
+                                        <dg:DataGridControl.Columns>
+
+                                            <dg:Column FieldName="Value" Title="Value" Width="80*" IsMainColumn="True" />
+                                            <dg:Column FieldName="Timestamp" Width="20*" Title="Timestamp"  />
+
+                                        </dg:DataGridControl.Columns>
+
+                                    </dg:DataGridControl>
+
+                                </Grid>
+
+                            </xcad:LayoutAnchorable>
+
+                        </xcad:LayoutAnchorablePane>
+
+                        <xcad:LayoutAnchorablePane>
+
+                            <xcad:LayoutAnchorable ContentId="chart" Title="Visualization" CanHide="False" CanClose="False">
+                                <Grid Grid.Row="2" Grid.RowSpan="1" x:Name="visualizationGrid" Margin="10,10,10,10"/>
+                            </xcad:LayoutAnchorable>
+
+                        </xcad:LayoutAnchorablePane>
+
+                    </xcad:LayoutPanel>
+
+                </xcad:LayoutPanel>
+
+            </xcad:LayoutRoot>
+        </xcad:DockingManager>
+
+        <StatusBar Grid.Row="2"  Grid.RowSpan="1" BorderBrush="Black">
+            <StatusBarItem Width="auto" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}">
+                <TextBlock Text="{Binding Status, ElementName=window, Mode=OneWay}" x:Name="statusText" />
+            </StatusBarItem>
+        </StatusBar>
+
+    </Grid>
+
+</Window>

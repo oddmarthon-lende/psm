@@ -10,21 +10,26 @@ namespace PSMViewer.Models
     public class EntryItem
     {
         
-        private Entry entry;
+        protected Entry entry;
+
+        public EntryItem(EntryItem e)
+        {
+            entry = e.entry;
+        }
 
         public EntryItem(Entry e)
         {
             entry = e;
-        }        
-
-        public object Value
+        }
+        
+        public virtual object Value
         {
-            get { return entry.value; }
+            get { return entry.Value; }
         }
 
         public DateTime Timestamp
         {
-            get { return entry.timestamp.ToLocalTime(); }
+            get { return entry.Timestamp.ToLocalTime(); }
         }
 
         public double Age
@@ -35,6 +40,11 @@ namespace PSMViewer.Models
         public static explicit operator EntryItem(Entry e)
         {
             return new EntryItem(e);
+        }
+
+        public static explicit operator Entry(EntryItem e)
+        {
+            return e.entry;
         }
     }
 

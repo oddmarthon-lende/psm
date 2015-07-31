@@ -1,0 +1,85 @@
+﻿<Window x:Class="PSMViewer.VisualizationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PSMViewer"
+        xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:v="clr-namespace:PSMViewer.Visualizations"
+        mc:Ignorable="d"
+        Title="" Height="600" Width="800" Icon="..\icons\application_view_tile.png" WindowStyle="None" ShowInTaskbar="False" Topmost="False" x:Name="window"  DataContext="{Binding RelativeSource={RelativeSource Self}}">
+
+    <Window.InputBindings>
+        <KeyBinding Key="F5" Command="{Binding Commands[Refresh]}"  />
+        <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding Commands[Export]}"   />
+        <KeyBinding Key="Delete" Modifiers="Ctrl" Command="{Binding Commands[Delete]}"  />
+        <KeyBinding Key="Space" Command="{Binding Commands[ControlsVisibility]}"  />
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding Commands[Save]}"  />
+    </Window.InputBindings>
+    
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"></RowDefinition>
+            <RowDefinition Height="100*"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100*" />
+            <ColumnDefinition Width="auto" />
+        </Grid.ColumnDefinitions>
+
+        <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding ControlsVisibility}" >
+
+            <Menu.Resources>
+                <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="AddChartStyle" TargetType="{x:Type MenuItem}">
+                    <Setter Property="Command" Value="{Binding Commands[AddChart], ElementName=window}"/>
+                </Style>
+                
+            </Menu.Resources>
+
+            <MenuItem Header="File">
+                <MenuItem Header="Add" ItemsSource="{x:Static v:VisualizationControl.List}" ItemContainerStyle="{DynamicResource AddChartStyle}"/>
+                <MenuItem Header="Save" InputGestureText="Ctrl+S" Command="{Binding Commands[Save]}" />
+                <MenuItem Header="Export" InputGestureText="Ctrl+E" Command="{Binding Commands[Export]}" />
+                <Separator />
+                <MenuItem Header="Delete" InputGestureText="Ctrl+Delete" Command="{Binding Commands[Delete]}" />
+            </MenuItem>
+
+            <MenuItem Header="Tools" >
+
+                <MenuItem.Resources>
+
+                    <CollectionViewSource Source="{Binding Children, ElementName=window}" x:Key="ChildrenViewSource" />
+
+                    <Style TargetType="{x:Type MenuItem}">
+                        <Setter Property="Header" Value="{Binding Title}" />
+                        <Setter Property="InputGestureText" Value="{Binding Index}" />
+                        <Setter Property="ItemsSource" Value="{Binding UserCommands}" />
+                        
+                    </Style>
+
+                </MenuItem.Resources>
+
+                <MenuItem.ItemsSource>
+                    <CompositeCollection>
+                        <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}"  />
+                        <MenuItem Header="Show/Hide Controls" InputGestureText="Space" Command="{Binding Commands[ControlsVisibility]}"  />
+                        <MenuItem Header="Capture Mouse" IsCheckable="True" IsChecked="{Binding CaptureRightClick}"  />
+                        <Separator />
+                        <MenuItem Header="Properties" Command="{Binding Commands[Properties]}"  />
+                        <Separator />
+                        <CollectionContainer Collection="{Binding Source={StaticResource ChildrenViewSource}}" />
+                    </CompositeCollection>
+                </MenuItem.ItemsSource>
+
+            </MenuItem>
+
+        </Menu>
+
+        <Grid x:Name="grid" Grid.Row="1" Grid.Column="0" />
+
+    </Grid>
+
+
+</Window>

@@ -1,5 +1,5 @@
-﻿<local:OxyBase x:Class="PSMViewer.Visualizations.Line" 
-               x:TypeArguments="o:TwoColorLineSeries"
+﻿<local:BarBase x:Class="PSMViewer.Visualizations.Bar" 
+               x:TypeArguments="o:BarSeries,o:BarItem"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -8,7 +8,7 @@
              xmlns:oxy="http://oxyplot.org/wpf"
              xmlns:o="clr-namespace:OxyPlot.Series;assembly=OxyPlot"
              mc:Ignorable="d">
-    
-        <oxy:PlotView Model="{Binding Model}" Controller="{Binding Controller}" x:Name="plotView" Background="Transparent" />
 
-</local:OxyBase>
+    <oxy:PlotView Model="{Binding Model}" Controller="{Binding Controller}" x:Name="plotView" Background="Transparent"  />
+
+</local:BarBase>
