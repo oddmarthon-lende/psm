@@ -55,7 +55,7 @@
                     <Style TargetType="{x:Type MenuItem}">
                         <Setter Property="Header" Value="{Binding Title}" />
                         <Setter Property="InputGestureText" Value="{Binding Index}" />
-                        <Setter Property="ItemsSource" Value="{Binding UserCommands}" />
+                        <Setter Property="ItemsSource" Value="{Binding MenuItems}" />
                         
                     </Style>
 

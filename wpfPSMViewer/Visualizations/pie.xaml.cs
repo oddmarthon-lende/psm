@@ -90,9 +90,8 @@ namespace PSMViewer.Visualizations
             return _series;
         }
 
-        public override void Dispose()
+        public sealed override void Dispose()
         {
-
             base.Dispose();
         }
 

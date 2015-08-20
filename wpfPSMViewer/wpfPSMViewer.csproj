@@ -95,6 +95,9 @@
     </ApplicationDefinition>
     <Compile Include="Converters\oxycolor_solidcolorbrush.cs" />
     <Compile Include="Converters\oxythickness_double.cs" />
+    <Compile Include="navigationButton.xaml.cs">
+      <DependentUpon>navigationButton.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Utilities\bindingwrapper.cs" />
     <Compile Include="Dialogs\properties.xaml.cs">
       <DependentUpon>properties.xaml</DependentUpon>
@@ -139,6 +142,10 @@
     <Compile Include="ViewModels\controls.cs" />
     <Compile Include="ViewModels\main.cs" />
     <Page Include="Dialogs\properties.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="navigationButton.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -217,6 +224,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Design\projectGuides.guides" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

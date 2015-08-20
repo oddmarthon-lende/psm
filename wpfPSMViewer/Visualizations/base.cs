@@ -21,44 +21,6 @@ namespace PSMViewer.Visualizations
     public class VisualizationControl : UserControl, IDisposable, IReload, INotifyPropertyChanged
     {
         #region Static Properties and Methods
-        
-        public static Type SetChartType(KeyItem key, Type chartType)
-        {
-
-            Settings s = Settings.Default;
-
-            foreach (string t in (from string t in s.chartType
-                                  where t.StartsWith(key.Path)
-                                  select t).ToArray())
-            {
-                s.chartType.Remove(t);
-            }
-
-            s.chartType.Add(String.Format("{0},{1}", key.Path, chartType.FullName));
-            s.Save();
-
-            return chartType;
-
-        }
-
-        public static Type GetChartType(KeyItem key)
-        {
-
-            Settings.Default.chartType = Settings.Default.chartType ?? new StringCollection();
-
-            Type chartType = (from string t in Settings.Default.chartType
-                              where (t.StartsWith(key.Path))
-                              select Type.GetType(t.Split(',')[1])).ElementAtOrDefault(0);
-
-            return chartType;
-
-        }
-        
-        public static VisualizationControl Restore(KeyItem key)
-        {
-            Type t = VisualizationControl.GetChartType(key);
-            return t == null ? null : (VisualizationControl)Activator.CreateInstance(t);
-        }
 
         public class InheritorInfo : INotifyPropertyChanged
         {
@@ -150,6 +112,26 @@ namespace PSMViewer.Visualizations
 
         #region Properties
 
+        public Visibility NavigationVisibility
+        {
+            get { return (Visibility)GetValue(NavigationVisibilityProperty); }
+            set {
+                SetValue(NavigationVisibilityProperty, value);
+            }
+        }
+        public static readonly DependencyProperty NavigationVisibilityProperty =
+            DependencyProperty.Register("NavigationVisibility", typeof(Visibility), typeof(VisualizationControl), new FrameworkPropertyMetadata(Visibility.Collapsed, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) =>
+            {
+                VisualizationControl w = (VisualizationControl)sender;
+
+                if (((Visibility)e.NewValue) == Visibility.Hidden && ((Visibility)e.OldValue) != Visibility.Hidden)
+                    w.PopState();
+                else if (((Visibility)e.NewValue) == Visibility.Visible && ((Visibility)e.OldValue) != Visibility.Visible)
+                    w.PushState();
+
+            }));
+
+
         public Guid Id { get; set; } = Guid.NewGuid();
 
         private string _title = null;
@@ -205,7 +187,7 @@ namespace PSMViewer.Visualizations
         public long Count { get; set; } = 1;
         public long StartIndex { get; set; } = 0;
 
-        public ControlType SelectedControlType { get; set; } = ControlType.Manual;
+        public ControlType SelectedControlType { get; set; } = ControlType.Index;
 
         public int? Row {
 
@@ -271,8 +253,7 @@ namespace PSMViewer.Visualizations
         public enum ControlType
         {
             Time,
-            Index,
-            Manual
+            Index
         }
 
         #region Commands
@@ -281,7 +262,9 @@ namespace PSMViewer.Visualizations
         {
             ADD,
             REMOVE,
-            PROPERTIES
+            PROPERTIES,
+            PREV,
+            NEXT
         }
 
         public class MultiControl : IDisposable
@@ -294,17 +277,52 @@ namespace PSMViewer.Visualizations
 
             public MultiControl(KeyItem key, ObservableCollection<EntryItem> Entries = null)
             {
+
                 this.Key = key;
                 this.Entries = Entries ?? new ObservableCollection<EntryItem>();
 
                 Controls.Add(ControlType.Index, new Controls<long, long>(this.Entries, 0, 1) { Selected = key });
                 Controls.Add(ControlType.Time, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan()) { Selected = key });
 
-                foreach(var pair in Controls)
+                Stack = new Stack<Dictionary<ControlType, ViewModels.Controls>>();
+                                
+                foreach (var pair in Controls)
                 {
                     pair.Value.DataChanged += Value_DataChanged;
                 }
 
+            }
+
+            private Stack<Dictionary<ControlType, ViewModels.Controls>> Stack;
+
+            public void PushState()
+            {
+
+                Dictionary<ControlType, Controls> c = new Dictionary<ControlType, ViewModels.Controls>();
+
+                Stack.Push(c);
+
+                foreach(KeyValuePair<ControlType, Controls> pair in Controls)
+                {
+                    c[pair.Key] = (Controls)Activator.CreateInstance(pair.Value.GetType(), Controls[pair.Key]);
+                    c[pair.Key].DataChanged += Value_DataChanged;
+                }
+            }
+
+            public void PopState()
+            {
+
+                Dictionary<ControlType, Controls> c = Stack.Pop();
+                
+                if (c != null)
+                {
+                    foreach (KeyValuePair<ControlType, Controls> pair in c)
+                    {
+                        Controls[pair.Key].Dispose();
+                        Controls[pair.Key] = c[pair.Key];
+                    }
+                    
+                }
             }
 
             private void Value_DataChanged(object sender)
@@ -364,6 +382,17 @@ namespace PSMViewer.Visualizations
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
+                
+                case CommandType.NEXT:
+
+                    Previous();
+                    return;
+
+                case CommandType.PREV:
+                                        
+                    Next();
+                    return;
+
                 case CommandType.ADD:
 
                     tree = new Tree();
@@ -410,14 +439,16 @@ namespace PSMViewer.Visualizations
         public VisualizationControl()
         {           
             
-            this.DataContext = this;
-            this.Template = (ControlTemplate)FindResource("VisualizationControlTemplate");            
+            DataContext = this;
+            Template = (ControlTemplate)FindResource("VisualizationControlTemplate");            
             
             #region Commands
            
             CommandsSource.Add("Add", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD));
             CommandsSource.Add("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE));
             CommandsSource.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
+            CommandsSource.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREV));
+            CommandsSource.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
 
             #endregion
 
@@ -458,30 +489,38 @@ namespace PSMViewer.Visualizations
             RegisterUserCommand();
             RegisterUserCommand("Remove Key(s)", CommandsSource["Remove"]);
             RegisterUserCommand("Add Key(s)", CommandsSource["Add"]);
-
+                        
             #endregion
 
             ContextMenu = new ContextMenu();
             ContextMenuOpening += delegate
             {
-                ContextMenu.ItemsSource = UserCommands;
+                ContextMenu.ItemsSource = MenuItems;
             };
 
             this.SizeChanged += delegate {
                 Refresh();
-            };
+            };           
             
         }
 
-        protected Dictionary<string, ICommand> _userCommands = new Dictionary<string, ICommand>();
-        public virtual IEnumerable<Control> UserCommands {
+        protected Dictionary<string, object> _userCommands = new Dictionary<string, object>();
+        public virtual IEnumerable<Control> MenuItems {
 
             get
             {
-                return _userCommands.Reverse().Select<KeyValuePair<string, ICommand>, Control>(pair => {
+                return _userCommands.Reverse().Select<KeyValuePair<string, object>, Control>(pair =>
+                {
 
                     if (pair.Value != null)
-                        return new MenuItem() { Header = pair.Key, Command = pair.Value, DataContext = null };
+                    {
+
+                        if (pair.Value is RelayCommand)
+                            return new MenuItem() { Header = pair.Key, Command = (ICommand)pair.Value, DataContext = null };
+                        else
+                            return (Control)pair.Value;
+                    }
+
                     else
                         return new Separator();
 
@@ -489,14 +528,19 @@ namespace PSMViewer.Visualizations
             }
         }
 
-        public virtual void RegisterUserCommand(string title = null, ICommand command = null)
+        public void RegisterUserCommand(string title = null, ICommand command = null)
         {
             if (title != null && command != null)
                 _userCommands.Add(title, command);
             else
                 _userCommands.Add(Guid.NewGuid().ToString(), null);
         }
-        
+
+        public void RegisterUserCommand(MenuItem item)
+        {
+            _userCommands.Add(Guid.NewGuid().ToString(), item);
+        }
+
         public virtual void Refresh()
         {
 
@@ -552,7 +596,9 @@ namespace PSMViewer.Visualizations
                 Grid.ColumnSpanProperty,
                 OwnerProperty,
                 ContextMenuProperty,
-                NameProperty
+                NameProperty,
+                NavigationVisibilityProperty,
+                TemplateProperty,
             };
 
             foreach (DependencyProperty p in properties)
@@ -643,10 +689,7 @@ namespace PSMViewer.Visualizations
 
             switch(SelectedControlType)
             {
-                case ControlType.Manual:
-
-                    return;                
-
+                
                 case ControlType.Index:
 
                     Start = StartIndex;
@@ -661,11 +704,11 @@ namespace PSMViewer.Visualizations
                     break;
             }
 
-            foreach (MultiControl m in (from p in controls select p))
+            foreach (MultiControl m in controls)
             {
 
                 Controls control = m.Get(SelectedControlType, Start, Count);
-                KeyItem key      = m.Key;
+                KeyItem key     = m.Key;
                 
                 key.Reload();
                 control.Reload();
@@ -677,12 +720,43 @@ namespace PSMViewer.Visualizations
                 
         public virtual bool Next()
         {
-            throw new NotImplementedException();
+            bool yn = false;
+
+            foreach (MultiControl control in controls)
+            {
+                yn |= control.Get(SelectedControlType).Next();
+            }
+
+            return yn;
         }
 
         public virtual bool Previous()
         {
-            throw new NotImplementedException();
+
+            bool yn = false;
+
+            foreach (MultiControl control in controls)
+            {
+                yn |= control.Get(SelectedControlType).Previous();
+            }
+
+            return yn;
+        }
+
+        public virtual void PushState()
+        {
+            foreach (MultiControl control in controls)
+            {
+                control.PushState();
+            }
+        }
+
+        public virtual void PopState()
+        {
+            foreach (MultiControl control in controls)
+            {
+                control.PopState();
+            }
         }
     }
 }

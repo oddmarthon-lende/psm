@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace PSMViewer.Utilities
 {
@@ -18,6 +20,7 @@ namespace PSMViewer.Utilities
         private Window Window;
 
         public event Action<Control> MouseOver;
+        public event Action<Control> MouseOut;
         public event Action<Control, MouseButtonEventArgs> MouseButtonUp;
 
         public Tracker(Window window, IEnumerable<Control> elements)
@@ -28,6 +31,11 @@ namespace PSMViewer.Utilities
             Window.PreviewMouseMove          += Window_PreviewMouseMove;
             Window.PreviewMouseLeftButtonUp  += Window_PreviewMouseButtonUp;
             Window.PreviewMouseRightButtonUp += Window_PreviewMouseButtonUp;
+
+            Dispatcher.CurrentDispatcher.InvokeAsync(delegate
+            {
+                Window_PreviewMouseMove(Window, new MouseEventArgs(Mouse.PrimaryDevice, (int)(DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds));
+            });
 
         }
 
@@ -49,10 +57,14 @@ namespace PSMViewer.Utilities
                 {
                     if(Current != element)
                     {
+
+                        if (MouseOut != null && Current != null)
+                            MouseOut(Current);
+
                         Current = element;
 
                         if(MouseOver != null)
-                            MouseOver(element);
+                            MouseOver(Current);
                     }
                     
                 }

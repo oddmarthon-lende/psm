@@ -3,8 +3,6 @@ using System.Windows.Data;
 using OxyPlot;
 using System.Collections.Generic;
 using Xceed.Wpf.Toolkit.PropertyGrid;
-using System.Collections.Specialized;
-using System;
 
 namespace PSMViewer.Visualizations
 {
@@ -29,7 +27,7 @@ namespace PSMViewer.Visualizations
             });
         }       
 
-        private void Line_SeriesAdded(Models.KeyItem key, MultiControl control, TwoColorLineSeries series)
+        private void Line_SeriesAdded(MultiControl control, TwoColorLineSeries series)
         {
 
             SetBinding(LineStyleProperty, new Binding("Value")

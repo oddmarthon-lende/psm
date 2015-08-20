@@ -20,6 +20,7 @@ using System.Xml;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Linq;
+using System.Collections.Specialized;
 
 namespace PSMViewer
 {
@@ -33,6 +34,45 @@ namespace PSMViewer
 
     public partial class MainWindow : Window, INotifyPropertyChanged, IReload
     {
+
+
+        public static Type SetChartType(KeyItem key, Type chartType)
+        {
+
+            Settings s = Settings.Default;
+
+            foreach (string t in (from string t in s.chartType
+                                  where t.StartsWith(key.Path)
+                                  select t).ToArray())
+            {
+                s.chartType.Remove(t);
+            }
+
+            s.chartType.Add(String.Format("{0},{1}", key.Path, chartType.FullName));
+            s.Save();
+
+            return chartType;
+
+        }
+
+        public static Type GetChartType(KeyItem key)
+        {
+
+            Settings.Default.chartType = Settings.Default.chartType ?? new StringCollection();
+
+            Type chartType = (from string t in Settings.Default.chartType
+                              where (t.StartsWith(key.Path))
+                              select Type.GetType(t.Split(',')[1])).ElementAtOrDefault(0);
+
+            return chartType;
+
+        }
+
+        public static VisualizationControl Restore(KeyItem key)
+        {
+            Type t = GetChartType(key);
+            return t == null ? null : (VisualizationControl)Activator.CreateInstance(t);
+        }
 
         public static string DefaultExt = ".xaml";
         public static string Filter = "XAML documents (.xaml)|*.xaml";
@@ -221,7 +261,7 @@ namespace PSMViewer
                     VisualizationControl.InheritorInfo info = (VisualizationControl.InheritorInfo)parameter;
                     info.IsSelected = true;
 
-                    VisualizationControl.SetChartType(key, info.Type);
+                    SetChartType(key, info.Type);
 
                     Visualize(key);
 
@@ -390,7 +430,7 @@ namespace PSMViewer
             if (key != null && key.Type != null)
             {
 
-                VisualizationControl instance = VisualizationControl.Restore(key);
+                VisualizationControl instance = Restore(key);
 
                 foreach (VisualizationControl v in visualizationGrid.Children)
                 {
@@ -423,7 +463,7 @@ namespace PSMViewer
 
             foreach (VisualizationControl.InheritorInfo info in ((MenuItem)sender).Items)
             {
-                Type t = VisualizationControl.GetChartType(key);
+                Type t = GetChartType(key);
                 info.IsSelected = t != null && key != null && t.Equals(info.Type);
             }
 

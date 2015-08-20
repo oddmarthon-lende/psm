@@ -9,7 +9,7 @@
              StartupUri="Windows\MainWindow.xaml">
     
     <Application.Resources>
-
+                
         <Image Source="{Binding Icon}" x:Key="Icon" x:Shared="False" />
 
         <Style TargetType="{x:Type MenuItem}" x:Key="ChartsMenuItemStyle">
@@ -90,24 +90,48 @@
                 </i:Interaction.Triggers>
             </toolkit:TimeSpanUpDown>
 
-        </ToolBar>
+        </ToolBar>      
 
         <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}" >
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="100*" />
-                </Grid.RowDefinitions>
-                <DockPanel Grid.Row="0" Visibility="Collapsed">
-                    <ToolBarTray >
-                        <StaticResource ResourceKey="IndexNavigationToolBar" />
-                        <StaticResource ResourceKey="TimeNavigationToolBar" />
-                    </ToolBarTray>
-                </DockPanel>
-                <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="1"/>
+            
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                
+                <Grid.ColumnDefinitions>                    
+                    <ColumnDefinition Width="100*" />                    
+                </Grid.ColumnDefinitions>
+
+                <ContentPresenter Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1" />
+
+                <Grid Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="2" Visibility="{TemplateBinding NavigationVisibility}">
+                    
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="5*" />
+                        <ColumnDefinition Width="90*" />
+                        <ColumnDefinition Width="5*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.Resources>
+
+                        <Style TargetType="{x:Type Button}">
+                            <Setter Property="Opacity" Value=".8" />
+                        </Style>
+                    </Grid.Resources>
+
+                    <Button  Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Command="{Binding Commands[Previous]}" >
+                        <Image Source="icons/resultset_previous.png"/>
+                    </Button>
+
+                    <Button Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding Commands[Next]}" >
+                        <Image Source="icons/resultset_next.png" />    
+                    </Button>
+                    
+
+                </Grid>
+                
             </Grid>
+            
         </ControlTemplate>
-        
+
     </Application.Resources>
     
 </Application>

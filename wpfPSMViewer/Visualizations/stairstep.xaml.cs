@@ -1,9 +1,7 @@
-﻿using OxyPlot;
+﻿
+using OxyPlot;
 using OxyPlot.Series;
-using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Windows;
 using System.Windows.Data;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 
@@ -29,7 +27,7 @@ namespace PSMViewer.Visualizations
 
         }
 
-        private void StairStep_SeriesAdded(Models.KeyItem key, MultiControl control, StairStepSeries series)
+        private void StairStep_SeriesAdded(MultiControl control, StairStepSeries series)
         {
 
             SetBinding(LineStyleProperty, new Binding("Value")

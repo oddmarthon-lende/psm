@@ -349,6 +349,11 @@ namespace PSMViewer.ViewModels
             this.Count = Count;
         }
 
+        public Controls(Controls<T, TCount> other) : this(other.Entries, other.Start, other.Count)
+        {
+            Selected = other.Selected;
+        }
+
         public override IEnumerable<EntryItem> Reload(KeyItem key)
         {
             IEnumerable<Entry> enumerable = null;

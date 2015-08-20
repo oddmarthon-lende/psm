@@ -11,9 +11,6 @@ using Microsoft.Win32;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Data;
-using System.Globalization;
-using System.Windows.Media;
 using System.IO.IsolatedStorage;
 using System.IO;
 
@@ -158,10 +155,15 @@ namespace PSMViewer
 
         #region PropertyDefinitions
 
-        private static PropertyDefinition[] Properties = new PropertyDefinition[2] {
+        private static PropertyDefinition[] Properties = new PropertyDefinition[] {
             new PropertyDefinition() {
                 Category = "Common",
-                TargetProperties = new List<object>(new string[] { "Title", "Background", "Foreground", "FontStyle", "FontFamily", "FontWeight", "FontSize" })
+                TargetProperties = new List<object>(new string[] { "Title", "FontStyle", "FontFamily", "FontWeight", "FontSize" })
+            },
+            new PropertyDefinition() {
+                Category = "Common",
+                IsExpandable = true,
+                TargetProperties = new List<object>(new string[] { "Background", "Foreground" })
             },
             new PropertyDefinition() {
                  
@@ -213,7 +215,7 @@ namespace PSMViewer
                         if (control == null) return;
                         if (e.ChangedButton == MouseButton.Right)
                         {
-                            control.ContextMenu.ItemsSource = ((VisualizationControl)control).UserCommands;
+                            control.ContextMenu.ItemsSource = ((VisualizationControl)control).MenuItems;
                             control.ContextMenu.IsOpen = true;
                         }
                      };
@@ -223,9 +225,10 @@ namespace PSMViewer
                 {
 
                     _tracker.Dispose();
-                    _tracker = null;
 
-                    foreach (var element in Children)
+                    SetField(ref _tracker, null);
+
+                    foreach (VisualizationControl element in Children)
                     {
                         element.IsEnabled = true;
                     }
@@ -262,14 +265,54 @@ namespace PSMViewer
 
             this.DataContext = this;
 
-            this.Closing += (sender, e) => {
-                e.Cancel = true;
-                this.Hide();
-            };
+            this.Closing += VisualizationWindow_Closing;
+            this.KeyDown += VisualizationWindow_KeyDown_LCTRL;
+            this.KeyUp   += VisualizationWindow_KeyUp_LCTRL;
             
         }
-
+        
         #region Event Handlers
+
+        private void VisualizationWindow_KeyUp_LCTRL(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.LeftCtrl) return;
+
+            CaptureRightClick = false;
+
+            foreach (VisualizationControl widget in Children)
+            {
+                widget.NavigationVisibility = Visibility.Collapsed;
+            }
+
+            Reload();
+
+        }
+
+        private void VisualizationWindow_KeyDown_LCTRL(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.LeftCtrl) return;
+
+            CaptureRightClick = true;
+
+            _tracker.MouseOver += (current) =>
+            {
+                current.IsEnabled = true;
+                ((VisualizationControl)current).NavigationVisibility = Visibility.Visible;
+            };
+
+            _tracker.MouseOut += (previous) =>
+            {
+                previous.IsEnabled = false;
+                ((VisualizationControl)previous).NavigationVisibility = Visibility.Collapsed;
+            };
+
+        }
+
+        private void VisualizationWindow_Closing(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+            this.Hide();
+        }
 
         private void Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -326,6 +369,11 @@ namespace PSMViewer
                         grid.Children.Add(v);
 
                     }
+            }
+
+            foreach(VisualizationControl widget in Children)
+            {
+                widget.Refresh();
             }
 
         }
@@ -440,11 +488,13 @@ namespace PSMViewer
                         Width = this.ActualHeight * .75,
                         Height = this.ActualWidth * .75
                     }).ShowDialog();
+
                     break;
 
                 case CommandType.CONTROLS:
 
                     ControlsVisibility = ControlsVisibility == Visibility.Hidden ? Visibility.Visible : Visibility.Hidden;
+
                     break;
 
                 default:
@@ -502,12 +552,22 @@ namespace PSMViewer
 
         public bool Next()
         {
-            return false;
+            bool r = false;
+
+            foreach (VisualizationControl widget in Children)
+                r |= widget.Next();
+
+            return r;
         }
 
         public bool Previous()
         {
-            return false;
+            bool r = false;
+
+            foreach (VisualizationControl widget in Children)
+                r |= widget.Previous();
+
+            return r;
         }
         
     }

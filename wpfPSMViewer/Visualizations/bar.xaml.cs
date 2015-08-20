@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using OxyPlot.Series;
+﻿using OxyPlot.Series;
 using OxyPlot.Axes;
-using PSMViewer.Models;
-using PSMViewer.ViewModels;
-using OxyPlot;
-using System.Windows.Data;
 
 namespace PSMViewer.Visualizations
 {
