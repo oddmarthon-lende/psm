@@ -54,6 +54,7 @@ namespace PSMViewer
             return Wrapped.Source;
         }
     }
+
     public class ColumnDefinition
     {
         public System.Windows.Controls.ColumnDefinition Source { get; private set; }
@@ -90,6 +91,7 @@ namespace PSMViewer
     }
 
     public class RowDefinitionList        : ObservableCollection<RowDefinition> { }
+
     public class ColumnDefinitionList     : ObservableCollection<ColumnDefinition> { }
         
     public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged
@@ -233,6 +235,13 @@ namespace PSMViewer
                         element.IsEnabled = true;
                     }
 
+                    foreach (VisualizationControl widget in Children)
+                    {
+                        widget.NavigationVisibility = Visibility.Collapsed;
+                    }
+
+                     ((MainWindow)App.Current.MainWindow).Reload(this);
+
                 }
             }
         }
@@ -275,21 +284,16 @@ namespace PSMViewer
 
         private void VisualizationWindow_KeyUp_LCTRL(object sender, KeyEventArgs e)
         {
+
             if (e.Key != Key.LeftCtrl) return;
 
-            CaptureRightClick = false;
-
-            foreach (VisualizationControl widget in Children)
-            {
-                widget.NavigationVisibility = Visibility.Collapsed;
-            }
-
-            Reload();
+            CaptureRightClick = false;            
 
         }
 
         private void VisualizationWindow_KeyDown_LCTRL(object sender, KeyEventArgs e)
         {
+
             if (e.Key != Key.LeftCtrl) return;
 
             CaptureRightClick = true;
@@ -359,14 +363,15 @@ namespace PSMViewer
                     }
 
                 if (e.NewItems != null)
-                    foreach (VisualizationControl v in e.NewItems)
+                    foreach (VisualizationControl widget in e.NewItems)
                     {
-                        v.Owner = this;
 
-                        v.RegisterUserCommand();
-                        v.RegisterUserCommand("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_WIDGET, v));
+                        widget.Owner = this;
 
-                        grid.Children.Add(v);
+                        widget.RegisterUserCommand();
+                        widget.RegisterUserCommand("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_WIDGET, widget));
+
+                        grid.Children.Add(widget);
 
                     }
             }
@@ -409,7 +414,7 @@ namespace PSMViewer
                     break;
 
                 case CommandType.SAVE:
-
+                    
                     IsolatedStorageFile store = IsolatedStorageFile.GetUserStoreForDomain();
 
                     if (!store.DirectoryExists("windows"))
@@ -429,6 +434,7 @@ namespace PSMViewer
                     chart.Owner = this;
 
                     Children.Add(chart);
+
                     ((MainWindow)App.Current.MainWindow).Reload(chart);
 
                     foreach(object item in chart.ContextMenu.Items)

@@ -90,8 +90,9 @@
                 </i:Interaction.Triggers>
             </toolkit:TimeSpanUpDown>
 
-        </ToolBar>      
+        </ToolBar>
 
+        
         <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}" >
             
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -100,29 +101,45 @@
                     <ColumnDefinition Width="100*" />                    
                 </Grid.ColumnDefinitions>
 
-                <ContentPresenter Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="100*" />
+                </Grid.RowDefinitions>
+                
+                <StackPanel  Grid.Column="0" Grid.Row="0" Margin="{TemplateBinding Margin}" Orientation="Vertical" Visibility="{TemplateBinding TitleVisibility}">
+                    <TextBlock FontSize="{TemplateBinding TitleFontSize}" FontWeight="{TemplateBinding TitleFontWeight}"  Text="{TemplateBinding Title}" TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" />
+                    <TextBlock FontSize="{TemplateBinding SubTitleFontSize}" FontWeight="{TemplateBinding TitleFontWeight}" Text="{TemplateBinding SubTitle}" TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" />
+                </StackPanel>                
 
-                <Grid Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="2" Visibility="{TemplateBinding NavigationVisibility}">
+                <ContentPresenter Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1" />
+
+                <Grid Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="2" Visibility="{TemplateBinding NavigationVisibility}">
                     
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="5*" />
-                        <ColumnDefinition Width="90*" />
-                        <ColumnDefinition Width="5*" />
+                        <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="100*" />
+                        <ColumnDefinition Width="32" />
                     </Grid.ColumnDefinitions>
 
                     <Grid.Resources>
 
+                        <ControlTemplate x:Key="ButtonControlTemplate" TargetType="{x:Type Button}">
+                            <ContentPresenter />
+                        </ControlTemplate>
+
                         <Style TargetType="{x:Type Button}">
-                            <Setter Property="Opacity" Value=".8" />
+                            <Setter Property="Template" Value="{StaticResource ButtonControlTemplate}" />
+                            <Setter Property="Margin" Value="2.5" />
                         </Style>
+                        
                     </Grid.Resources>
 
                     <Button  Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Command="{Binding Commands[Previous]}" >
-                        <Image Source="icons/resultset_previous.png"/>
+                        <Image Source="images/left.png" Width="27" Height="44" />
                     </Button>
 
                     <Button Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding Commands[Next]}" >
-                        <Image Source="icons/resultset_next.png" />    
+                        <Image Source="images/right.png" Width="27" Height="44" />    
                     </Button>
                     
 

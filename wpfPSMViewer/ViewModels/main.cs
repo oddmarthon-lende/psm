@@ -85,13 +85,7 @@ namespace PSMViewer.ViewModels
 
             return false;
         }
-    }
+    }   
     
-    public interface IReload
-    {
-        void Reload();
-        bool Next();
-        bool Previous();
-    }
 
 }

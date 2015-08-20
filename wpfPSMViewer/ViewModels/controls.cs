@@ -57,9 +57,10 @@ namespace PSMViewer.ViewModels
 
         protected virtual void Append(EntryItem item) {
 
-            if (!isActive) return;
+            if (!IsActive) return;
             
-            Entries.Insert(0, item);            
+            Entries.Insert(0, item);  
+                      
             OnDataChanged(null, null);
         }
 
@@ -169,7 +170,7 @@ namespace PSMViewer.ViewModels
 
         public virtual void Activate() {
 
-            Instances.ForEach(c => { c.isActive = c == this; });
+            Instances.ForEach(c => { c.IsActive = c == this; });
 
             if (ActivationRequested != null)
                 ActivationRequested(this);
@@ -177,7 +178,7 @@ namespace PSMViewer.ViewModels
         }
 
         private bool _active = false;
-        public virtual bool isActive
+        public virtual bool IsActive
         {
             get
             {

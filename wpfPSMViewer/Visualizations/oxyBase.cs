@@ -235,27 +235,14 @@ namespace PSMViewer.Visualizations
                 ((SolidColorBrushList)e.NewValue).Reset(((OxyBase<T>)sender).Model.DefaultColors);
             }));
 
-
-        public override string Title
-        {
-            get
-            {
-                string title = Model.Title;
-                return (String.IsNullOrEmpty(title) || String.IsNullOrWhiteSpace(title) ? null : title) ?? base.Title;
-            }
-
-            set
-            {
-                Model.Title = value;
-            }
-        }
-
         public override void Refresh()
         {
 
+            FrameworkElement element = (FrameworkElement)this.Parent??this;
+
             Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.Wpf.TrackerControl) };
 
-            this.Resources.Remove(TrackerControlStyle.TargetType);
+            element.Resources.Remove(TrackerControlStyle.TargetType);
 
             Setter setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
             TrackerControlStyle.Setters.Add(setter);
@@ -263,7 +250,7 @@ namespace PSMViewer.Visualizations
             setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
             TrackerControlStyle.Setters.Add(setter);
 
-            this.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
+            element.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
 
             Model.InvalidatePlot(true);
 
@@ -292,7 +279,7 @@ namespace PSMViewer.Visualizations
             set { SetValue(MinorGridLineColorProperty, value); }
         }
         public static readonly DependencyProperty MinorGridLineColorProperty =
-            DependencyProperty.Register("MinorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+            DependencyProperty.Register("MinorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 0)), FrameworkPropertyMetadataOptions.AffectsRender));
         
 
         public double MinorGridlineThickness
@@ -337,7 +324,7 @@ namespace PSMViewer.Visualizations
             set { SetValue(MajorGridLineColorProperty, value); }
         }
         public static readonly DependencyProperty MajorGridLineColorProperty =
-            DependencyProperty.Register("MajorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+            DependencyProperty.Register("MajorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 0)), FrameworkPropertyMetadataOptions.AffectsRender));
         
 
         public double MajorGridlineThickness
@@ -466,10 +453,11 @@ namespace PSMViewer.Visualizations
         public OxyBase() : base()
         {
 
-            ToolTipBackground = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
-            ToolTipForeground = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+            ToolTipBackground  = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
+            ToolTipForeground  = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MajorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MinorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+
             Colors = new SolidColorBrushList(Model.DefaultColors);
 
             Model.Axes.Add(new DateTimeAxis { Position = AxisPosition.Bottom, Angle = 45 });
@@ -893,16 +881,30 @@ namespace PSMViewer.Visualizations
 
         protected static double ConvertEntryValueToDouble(EntryItem entry)
         {
+
             double value = 0D;
 
             switch (entry.Value.GetType().Name.ToLower())
             {
                 case "string":
-                    value = Convert.ToDouble(((string)entry.Value).Length);
+
+                    try
+                    {
+                        value = Convert.ToDouble((string)entry.Value);
+                    }
+                    catch(Exception)
+                    {
+                        value = Convert.ToDouble(((string)entry.Value).Length);
+                    }                    
+                    
                     break;
+
                 default:
+
                     value = Convert.ToDouble(entry.Value);
+
                     break;
+
             }
 
             return value;

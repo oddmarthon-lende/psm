@@ -357,6 +357,7 @@ namespace PSMViewer
                 Indent = true,
                 ConformanceLevel = ConformanceLevel.Auto,
                 OmitXmlDeclaration = true
+                 
             });
 
             XamlDesignerSerializationManager mgr = new XamlDesignerSerializationManager(writer)

@@ -1,5 +1,4 @@
 ﻿using PSMViewer.Models;
-using PSMViewer.Properties;
 using PSMViewer.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -13,13 +12,16 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Windows.Input;
+using System.ComponentModel.DataAnnotations;
+using System.Xml.Serialization;
 
 namespace PSMViewer.Visualizations
 {
     public class KeyItemPathList : List<string> {}
-    
-    public class VisualizationControl : UserControl, IDisposable, IReload, INotifyPropertyChanged
+
+    public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged
     {
+        
         #region Static Properties and Methods
 
         public class InheritorInfo : INotifyPropertyChanged
@@ -112,6 +114,8 @@ namespace PSMViewer.Visualizations
 
         #region Properties
 
+        #region Dependency Properties
+
         public Visibility NavigationVisibility
         {
             get { return (Visibility)GetValue(NavigationVisibilityProperty); }
@@ -124,27 +128,97 @@ namespace PSMViewer.Visualizations
             {
                 VisualizationControl w = (VisualizationControl)sender;
 
-                if (((Visibility)e.NewValue) == Visibility.Hidden && ((Visibility)e.OldValue) != Visibility.Hidden)
+                if (((Visibility)e.NewValue) != Visibility.Visible && ((Visibility)e.OldValue) == Visibility.Visible)
                     w.PopState();
                 else if (((Visibility)e.NewValue) == Visibility.Visible && ((Visibility)e.OldValue) != Visibility.Visible)
                     w.PushState();
 
-            }));
-
-
-        public Guid Id { get; set; } = Guid.NewGuid();
-
-        private string _title = null;
-        public virtual string Title {
-
+            }));    
+            
+                
+        
+        public string Title
+        {
             get {
-                return (String.IsNullOrEmpty(_title) || String.IsNullOrWhiteSpace(_title) ? null : _title) ?? String.Format("<{0}> [{1}]", GetType().Name, Index );
+                return (string)GetValue(TitleProperty);
             }
-
             set {
-                SetField(ref _title, value);
+                SetValue(TitleProperty, value);
             }
         }
+        public static readonly DependencyProperty TitleProperty =
+            DependencyProperty.Register("Title", typeof(string), typeof(VisualizationControl), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
+
+
+
+        public string SubTitle
+        {
+            get { return (string)GetValue(SubTitleProperty); }
+            set { SetValue(SubTitleProperty, value); }
+        }
+        public static readonly DependencyProperty SubTitleProperty =
+            DependencyProperty.Register("SubTitle", typeof(string), typeof(VisualizationControl), new PropertyMetadata(null));
+
+
+
+        
+
+        public double TitleFontSize
+        {
+            get { return (double)GetValue(TitleFontSizeProperty); }
+            set { SetValue(TitleFontSizeProperty, value); }
+        }
+        public static readonly DependencyProperty TitleFontSizeProperty =
+            DependencyProperty.Register("TitleFontSize", typeof(double), typeof(VisualizationControl), new PropertyMetadata(14D));
+
+
+
+
+
+        public double SubTitleFontSize
+        {
+            get { return (double)GetValue(SubTitleFontSizeProperty); }
+            set { SetValue(SubTitleFontSizeProperty, value); }
+        }
+        public static readonly DependencyProperty SubTitleFontSizeProperty =
+            DependencyProperty.Register("SubTitleFontSize", typeof(double), typeof(VisualizationControl), new PropertyMetadata(12D));
+
+
+
+
+        public FontWeight TitleFontWeight
+        {
+            get { return (FontWeight)GetValue(TitleFontWeightProperty); }
+            set { SetValue(TitleFontWeightProperty, value); }
+        }public static readonly DependencyProperty TitleFontWeightProperty =
+            DependencyProperty.Register("TitleFontWeight", typeof(FontWeight), typeof(VisualizationControl), new PropertyMetadata(FontWeights.Bold));
+
+
+
+
+        public Visibility TitleVisibility
+        {
+            get { return (Visibility)GetValue(TitleVisibilityProperty); }
+            set { SetValue(TitleVisibilityProperty, value); }
+        }
+        public static readonly DependencyProperty TitleVisibilityProperty =
+            DependencyProperty.Register("TitleVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Hidden));
+
+
+
+
+        public Window Owner
+        {
+            get { return (Window)GetValue(OwnerProperty); }
+            set { SetValue(OwnerProperty, value); }
+        }
+        public static readonly DependencyProperty OwnerProperty =
+            DependencyProperty.Register("Owner", typeof(Window), typeof(VisualizationControl), new PropertyMetadata(null));
+
+        #endregion
+
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         public int Index
         {
@@ -184,8 +258,8 @@ namespace PSMViewer.Visualizations
 
         public TimeSpan Timespan { get; set; } = new TimeSpan(1, 0, 0, 0, 0);
 
-        public long Count { get; set; } = 1;
-        public long StartIndex { get; set; } = 0;
+        public long Count { get; set; }      = 1L;
+        public long StartIndex { get; set; } = 0L;
 
         public ControlType SelectedControlType { get; set; } = ControlType.Index;
 
@@ -238,16 +312,7 @@ namespace PSMViewer.Visualizations
                 SetValue(Grid.ColumnSpanProperty, Math.Max(1, value ?? 1));
             }
         }
-
-        public Window Owner
-        {
-            get { return (Window)GetValue(OwnerProperty); }
-            set { SetValue(OwnerProperty, value); }
-        }
-        public static readonly DependencyProperty OwnerProperty =
-            DependencyProperty.Register("Owner", typeof(Window), typeof(VisualizationControl), new PropertyMetadata(null));
-               
-
+        
         #endregion
 
         public enum ControlType
@@ -260,8 +325,8 @@ namespace PSMViewer.Visualizations
 
         protected enum CommandType
         {
-            ADD,
-            REMOVE,
+            ADD_KEY,
+            REMOVE_KEY,
             PROPERTIES,
             PREV,
             NEXT
@@ -377,10 +442,29 @@ namespace PSMViewer.Visualizations
         protected virtual void ExecuteCommand(object sender, object parameter)
         {
 
-            RelayCommand cmd = (RelayCommand)sender;
-            Tree tree = null;
+            CommandType cmd = (CommandType)((RelayCommand)sender).Arguments[0].Value;
 
-            switch ((CommandType)cmd.Arguments[0].Value)
+            Tree tree = null;
+            Window window = null;
+            
+            switch (cmd)
+            {
+
+                case CommandType.ADD_KEY:
+                case CommandType.REMOVE_KEY:
+
+                    tree = new Tree();
+                    window = tree.Window;
+
+                    window.Owner = this.Owner;
+                    window.Width = this.Owner.Width * .5;
+                    window.Height = this.Owner.Height * 1.25;
+
+                    break;
+
+            }
+
+            switch (cmd)
             {
                 
                 case CommandType.NEXT:
@@ -393,9 +477,11 @@ namespace PSMViewer.Visualizations
                     Next();
                     return;
 
-                case CommandType.ADD:
+                case CommandType.ADD_KEY:
 
-                    tree = new Tree();
+                    window.Title = String.Format("Add Key [{0}]", Title);
+
+                    ((MainWindow)App.Current.MainWindow).Reload(tree);
 
                     tree.Window.ShowDialog();
 
@@ -404,9 +490,10 @@ namespace PSMViewer.Visualizations
                                         
                     break;
 
-                case CommandType.REMOVE:
+                case CommandType.REMOVE_KEY:
 
-                    tree = new Tree();
+                    window.Title = String.Format("Remove Key [{0}]", Title);
+
                     ((TreeViewItem)tree.Items[0]).ItemsSource = Keys.Select(path => { return KeyItem.CreateFromPath(path); });
 
                     tree.Window.ShowDialog();
@@ -437,15 +524,17 @@ namespace PSMViewer.Visualizations
         protected Func<object, object, bool> canExecute = delegate { return true; };
 
         public VisualizationControl()
-        {           
+        {
             
             DataContext = this;
-            Template = (ControlTemplate)FindResource("VisualizationControlTemplate");            
-            
+            Template    = (ControlTemplate)FindResource("VisualizationControlTemplate");
+            Title       = String.Format("<{0}> [{1}]", GetType().Name, Id);
+            Margin      = new Thickness(5);
+
             #region Commands
-           
-            CommandsSource.Add("Add", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD));
-            CommandsSource.Add("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE));
+
+            CommandsSource.Add("Add", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD_KEY));
+            CommandsSource.Add("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_KEY));
             CommandsSource.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             CommandsSource.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREV));
             CommandsSource.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
@@ -453,8 +542,8 @@ namespace PSMViewer.Visualizations
             #endregion
 
             #region PropertyDefinitions
-
-            PropertyDefinitions.Add(new PropertyDefinition()
+            
+                PropertyDefinitions.Add(new PropertyDefinition()
                 {
                     Category = "Layout",
                     TargetProperties = new List<object>(new string[] { "Row", "RowSpan", "Column", "ColumnSpan", "Margin" })
@@ -469,8 +558,14 @@ namespace PSMViewer.Visualizations
                 PropertyDefinitions.Add(new PropertyDefinition()
                 {
                     Category = "Common",
-                    TargetProperties = new List<object>(new string[] { "Title", "FontStyle", "FontFamily", "FontWeight", "FontSize", "BorderThickness" })
+                    TargetProperties = new List<object>(new string[] { "FontStyle", "FontFamily", "FontWeight", "FontSize", "BorderThickness" })
                 });
+
+                PropertyDefinitions.Add(new PropertyDefinition()
+                {
+                    Category = "Title",
+                    TargetProperties = new List<object>(new string[] { "Title", "SubTitle", "TitleVisibility", "TitleFontSize", "SubTitleFontSize", "TitleFontWeight"  })
+                }); 
 
                 PropertyDefinitions.Add(new PropertyDefinition()
                 {
@@ -493,9 +588,10 @@ namespace PSMViewer.Visualizations
             #endregion
 
             ContextMenu = new ContextMenu();
-            ContextMenuOpening += delegate
+            ContextMenu.ContextMenuOpening += delegate
             {
                 ContextMenu.ItemsSource = MenuItems;
+                NavigationVisibility = Visibility.Collapsed;
             };
 
             this.SizeChanged += delegate {
@@ -534,11 +630,8 @@ namespace PSMViewer.Visualizations
                 _userCommands.Add(title, command);
             else
                 _userCommands.Add(Guid.NewGuid().ToString(), null);
-        }
 
-        public void RegisterUserCommand(MenuItem item)
-        {
-            _userCommands.Add(Guid.NewGuid().ToString(), item);
+            OnPropertyChanged("MenuItems");
         }
 
         public virtual void Refresh()
@@ -576,7 +669,7 @@ namespace PSMViewer.Visualizations
             GC.SuppressFinalize(this);
         }
 
-        public MultiControl GetControlsFor(KeyItem key)
+        protected MultiControl GetControlsFor(KeyItem key)
         {
             return (from s in controls where s.Key.Path == key.Path select s).ElementAtOrDefault(0);
         }
@@ -683,7 +776,7 @@ namespace PSMViewer.Visualizations
 
         public virtual void Reload()
         {
-
+            
             object Start = null;
             object Count = null;
 

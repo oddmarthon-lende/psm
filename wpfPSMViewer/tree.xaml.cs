@@ -25,21 +25,31 @@ namespace PSMViewer
             InitializeComponent();
 
             AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(Reload));
-
+            
         }
 
+        private Window _window = null;
         public Window Window
         {
             get
             {
-                Window window = (Window)Resources["window"];
-                window.Content = this;
+                if(_window == null)
+                {
 
-                Reload();
+                    _window = new Window()
+                    {
+                        Template = (ControlTemplate)FindResource("WindowTemplate"),
+                        WindowStyle = WindowStyle.None,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                        Content = this,
+                        ShowInTaskbar = false
+                    };
 
-                return window;
-            }
-            
+                    _window.Closing += Window_Closing;
+
+                }
+                return _window;
+            }            
         }
 
         public bool Next()
@@ -92,5 +102,21 @@ namespace PSMViewer
             e.Cancel = true;
             ((Window)sender).Hide();
         }
+
+        private void Ok_Button_Click(object sender, RoutedEventArgs e)
+        {
+
+            if( !(SelectedValue is KeyItem) )
+                SelectedValuePath = null;
+
+            Window.Close();
+        }
+
+        private void Cancel_Button_Click(object sender, RoutedEventArgs e)
+        {
+            SelectedValuePath = null;
+            Window.Close();
+        }
+        
     }
 }

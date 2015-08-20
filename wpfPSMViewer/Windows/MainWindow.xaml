@@ -141,13 +141,13 @@
 
         <xcad:DockingManager Grid.RowSpan="1" Grid.Row="1" >
 
-            <xcad:LayoutRoot x:Name="_layoutRoot">
+            <xcad:LayoutRoot x:Name="_layoutRoot" >
 
                 <xcad:LayoutPanel Orientation="Horizontal">
 
                     <xcad:LayoutAnchorablePane DockWidth="20*">
 
-                        <xcad:LayoutAnchorable ContentId="navigation" Title="Tree" CanHide="False" CanClose="False" AutoHideWidth="240">
+                        <xcad:LayoutAnchorable ContentId="navigation" Title="Tree" CanHide="False" CanClose="False" AutoHideWidth="240" >
 
                             <local:Tree x:Name="treeView" Grid.Column="0" />
 
@@ -155,11 +155,11 @@
 
                     </xcad:LayoutAnchorablePane>
 
-                    <xcad:LayoutPanel Orientation="Vertical" DockWidth="80*">
+                    <xcad:LayoutPanel Orientation="Vertical" DockWidth="80*" >
 
-                        <xcad:LayoutAnchorablePane>
+                        <xcad:LayoutAnchorablePane >
 
-                            <xcad:LayoutAnchorable ContentId="datagrid" Title="List"  CanHide="False" CanClose="False">
+                            <xcad:LayoutAnchorable ContentId="datagrid" Title="Data"  CanHide="False" CanClose="False" >
 
                                 <Grid>
                                     <Grid.Resources>
@@ -200,9 +200,9 @@
 
                         </xcad:LayoutAnchorablePane>
 
-                        <xcad:LayoutAnchorablePane>
+                        <xcad:LayoutAnchorablePane >
 
-                            <xcad:LayoutAnchorable ContentId="chart" Title="Visualization" CanHide="False" CanClose="False">
+                            <xcad:LayoutAnchorable ContentId="chart" Title="Chart" CanHide="False" CanClose="False">
                                 <Grid Grid.Row="2" Grid.RowSpan="1" x:Name="visualizationGrid" Margin="10,10,10,10"/>
                             </xcad:LayoutAnchorable>
 

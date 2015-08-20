@@ -49,6 +49,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Xml" />
@@ -95,9 +96,6 @@
     </ApplicationDefinition>
     <Compile Include="Converters\oxycolor_solidcolorbrush.cs" />
     <Compile Include="Converters\oxythickness_double.cs" />
-    <Compile Include="navigationButton.xaml.cs">
-      <DependentUpon>navigationButton.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Utilities\bindingwrapper.cs" />
     <Compile Include="Dialogs\properties.xaml.cs">
       <DependentUpon>properties.xaml</DependentUpon>
@@ -106,6 +104,7 @@
     <Compile Include="tree.xaml.cs">
       <DependentUpon>tree.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModels\ireload.cs" />
     <Compile Include="Visualizations\barBase.cs" />
     <Compile Include="Visualizations\bar.xaml.cs">
       <DependentUpon>bar.xaml</DependentUpon>
@@ -142,10 +141,6 @@
     <Compile Include="ViewModels\controls.cs" />
     <Compile Include="ViewModels\main.cs" />
     <Page Include="Dialogs\properties.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="navigationButton.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -1246,6 +1241,10 @@
   </ItemGroup>
   <ItemGroup>
     <SplashScreen Include="splash.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="images\left.png" />
+    <Resource Include="images\right.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

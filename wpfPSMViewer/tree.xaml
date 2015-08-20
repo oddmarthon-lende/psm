@@ -5,11 +5,38 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:PSMViewer"
              xmlns:m="clr-namespace:PSMViewer.Models"
-             mc:Ignorable="d" >
+          
+             mc:Ignorable="d" Background="{x:Null}" BorderThickness="0">
 
     <TreeView.Resources>
+        
+        <ControlTemplate x:Key="WindowTemplate" TargetType="{x:Type Window}">
 
-        <Window x:Key="window" Icon="icons/folder_explore.png" WindowStyle="ToolWindow" WindowStartupLocation="CenterOwner" Closing="Window_Closing" />
+            <Grid Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="100*" />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+
+                <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="0" />
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Grid.Row="1" Margin="10">
+
+                    <StackPanel.Resources>
+                        <Style TargetType="{x:Type Button}">
+                            <Setter Property="Margin" Value="5" />
+                        </Style>
+                    </StackPanel.Resources>
+                    
+                    <Button Content=" Ok " Click="Ok_Button_Click"/>
+                    <Button Content=" Cancel " Click="Cancel_Button_Click" />
+                    
+                </StackPanel>
+
+            </Grid>
+            
+        </ControlTemplate>
 
         <Style TargetType="{x:Type TreeViewItem}">
             <Setter Property="ItemsSource" Value="{Binding Children}"/>
