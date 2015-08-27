@@ -1,4 +1,10 @@
-﻿using PSMViewer.Properties;
+﻿/// <copyright file="mainwindow.xaml.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Code behind for the Main Window</summary>
+
+using PSMViewer.Properties;
 using PSMViewer.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -21,10 +27,15 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Linq;
 using System.Collections.Specialized;
+using Xceed.Wpf.AvalonDock.Layout;
+using System.Threading;
 
 namespace PSMViewer
 {
         
+    /// <summary>
+    /// Defines the window status
+    /// </summary>
     public enum Status
     {
         Loading,
@@ -35,8 +46,31 @@ namespace PSMViewer
     public partial class MainWindow : Window, INotifyPropertyChanged, IReload
     {
 
+        
+        private CancellationTokenSource _c = new CancellationTokenSource();
+        public CancellationTokenSource Cancel
+        {
+            get
+            {
+                return _c;
+            }
+        }
 
-        public static Type SetChartType(KeyItem key, Type chartType)
+        #region Static Properties and Methods
+
+        public static string DefaultExt = ".xaml";
+        public static string Filter = "XAML documents (.xaml)|*.xaml";
+
+        static string WindowsFolderFormat = @"windows\{0}";
+        static IsolatedStorageFile UserStore = IsolatedStorageFile.GetUserStoreForDomain();
+
+        /// <summary>
+        /// Set the chart type for the specified key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="chartType"></param>
+        /// <returns>The chart type</returns>
+        private static Type SetChartType(KeyItem key, Type chartType)
         {
 
             Settings s = Settings.Default;
@@ -55,7 +89,12 @@ namespace PSMViewer
 
         }
 
-        public static Type GetChartType(KeyItem key)
+        /// <summary>
+        /// Get the chart type for the specified key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns>The chart type for the key if found or <c>null</c> if not found</returns>
+        private static Type GetChartType(KeyItem key)
         {
 
             Settings.Default.chartType = Settings.Default.chartType ?? new StringCollection();
@@ -68,14 +107,15 @@ namespace PSMViewer
 
         }
 
-        public static VisualizationControl Restore(KeyItem key)
+        private static VisualizationControl Restore(KeyItem key)
         {
             Type t = GetChartType(key);
             return t == null ? null : (VisualizationControl)Activator.CreateInstance(t);
         }
 
-        public static string DefaultExt = ".xaml";
-        public static string Filter = "XAML documents (.xaml)|*.xaml";
+        #endregion
+
+        #region INotifyPropertyChanged
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -92,23 +132,22 @@ namespace PSMViewer
             return true;
         }
 
+        #endregion
+
         private Status _status = Status.Idle;
+        /// <summary>
+        /// Used to show a status in the bottom of the window
+        /// </summary>
         public Status Status
         {
             get { return _status; }
             private set { SetField(ref _status, value); }
-        }
-
-        public bool navigationEnabled
-        {
-
-            get
-            {
-                return ((Main)this.DataContext).Selected != null;
-            }
-        }
+        }              
 
         private ObservableCollection<Window> _windows = new ObservableCollection<Window>();
+        /// <summary>
+        /// Contains all the data visualization windows 
+        /// </summary>
         public ObservableCollection<Window> Windows
         {
             get
@@ -118,6 +157,9 @@ namespace PSMViewer
             set { _windows = value; }
         }
 
+        /// <summary>
+        /// Used to identify commands
+        /// </summary>
         private enum CommandType
         {
             ABOUT,
@@ -134,9 +176,12 @@ namespace PSMViewer
             NEW_WINDOW
         }
 
+        /// <summary>
+        /// The MainWindow Constructor
+        /// </summary>
         public MainWindow()
         {
-
+            
             Func<object, object, bool> canExecute = delegate { return true; };
 
             Commands.Add("Windows", new RelayCommand(ExecuteCommand, canExecute, CommandType.WINDOWS));
@@ -164,12 +209,24 @@ namespace PSMViewer
             {
                 Commands["Exit"].Execute(null);
             };
-        }
 
+            ((Main)DataContext).Timebased.Load += Reload;
+            ((Main)DataContext).Indexbased.Load += Reload;
+
+        }
+        
         #region Commands
 
-        public CommandCollection Commands { get; private set; } = new CommandCollection();
+        /// <summary>
+        /// Stores the commands defined for this window
+        /// </summary>
+        public CommandCollection Commands { get; private set; } = new CommandCollection();        
 
+        /// <summary>
+        /// Executes the commands based on CommandType argument passed to RelayCommand objects
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="parameter"></param>
         private void ExecuteCommand(object sender, object parameter)
         {
 
@@ -180,10 +237,28 @@ namespace PSMViewer
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
+
+                // Creates a new blank window in a new thread
                 case CommandType.NEW_WINDOW:
 
-                    Windows.Add(new VisualizationWindow() { ControlsVisibility = Visibility.Visible });
-                    Windows.Last().Show();
+                    Thread thread = new Thread(new ParameterizedThreadStart((s) =>
+                    {
+                        VisualizationWindow w = new VisualizationWindow() {
+                            ControlsVisibility = Visibility.Visible
+                        };
+
+                        Dispatcher.InvokeAsync(delegate
+                        {
+                            Windows.Add(w);
+                            w.Dispatcher.InvokeAsync(w.Show);
+                        });
+
+                        System.Windows.Threading.Dispatcher.Run();
+
+                    }));
+
+                    thread.SetApartmentState(ApartmentState.STA);
+                    thread.Start();
 
                     break;
 
@@ -217,16 +292,33 @@ namespace PSMViewer
                 case CommandType.SAVE:
 
                     IsolatedStorageFile store = IsolatedStorageFile.GetUserStoreForDomain();
-
-                    if (!store.DirectoryExists("windows"))
-                        store.CreateDirectory("windows");
-
+                    
                     foreach (VisualizationWindow w in Windows)
                     {
-                        using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(pattern, String.Format("{0}.xaml", w.Id)), FileMode.Create))
+                        using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(WindowsFolderFormat, String.Format("{0}.xaml", w.Id)), FileMode.Create))
                         {
                             Export(w, stream);
                         }
+                    }
+
+                    foreach (object element in _layoutRoot.Descendents())
+                    {
+                        if (element is LayoutAnchorable)
+                        {
+                            
+                            LayoutAnchorable anchorable = (LayoutAnchorable)element;
+                            
+                            using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(@"state\{0}.xaml", anchorable.ContentId), FileMode.Create))
+                            {
+                                Export(new LayoutAnchorableSavedState(anchorable), stream);
+                            }
+
+                        }
+                    }
+
+                    using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"state\mainwindow.xaml", FileMode.Create))
+                    {
+                        Export(new WindowSavedState(this), stream);
                     }
 
                     Settings.Default.Save();
@@ -287,7 +379,7 @@ namespace PSMViewer
 
                     if (MessageBox.Show("Do you want to save before exiting?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                         Commands["Save"].Execute(null);
-
+                                        
                     Environment.Exit(0);
 
                     break;
@@ -295,61 +387,133 @@ namespace PSMViewer
             }
 
         }
-
-        private bool ContextMenu_CanExecute(object sender, object parameter)
-        {
-            try
-            {
-                return treeView.SelectedValue != null;
-            }
-            catch (Exception) { }
-
-            return false;
-        }
-
+        
         #endregion
 
         #region Load/Save
-
-        static string pattern = @"windows\{0}";
-        static IsolatedStorageFile store = IsolatedStorageFile.GetUserStoreForDomain();
-
+        
+        /// <summary>
+        /// Reloads everything. 
+        /// </summary>
         public void Reload()
         {
+                        
+            if (!UserStore.DirectoryExists("windows"))
+                UserStore.CreateDirectory("windows");
+
+            if (!UserStore.DirectoryExists("state"))
+                UserStore.CreateDirectory("state");
+
             treeView.Reload();
 
             Windows.Clear();
 
-            foreach (var filename in store.GetFileNames(String.Format(pattern, '*')))
+            // Load windows
+            foreach (var filename in UserStore.GetFileNames(String.Format(WindowsFolderFormat, '*')))
             {
 
-                using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(pattern, filename), FileMode.Open, FileAccess.Read))
+                using (IsolatedStorageFileStream stream = UserStore.OpenFile(String.Format(WindowsFolderFormat, filename), FileMode.Open, FileAccess.Read))
                 {
                     Import(stream);
                 }
 
-            }           
+            }
+
+            // Load layout panes saved state
+            foreach (object element in _layoutRoot.Descendents().ToArray())
+            {
+
+                if (element is LayoutAnchorable)
+                {
+
+                    LayoutAnchorable anchorable = (LayoutAnchorable)element;
+
+                    try {
+
+                        using (IsolatedStorageFileStream stream = UserStore.OpenFile(String.Format(@"state\{0}.xaml", anchorable.ContentId), FileMode.Open, FileAccess.Read))
+                        {
+                            ((LayoutAnchorableSavedState)XamlReader.Load(stream)).Restore(anchorable);
+                        }
+
+                    }
+                    catch(FileNotFoundException) { }
+
+                }
+            }
+
+            // Load mainwindow saved state
+            try
+            {
+
+                using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"state\mainwindow.xaml", FileMode.Open, FileAccess.Read))
+                {
+                    ((WindowSavedState)XamlReader.Load(stream)).Restore(this);
+                }
+
+            }
+            catch (FileNotFoundException) {
+                // Restore to defaults if file not found
+                new WindowSavedState().Restore(this);
+            }
 
         }
 
-        public static void Import(Stream stream)
+        /// <summary>
+        /// Import a window into a new thread from the provided stream
+        /// </summary>
+        /// <param name="stream">The serialized text stream containing the XAML to de-serialize</param>
+        private static void Import(Stream stream)
         {
 
             MainWindow mainWindow = (MainWindow)App.Current.MainWindow;
-            VisualizationWindow w = (VisualizationWindow)XamlReader.Load(stream);
+            Dispatcher d = mainWindow.Dispatcher;
 
-            if ((new List<Window>(mainWindow.Windows)).Find((v) => { return ((VisualizationWindow)v).Id == w.Id; }) != null)
+            using (StreamReader reader = new StreamReader(stream))
             {
-                w.Id = new Guid();
-                MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", w.Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                Thread thread = new Thread(new ParameterizedThreadStart((s) =>
+                    {
+
+                        VisualizationWindow w = (VisualizationWindow)XamlReader.Parse((string)s);
+                        Guid Id = w.Id;
+
+                        Thread.CurrentThread.Name = String.Format("{0} [{1}]", w.GetType(), Id);
+
+                        d.InvokeAsync(delegate
+                        {
+
+                            if ((new List<Window>(mainWindow.Windows)).Find((v) => { return ((VisualizationWindow)v).Id == Id; }) != null)
+                            {
+                                w.Dispatcher.Invoke(delegate
+                                {
+                                    w.Id = new Guid();
+                                });
+
+                                MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", w.Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
+                            }
+
+                            mainWindow.Reload(w);
+                            mainWindow.Windows.Add(w);
+
+                        });
+
+                        System.Windows.Threading.Dispatcher.Run();
+
+                    }));
+
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start(reader.ReadToEnd());
+
             }
-
-            mainWindow.Reload(w);
-            mainWindow.Windows.Add(w);
-
+            
         }
-
-        public static void Export(VisualizationWindow window, Stream stream)
+                
+        /// <summary>
+        /// Serializes objects to a stream
+        /// </summary>
+        /// <param name="obj">The object to serialize</param>
+        /// <param name="stream">The stream that the XAML is written to</param>
+        public static void Export(object obj, Stream stream)
         {
 
             XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings
@@ -357,23 +521,26 @@ namespace PSMViewer
                 Indent = true,
                 ConformanceLevel = ConformanceLevel.Auto,
                 OmitXmlDeclaration = true
-                 
+
             });
 
             XamlDesignerSerializationManager mgr = new XamlDesignerSerializationManager(writer)
             {
                 XamlWriterMode = XamlWriterMode.Expression
             };
-
-            window.Owner = null;
-
-            XamlWriter.Save(window, mgr);
+            
+            XamlWriter.Save(obj, mgr);
 
         }
 
+        /// <summary>
+        /// Remove a window
+        /// </summary>
+        /// <param name="window">The window to remove</param>
+        /// <param name="delete">If set to false, will not remove the saved file from the filesystem if any.</param>
         public void Remove(VisualizationWindow window, bool delete = true)
         {
-
+            
             window.Close();
             Windows.Remove(window);
 
@@ -381,7 +548,7 @@ namespace PSMViewer
             {
                 try
                 {
-                    store.DeleteFile(String.Format(pattern, String.Format("{0}.xaml", window.Id)));
+                    UserStore.DeleteFile(String.Format(WindowsFolderFormat, String.Format("{0}.xaml", window.Id)));
                 }
                 catch (IsolatedStorageException) { }
             }
@@ -391,14 +558,16 @@ namespace PSMViewer
 
         #endregion
 
+        /// <summary>
+        /// Reloads objects that implements the IReload interface and handles any errors
+        /// </summary>
+        /// <param name="obj"></param>
         public void Reload(IReload obj)
         {
-
-            if (obj == null) return;
-
+            
             Status = Status.Loading;
 
-            Dispatcher.InvokeAsync(obj.Reload, DispatcherPriority.ApplicationIdle).Task.ContinueWith(task =>
+            obj.Dispatcher.InvokeAsync(obj.Reload, DispatcherPriority.Background, obj.Cancel.Token).Task.ContinueWith(task =>
             {
 
                 switch (task.Status)
@@ -406,23 +575,33 @@ namespace PSMViewer
 
                     case TaskStatus.Faulted:
 
-                        Status = Status.Error;
+                        Dispatcher.Invoke(delegate
+                        {
+                            Status = Status.Error;
+                            MessageBox.Show(task.Exception.GetBaseException().Message, task.Exception.Message, MessageBoxButton.OK, MessageBoxImage.Error);
 
-                        MessageBox.Show(task.Exception.GetBaseException().Message, task.Exception.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+                        });                       
 
                         break;
-
+                        
                     default:
-                        Status = Status.Idle;
+
+                        Dispatcher.Invoke(delegate
+                        {
+                            Status = Status.Idle;
+                        });
+                            
                         break;
                 }
-
-
 
             });
 
         }
 
+        /// <summary>
+        /// Adds a chart to visualize the current data in the window
+        /// </summary>
+        /// <param name="key"></param>
         private void Visualize(KeyItem key)
         {
 
@@ -455,6 +634,11 @@ namespace PSMViewer
 
         #region Event Handlers     
 
+        /// <summary>
+        /// Used so that the items are checked accordingly in the context menu.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ChartTypeMenuItem_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
 
@@ -470,6 +654,11 @@ namespace PSMViewer
 
         }
 
+        /// <summary>
+        /// Used to switch controls (Time, Indexed) when the mouse moves over the toolbars. 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ToolBarTray_PreviewMouseMove(object sender, MouseEventArgs e)
         {
 
@@ -487,6 +676,11 @@ namespace PSMViewer
             }
         }
 
+        /// <summary>
+        /// Used to update the chart when the selected key changes in the tree
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void treeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             KeyItem key;
@@ -509,26 +703,19 @@ namespace PSMViewer
             Reload(context);
         }
 
-        #endregion
-
-        public bool Next()
-        {
-            return ((Main)this.DataContext).Next();
-        }
-
-        public bool Previous()
-        {
-            return ((Main)this.DataContext).Previous();
-        }
-
+        /// <summary>
+        /// Used Support drag and dropping of exported files onto the mainwindow.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void window_Drop(object sender, DragEventArgs e)
         {
-            
+
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
 
-                foreach(string path in paths)
+                foreach (string path in paths)
                 {
                     using (FileStream stream = new FileStream(path, FileMode.Open))
                     {
@@ -536,7 +723,7 @@ namespace PSMViewer
                         {
                             Import(stream);
                         }
-                        catch(Exception error)
+                        catch (Exception error)
                         {
                             MessageBox.Show(error.Message, "Import error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
@@ -544,5 +731,43 @@ namespace PSMViewer
                 }
             }
         }
+
+        /// <summary>
+        /// Used to disable the contextmenu items if nothing is selected in the tree
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="parameter"></param>
+        /// <returns><c>True</c> if it can execute, <c>False</c> if not.. </returns>
+        private bool ContextMenu_CanExecute(object sender, object parameter)
+        {
+            try
+            {
+                return treeView.SelectedValue != null;
+            }
+            catch (Exception) { }
+
+            return false;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Move to next results
+        /// </summary>
+        /// <returns><c>True</c> if there is more data, <c>False</c> if not</returns>
+        public bool Next()
+        {
+            return ((Main)this.DataContext).Next();
+        }
+
+        /// <summary>
+        /// Move to previous results
+        /// </summary>
+        /// <returns><c>True</c> if there is more data, <c>False</c> if not</returns>
+        public bool Previous()
+        {
+            return ((Main)this.DataContext).Previous();
+        }
+                
     }
 }

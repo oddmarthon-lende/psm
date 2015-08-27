@@ -1,4 +1,10 @@
-﻿using OxyPlot;
+﻿/// <copyright file="oxycolor_solidcolorbrush.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>A converter to convert between <see cref="SolidColorBrush"/> and <see cref="OxyColor"/></summary>
+/// 
+using OxyPlot;
 using PSMViewer.Visualizations;
 using System;
 using System.Collections.Generic;

@@ -29,7 +29,7 @@
                         </Style>
                     </StackPanel.Resources>
                     
-                    <Button Content=" Ok " Click="Ok_Button_Click"/>
+                    <Button Content=" Select " Click="Ok_Button_Click"/>
                     <Button Content=" Cancel " Click="Cancel_Button_Click" />
                     
                 </StackPanel>

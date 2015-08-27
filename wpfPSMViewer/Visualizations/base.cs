@@ -1,4 +1,11 @@
-﻿using PSMViewer.Models;
+﻿/// <copyright file="base.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>The base for all visualization controls</summary>
+/// 
+
+using PSMViewer.Models;
 using PSMViewer.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -12,18 +19,40 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Windows.Input;
-using System.ComponentModel.DataAnnotations;
-using System.Xml.Serialization;
+using System.IO;
+using System.Collections;
+using System.Windows.Media.Imaging;
+using System.Threading;
 
 namespace PSMViewer.Visualizations
 {
+
+    /// <summary>
+    /// A wrapper class around List<string>.
+    /// Used to hold the key paths when the VisualizationControl is serialized to XAML
+    /// </summary>
     public class KeyItemPathList : List<string> {}
 
-    public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged
+    /// <summary>
+    /// The VisualizationControl base class, inherited by all visualization controls
+    /// </summary>
+    public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged, IUndo
     {
-        
+                
+        private CancellationTokenSource _c = new CancellationTokenSource();
+        public CancellationTokenSource Cancel
+        {
+            get
+            {
+                return _c;
+            }
+        }
+
         #region Static Properties and Methods
 
+        /// <summary>
+        /// This class is used to hold information about the types that inherits from VisualizationControl
+        /// </summary>
         public class InheritorInfo : INotifyPropertyChanged
         {
 
@@ -57,7 +86,9 @@ namespace PSMViewer.Visualizations
                 this.Type = Type;
             }
         }
-
+        /// <summary>
+        /// Lists information about the types that inherits from VisualizationControl
+        /// </summary>
         public static List<InheritorInfo> List {
 
             get {
@@ -116,16 +147,18 @@ namespace PSMViewer.Visualizations
 
         #region Dependency Properties
 
-        public Visibility NavigationVisibility
+        
+        public Visibility HorizontalArrowsVisibility
         {
-            get { return (Visibility)GetValue(NavigationVisibilityProperty); }
+            get { return (Visibility)GetValue(HorizontalArrowsVisibilityProperty); }
             set {
-                SetValue(NavigationVisibilityProperty, value);
+                SetValue(HorizontalArrowsVisibilityProperty, value);
             }
         }
-        public static readonly DependencyProperty NavigationVisibilityProperty =
-            DependencyProperty.Register("NavigationVisibility", typeof(Visibility), typeof(VisualizationControl), new FrameworkPropertyMetadata(Visibility.Collapsed, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) =>
+        public static readonly DependencyProperty HorizontalArrowsVisibilityProperty =
+            DependencyProperty.Register("HorizontalArrowsVisibility", typeof(Visibility), typeof(VisualizationControl), new FrameworkPropertyMetadata(Visibility.Collapsed, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) =>
             {
+
                 VisualizationControl w = (VisualizationControl)sender;
 
                 if (((Visibility)e.NewValue) != Visibility.Visible && ((Visibility)e.OldValue) == Visibility.Visible)
@@ -133,10 +166,22 @@ namespace PSMViewer.Visualizations
                 else if (((Visibility)e.NewValue) == Visibility.Visible && ((Visibility)e.OldValue) != Visibility.Visible)
                     w.PushState();
 
-            }));    
-            
-                
+            }));
+
+
+
+
+        public Visibility VerticalArrowsVisibility
+        {
+            get { return (Visibility)GetValue(VerticalArrowsVisibilityProperty); }
+            set { SetValue(VerticalArrowsVisibilityProperty, value); }
+        }
+        public static readonly DependencyProperty VerticalArrowsVisibilityProperty =
+            DependencyProperty.Register("VerticalArrowsVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Collapsed));
         
+        
+                
+
         public string Title
         {
             get {
@@ -147,7 +192,16 @@ namespace PSMViewer.Visualizations
             }
         }
         public static readonly DependencyProperty TitleProperty =
-            DependencyProperty.Register("Title", typeof(string), typeof(VisualizationControl), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+            DependencyProperty.Register("Title", typeof(string), typeof(VisualizationControl), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) =>
+            {
+                VisualizationControl control = (VisualizationControl)sender;
+
+                if (String.IsNullOrEmpty((string)e.NewValue))
+                {
+                    control.Title = (string)e.OldValue;
+                }
+
+            }));
 
 
 
@@ -203,7 +257,7 @@ namespace PSMViewer.Visualizations
             set { SetValue(TitleVisibilityProperty, value); }
         }
         public static readonly DependencyProperty TitleVisibilityProperty =
-            DependencyProperty.Register("TitleVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Hidden));
+            DependencyProperty.Register("TitleVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Collapsed));
 
 
 
@@ -218,19 +272,38 @@ namespace PSMViewer.Visualizations
 
         #endregion
 
+        /// <summary>
+        /// A unique idenfifier for the object
+        /// </summary>
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        public int Index
+        /// <summary>
+        /// The index of this object in the parent windows children
+        /// </summary>
+        public int? Index
         {
             get
             {
-                return ((VisualizationWindow)this.Owner).Children.IndexOf(this);
+                try {
+                    return ((VisualizationWindow)this.Owner).Children.IndexOf(this);
+                }
+                catch(Exception)
+                {
+                    return null;
+                }
             }
         }
-        
-        protected List<PropertyDefinition> PropertyDefinitions { get; set; } = new List<PropertyDefinition>();
 
+        /// <summary>
+        /// Holds a list of <typeparamref name="PropertyDefinition"/> objects that will be exposed to the user.
+        /// </summary>
+        protected List<PropertyDefinition> PropertyDefinitions { get; set; } = new List<PropertyDefinition>();
+        
         private KeyItemPathList keys = new KeyItemPathList();
+        /// <summary>
+        /// Holds the key paths.
+        /// Used for serialization, need only paths not the whole <typeparamref name="KeyItem"/>
+        /// </summary>
         public KeyItemPathList Keys
         {
             get
@@ -248,6 +321,9 @@ namespace PSMViewer.Visualizations
         }
 
         private ObservableCollection<MultiControl> controls = new ObservableCollection<MultiControl>();
+        /// <summary>
+        /// Holds the controls for each key
+        /// </summary>
         public ObservableCollection<MultiControl> Controls
         {
             get
@@ -256,13 +332,28 @@ namespace PSMViewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// The timespan that will be used when loading time data
+        /// </summary>
         public TimeSpan Timespan { get; set; } = new TimeSpan(1, 0, 0, 0, 0);
 
+        /// <summary>
+        /// The count used when loading index data
+        /// </summary>
         public long Count { get; set; }      = 1L;
+        /// <summary>
+        /// The start index that will be used when loading index data
+        /// </summary>
         public long StartIndex { get; set; } = 0L;
 
+        /// <summary>
+        /// Defines how data is loaded based on the <typeparamref name="ControlType"/>
+        /// </summary>
         public ControlType SelectedControlType { get; set; } = ControlType.Index;
 
+        /// <summary>
+        /// The vertical position in the grid (If any)
+        /// </summary>
         public int? Row {
 
             get {
@@ -273,6 +364,9 @@ namespace PSMViewer.Visualizations
                 SetValue(Grid.RowProperty, Math.Max(0, value ?? 0));
             }
         }
+        /// <summary>
+        /// How many rows to fill in the grid (If any)
+        /// </summary>
         public int? RowSpan
         {
 
@@ -286,6 +380,9 @@ namespace PSMViewer.Visualizations
                 SetValue(Grid.RowSpanProperty, Math.Max(1, value??1));
             }
         }
+        /// <summary>
+        /// The horizontal position in the grid (If any)
+        /// </summary>
         public int? Column
         {
 
@@ -299,6 +396,9 @@ namespace PSMViewer.Visualizations
                 SetValue(Grid.ColumnProperty, Math.Max(0, value ?? 0));
             }
         }
+        /// <summary>
+        /// How many columns to fill in the grid (If any) 
+        /// </summary>
         public int? ColumnSpan
         {
 
@@ -315,32 +415,84 @@ namespace PSMViewer.Visualizations
         
         #endregion
 
+
+        /// <summary>
+        /// Defines how data can be loaded
+        /// </summary>
         public enum ControlType
         {
+            /// <summary>
+            /// Load data using time as index
+            /// </summary>
             Time,
+            /// <summary>
+            /// Loads data using index as index
+            /// </summary>
             Index
         }
 
         #region Commands
 
+        /// <summary>
+        /// Used to identify the different commands
+        /// </summary>
         protected enum CommandType
         {
-            ADD_KEY,
+            /// <summary>
+            /// Add a key to visualize its data
+            /// </summary>
+            ADD_KEY = int.MinValue,
+            /// <summary>
+            /// Remove a previously added key
+            /// </summary>
             REMOVE_KEY,
+            /// <summary>
+            /// Shows the properties window
+            /// </summary>
             PROPERTIES,
+            /// <summary>
+            /// Load previous results
+            /// </summary>
             PREV,
-            NEXT
+            /// <summary>
+            /// Load next results
+            /// </summary>
+            NEXT,
+            DOWN,
+            UP
         }
 
-        public class MultiControl : IDisposable
+        /// <summary>
+        /// An image of the windows contents
+        /// </summary>
+        public BitmapSource Image
+        {
+            get
+            {
+
+                return this.GetThumbnailImage((int)ActualWidth, (int)ActualHeight);
+
+            }
+        }
+
+        /// <summary>
+        /// A multicontrol can handle the different <typeparamref name="ControlType"/> in one object.
+        /// Each key gets a <typeparamref name="MultiControl"/> when added to the <typeparamref name="VisualizationControl"/>
+        /// </summary>
+        public class MultiControl : IDisposable, IUndo
         {
             public KeyItem Key { get; private set; }
-            public ObservableCollection<EntryItem> Entries { get; set; }
+            public ObservableCollection<EntryItem> Entries { get; set; }           
             public event DataChangedEventHandler DataChanged;
-
+            
             private Dictionary<ControlType, Controls> Controls = new Dictionary<ControlType, ViewModels.Controls>();
 
-            public MultiControl(KeyItem key, ObservableCollection<EntryItem> Entries = null)
+            /// <summary>
+            /// The constructor
+            /// </summary>
+            /// <param name="key">The <typeparamref name="KeyItem"/> this <typeparamref name="MultiControl"/> is for</param>
+            /// <param name="Entries">An alternate collection for the data. Used to share a collection between different controls.</param>
+            public MultiControl(KeyItem key, LoadEventHandler load = null, ObservableCollection<EntryItem> Entries = null)
             {
 
                 this.Key = key;
@@ -353,6 +505,10 @@ namespace PSMViewer.Visualizations
                                 
                 foreach (var pair in Controls)
                 {
+
+                    if (load != null)
+                        pair.Value.Load += load;
+
                     pair.Value.DataChanged += Value_DataChanged;
                 }
 
@@ -360,6 +516,9 @@ namespace PSMViewer.Visualizations
 
             private Stack<Dictionary<ControlType, ViewModels.Controls>> Stack;
 
+            /// <summary>
+            /// Make a copy of the current state and push it to the stack
+            /// </summary>
             public void PushState()
             {
 
@@ -374,6 +533,9 @@ namespace PSMViewer.Visualizations
                 }
             }
 
+            /// <summary>
+            /// Pop off the stack and restore the saved state
+            /// </summary>
             public void PopState()
             {
 
@@ -390,12 +552,23 @@ namespace PSMViewer.Visualizations
                 }
             }
 
+            /// <summary>
+            /// Called when the data has changed for a control type
+            /// </summary>
+            /// <param name="sender"></param>
             private void Value_DataChanged(object sender)
             {
                 if (DataChanged != null)
                     DataChanged(sender);  
             }
 
+            /// <summary>
+            /// Gets the controls
+            /// </summary>
+            /// <param name="type"></param>
+            /// <param name="Start"></param>
+            /// <param name="Count"></param>
+            /// <returns>The controls</returns>
             public Controls Get(ControlType type, object Start = null, object Count = null)
             {
                 
@@ -429,6 +602,9 @@ namespace PSMViewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// A read only wrapper around the <typeparamref name="CommandCollection"/> <see cref="CommandsSource"/>
+        /// </summary>
         public ReadOnlyDictionary<string, RelayCommand> Commands
         {
             get
@@ -437,8 +613,16 @@ namespace PSMViewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// Holds the commands for this object
+        /// </summary>
         protected CommandCollection CommandsSource = new CommandCollection();
         
+        /// <summary>
+        /// Used to execute commands based on <typeparamref name="CommandType"/>
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="parameter"></param>
         protected virtual void ExecuteCommand(object sender, object parameter)
         {
 
@@ -446,7 +630,8 @@ namespace PSMViewer.Visualizations
 
             Tree tree = null;
             Window window = null;
-            
+            PropertiesWindow prpWindow;
+
             switch (cmd)
             {
 
@@ -456,9 +641,10 @@ namespace PSMViewer.Visualizations
                     tree = new Tree();
                     window = tree.Window;
 
+                    window.WindowStyle = WindowStyle.ToolWindow;
                     window.Owner = this.Owner;
                     window.Width = this.Owner.Width * .5;
-                    window.Height = this.Owner.Height * 1.25;
+                    window.Height = this.Owner.Height * .95;
 
                     break;
 
@@ -466,7 +652,17 @@ namespace PSMViewer.Visualizations
 
             switch (cmd)
             {
-                
+
+                case CommandType.DOWN:
+
+                    Down();
+                    return;
+
+                case CommandType.UP:
+
+                    Up();
+                    return;
+
                 case CommandType.NEXT:
 
                     Previous();
@@ -479,9 +675,15 @@ namespace PSMViewer.Visualizations
 
                 case CommandType.ADD_KEY:
 
+                    if(parameter != null && parameter is KeyItem)
+                    {
+                        Add((KeyItem)parameter);
+                        break;
+                    }
+
                     window.Title = String.Format("Add Key [{0}]", Title);
 
-                    ((MainWindow)App.Current.MainWindow).Reload(tree);
+                    OnReload(tree);
 
                     tree.Window.ShowDialog();
 
@@ -498,31 +700,44 @@ namespace PSMViewer.Visualizations
 
                     tree.Window.ShowDialog();
 
-                    if (tree.SelectedValue != null)
-                        Remove((KeyItem)tree.SelectedValue);
+                    if (tree.Key != null)
+                        Remove(tree.Key);
 
                     break;
 
                 case CommandType.PROPERTIES:
 
-                    (new PropertiesWindow(this, PropertyDefinitions.ToArray()) {
+                    PushState();                    
+
+                    prpWindow = (new PropertiesWindow(this, PropertyDefinitions.ToArray())
+                    {
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
                         Owner = this.Owner,
                         Width = this.Owner.ActualWidth * .75
-                    }).ShowDialog();
+                    });
+
+                    prpWindow.ShowDialog();
                     
                     break;
             }
 
-            ((MainWindow)App.Current.MainWindow).Reload(this);
+            OnReload(this);
 
         }
-
+        
         #endregion
 
         protected Func<object, object, bool> canExecute = delegate { return true; };
 
+        protected void OnReload(IReload reloadable)
+        {
+            reloadable.Dispatcher.InvokeAsync(reloadable.Reload);
+        }
+
+        /// <summary>
+        /// The default constructor
+        /// </summary>
         public VisualizationControl()
         {
             
@@ -530,6 +745,7 @@ namespace PSMViewer.Visualizations
             Template    = (ControlTemplate)FindResource("VisualizationControlTemplate");
             Title       = String.Format("<{0}> [{1}]", GetType().Name, Id);
             Margin      = new Thickness(5);
+            AllowDrop   = true;
 
             #region Commands
 
@@ -538,12 +754,14 @@ namespace PSMViewer.Visualizations
             CommandsSource.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             CommandsSource.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREV));
             CommandsSource.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
+            CommandsSource.Add("Down", new RelayCommand(ExecuteCommand, canExecute, CommandType.DOWN));
+            CommandsSource.Add("Up", new RelayCommand(ExecuteCommand, canExecute, CommandType.UP));
 
             #endregion
 
             #region PropertyDefinitions
-            
-                PropertyDefinitions.Add(new PropertyDefinition()
+
+            PropertyDefinitions.Add(new PropertyDefinition()
                 {
                     Category = "Layout",
                     TargetProperties = new List<object>(new string[] { "Row", "RowSpan", "Column", "ColumnSpan", "Margin" })
@@ -584,23 +802,54 @@ namespace PSMViewer.Visualizations
             RegisterUserCommand();
             RegisterUserCommand("Remove Key(s)", CommandsSource["Remove"]);
             RegisterUserCommand("Add Key(s)", CommandsSource["Add"]);
-                        
+            
             #endregion
 
             ContextMenu = new ContextMenu();
             ContextMenu.ContextMenuOpening += delegate
             {
                 ContextMenu.ItemsSource = MenuItems;
-                NavigationVisibility = Visibility.Collapsed;
+                HorizontalArrowsVisibility = Visibility.Collapsed;
+                VerticalArrowsVisibility = Visibility.Collapsed;
             };
 
             this.SizeChanged += delegate {
                 Refresh();
-            };           
-            
+            };
+
+            this.Drop += VisualizationControl_Drop;
+                        
+        }
+        
+        /// <summary>
+        /// Drop keys onto the widget
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void VisualizationControl_Drop(object sender, DragEventArgs e)
+        {
+
+            if (e.Data.GetDataPresent(DataFormats.StringFormat))
+            {
+
+                string path = (string)e.Data.GetData(DataFormats.StringFormat);
+
+                if(path != null)
+                {
+                    CommandsSource["Add"].Execute(KeyItem.CreateFromPath(path));
+                }
+               
+            }
         }
 
+        /// <summary>
+        /// Holds the Usercommands added with <see cref="RegisterUserCommand" />
+        /// </summary>
         protected Dictionary<string, object> _userCommands = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Returns items based on <see cref="_userCommands"/> that can be used in menus
+        /// </summary>
         public virtual IEnumerable<Control> MenuItems {
 
             get
@@ -624,6 +873,12 @@ namespace PSMViewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// Register a command that will show up in the menus
+        /// When called with no parameters, a seperator is added in the menus
+        /// </summary>
+        /// <param name="title">The header that will be displayed in the menuitem</param>
+        /// <param name="command">The command that will be executed. Normally a <see cref="RelayCommand"/></param>
         public void RegisterUserCommand(string title = null, ICommand command = null)
         {
             if (title != null && command != null)
@@ -634,6 +889,9 @@ namespace PSMViewer.Visualizations
             OnPropertyChanged("MenuItems");
         }
 
+        /// <summary>
+        /// Refreshed the rendering, no data is updated by this method.
+        /// </summary>
         public virtual void Refresh()
         {
 
@@ -669,18 +927,33 @@ namespace PSMViewer.Visualizations
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Helper method to easily get the controls for a key
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <returns>The <see cref="MultiControl"/> if any</returns>
         protected MultiControl GetControlsFor(KeyItem key)
         {
             return (from s in controls where s.Key.Path == key.Path select s).ElementAtOrDefault(0);
         }
 
+        /// <summary>
+        /// Overridden so that the content is not serialized when the object is saved to disk
+        /// </summary>
+        /// <returns><c>False</c></returns>
         public override bool ShouldSerializeContent()
         {
             return false;
         }
 
+        /// <summary>
+        /// Used to disable serialization of some properties that are unwanted in the serialized document when save to disk
+        /// </summary>
+        /// <param name="dp">The property</param>
+        /// <returns><c>False</c> if the property should not be serialized</returns>
         protected override bool ShouldSerializeProperty(DependencyProperty dp)
         {
+
             DependencyProperty[] properties = new DependencyProperty[]
             {
                 Grid.RowProperty,
@@ -689,9 +962,14 @@ namespace PSMViewer.Visualizations
                 Grid.ColumnSpanProperty,
                 OwnerProperty,
                 ContextMenuProperty,
+                ContentProperty,
                 NameProperty,
-                NavigationVisibilityProperty,
+                HorizontalArrowsVisibilityProperty,
+                VerticalArrowsVisibilityProperty,
                 TemplateProperty,
+                IsEnabledProperty,
+                AllowDropProperty,
+                VisibilityProperty
             };
 
             foreach (DependencyProperty p in properties)
@@ -702,6 +980,12 @@ namespace PSMViewer.Visualizations
             return base.ShouldSerializeProperty(dp);
         }
 
+        /// <summary>
+        /// Add a key to this control. So that data is loaded for this key.
+        /// </summary>
+        /// <param name="key">The key to load</param>
+        /// <param name="collection">A collection for the data. Used to share collection between objects.</param>
+        /// <returns>The MultiControl that is created for the key</returns>
         public virtual MultiControl Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
         {
 
@@ -711,7 +995,7 @@ namespace PSMViewer.Visualizations
 
                 key.Children.CollectionChanged += Children_CollectionChanged;
 
-                ((MainWindow)App.Current.MainWindow).Reload(key);
+                OnReload(key);
 
                 return null;
             }
@@ -720,7 +1004,8 @@ namespace PSMViewer.Visualizations
 
             if (control == null)
             {
-                control = new MultiControl(key, collection);
+
+                control = new MultiControl(key, OnReload, collection);
 
                 controls.Add(control);
 
@@ -735,6 +1020,10 @@ namespace PSMViewer.Visualizations
 
         }
 
+        /// <summary>
+        /// Removes the key, so that it will no longer be associated with this control.
+        /// </summary>
+        /// <param name="key">The KeyItem to remove.</param>
         public virtual void Remove(KeyItem key)
         {
 
@@ -751,6 +1040,12 @@ namespace PSMViewer.Visualizations
 
         }
 
+
+        /// <summary>
+        /// Called when the keys are added or removed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         protected void Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
 
@@ -774,9 +1069,14 @@ namespace PSMViewer.Visualizations
 
         }
 
+        /// <summary>
+        /// Reload data and keys
+        /// </summary>
         public virtual void Reload()
         {
-            
+
+            HorizontalArrowsVisibility = Visibility.Collapsed;
+
             object Start = null;
             object Count = null;
 
@@ -811,6 +1111,10 @@ namespace PSMViewer.Visualizations
 
         }
                 
+        /// <summary>
+        /// Loads the next results
+        /// </summary>
+        /// <returns><c>False</c> if there is more data to be loaded in this direction</returns>
         public virtual bool Next()
         {
             bool yn = false;
@@ -823,6 +1127,10 @@ namespace PSMViewer.Visualizations
             return yn;
         }
 
+        /// <summary>
+        /// Loads the previous results
+        /// </summary>
+        /// <returns><c>False</c> if there is more data to be loaded in this direction</returns>
         public virtual bool Previous()
         {
 
@@ -836,20 +1144,61 @@ namespace PSMViewer.Visualizations
             return yn;
         }
 
+        /// <summary>
+        /// Called when the Up arrow is clicked
+        /// </summary>
+        public virtual void Up() {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Called when the Down arrow is clicked
+        /// </summary>
+        public virtual void Down() {
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
+        /// Save state.
+        /// </summary>
+        /// 
         public virtual void PushState()
         {
+            
             foreach (MultiControl control in controls)
             {
                 control.PushState();
             }
+
+            UndoExtension.PushState(this);
         }
 
+        /// <summary>
+        /// Restore state.
+        /// </summary>
+        ///        
         public virtual void PopState()
         {
+            
             foreach (MultiControl control in controls)
             {
                 control.PopState();
             }
+
+            UndoExtension.PopState(this, ShouldSerializeProperty);
+
+            Refresh();
+
+        }
+
+        /// <summary>
+        /// Overrides what should be displayed if the object is converted to text.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return String.IsNullOrEmpty(Title) ? String.Format("<{0}> [{1}]", GetType().Name, Id) : Title;
         }
     }
 }

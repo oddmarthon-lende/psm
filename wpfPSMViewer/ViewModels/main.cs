@@ -1,4 +1,11 @@
-﻿using System;
+﻿/// <copyright file="main.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>The <see cref="MainWindow"/> viewmodel.</summary>
+/// 
+
+using System;
 using System.Collections.Generic;
 using PSMonitor;
 using System.Collections.ObjectModel;

@@ -1,4 +1,10 @@
-﻿using System;
+﻿/// <copyright file="entryitem.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>A wrapper class around the struct <see cref="Entry"/></summary>
+/// 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,12 +37,7 @@ namespace PSMViewer.Models
         {
             get { return entry.Timestamp.ToLocalTime(); }
         }
-
-        public double Age
-        {
-            get { return (DateTime.Now - this.Timestamp).TotalHours; }
-        }
-
+        
         public static explicit operator EntryItem(Entry e)
         {
             return new EntryItem(e);

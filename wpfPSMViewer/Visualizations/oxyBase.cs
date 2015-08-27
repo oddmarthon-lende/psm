@@ -1,4 +1,11 @@
-﻿using System;
+﻿/// <copyright file="oxyBase.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>A base for all widgets using <see cref="OxyPlot"/></summary>
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OxyPlot;
@@ -237,20 +244,28 @@ namespace PSMViewer.Visualizations
 
         public override void Refresh()
         {
+            
+            FrameworkElement Parent = (FrameworkElement)this.Parent;
 
-            FrameworkElement element = (FrameworkElement)this.Parent??this;
+            // Had to add styling for the TrackerControl like this, because i could not find a better way to set the style for the TrackerControl.
+            // The Resources property is not a dependency property and is always serialized, so add it to the parent and it will propagate down the tree and style applied.
+            //
+            if (Parent != null)
+            {
 
-            Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.Wpf.TrackerControl) };
+                Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.Wpf.TrackerControl) };
 
-            element.Resources.Remove(TrackerControlStyle.TargetType);
+                Parent.Resources.Remove(TrackerControlStyle.TargetType);
 
-            Setter setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
-            TrackerControlStyle.Setters.Add(setter);
+                Setter setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
+                TrackerControlStyle.Setters.Add(setter);
 
-            setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
-            TrackerControlStyle.Setters.Add(setter);
+                setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
+                TrackerControlStyle.Setters.Add(setter);
 
-            element.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
+                Parent.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
+
+            }
 
             Model.InvalidatePlot(true);
 

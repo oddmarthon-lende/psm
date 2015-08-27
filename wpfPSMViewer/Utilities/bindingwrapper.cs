@@ -1,4 +1,10 @@
-﻿
+﻿/// <copyright file="bindingwrapper.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Used to forward bound data properties to another object. </summary>
+///
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

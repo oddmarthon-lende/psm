@@ -1,4 +1,11 @@
-﻿using System;
+﻿/// <copyright file="tracker.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Tracks and detects the element that is under the mouse</summary>
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

@@ -14,8 +14,7 @@
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         x:Class="PSMViewer.MainWindow"
         mc:Ignorable="d"
-        Title="PSM Data Viewer" Height="{Binding [w_height], Mode=TwoWay}" Width="{Binding [w_width], Mode=TwoWay}" Left="{Binding [w_left], Mode=TwoWay}" Top="{Binding [w_top], Mode=TwoWay}"
-    x:Name="window" SnapsToDevicePixels="True" Icon="..\icons\database_table.png" Drop="window_Drop" AllowDrop="True">
+        Title="PSM Data Viewer" x:Name="window" SnapsToDevicePixels="True" Icon="..\icons\database_table.png" Drop="window_Drop" AllowDrop="True">
 
     <Window.Resources>
 
@@ -121,6 +120,11 @@
                                     <Setter Property="Header" Value="{Binding Title}" />
                                     <Setter Property="CommandParameter" Value="{Binding}"/>
                                     <Setter Property="Command" Value="{Binding Commands[Windows], ElementName=window}" />
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <Image Source="{Binding Thumbnail}" />
+                                        </Setter.Value>
+                                    </Setter>
                                 </Style>
                             </MenuItem.ItemContainerStyle>
 

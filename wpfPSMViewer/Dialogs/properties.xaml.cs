@@ -1,4 +1,11 @@
-﻿using System;
+﻿
+/// <copyright file="properties.xaml.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Code behind for the Properties Window</summary>
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,24 +35,24 @@ namespace PSMViewer
         {
             get
             {
-                return Element.PropertyDefinitions.ToArray();
+                return PropertyGrid.PropertyDefinitions.ToArray();
             }
             private set
             {
                 if (value == null) return;
 
-                Element.PropertyDefinitions.Clear();
+                PropertyGrid.PropertyDefinitions.Clear();
 
                 foreach(PropertyDefinition d in value)
                 {
-                    Element.PropertyDefinitions.Add(d);   
+                    PropertyGrid.PropertyDefinitions.Add(d);   
                 }
 
             }
 
         }
 
-        public PropertyGrid Element
+        public PropertyGrid PropertyGrid
         {
             get
             {
@@ -64,7 +71,7 @@ namespace PSMViewer
 
             this.Loaded += delegate
             {
-                Element.SelectedObject = SelectedObject;
+                PropertyGrid.SelectedObject = SelectedObject;
                 PropertyDefinitions    = Definitions;
             };           
 

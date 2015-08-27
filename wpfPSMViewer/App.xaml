@@ -111,15 +111,21 @@
                     <TextBlock FontSize="{TemplateBinding SubTitleFontSize}" FontWeight="{TemplateBinding TitleFontWeight}" Text="{TemplateBinding SubTitle}" TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" />
                 </StackPanel>                
 
-                <ContentPresenter Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1" />
+                <ContentPresenter Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1" Margin="0" />
 
-                <Grid Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="2" Visibility="{TemplateBinding NavigationVisibility}">
+                <Grid Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="2" >
                     
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="32" />
                         <ColumnDefinition Width="100*" />
                         <ColumnDefinition Width="32" />
                     </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="32" />
+                        <RowDefinition Height="100*" />
+                        <RowDefinition Height="32" />
+                    </Grid.RowDefinitions>
 
                     <Grid.Resources>
 
@@ -133,15 +139,24 @@
                         </Style>
                         
                     </Grid.Resources>
+                    
 
-                    <Button  Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Command="{Binding Commands[Previous]}" >
+                    <Button  Grid.Column="0" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Command="{Binding Commands[Previous]}" Visibility="{TemplateBinding HorizontalArrowsVisibility}" >
                         <Image Source="images/left.png" Width="27" Height="44" />
                     </Button>
 
-                    <Button Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding Commands[Next]}" >
+                    <Button Grid.Column="2" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding Commands[Next]}" Visibility="{TemplateBinding HorizontalArrowsVisibility}" >
                         <Image Source="images/right.png" Width="27" Height="44" />    
                     </Button>
-                    
+
+                    <Button  Grid.Column="1" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="{TemplateBinding VerticalArrowsVisibility}" Command="{Binding Commands[Up]}" >
+                        <Image Source="images/up.png" Height="27" Width="44" />
+                    </Button>
+
+                    <Button Grid.Column="1" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="{TemplateBinding VerticalArrowsVisibility}" Command="{Binding Commands[Down]}" >
+                        <Image Source="images/down.png" Height="27" Width="44" />
+                    </Button>
+
 
                 </Grid>
                 

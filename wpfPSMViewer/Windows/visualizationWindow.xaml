@@ -7,14 +7,21 @@
         xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:v="clr-namespace:PSMViewer.Visualizations"
         mc:Ignorable="d"
-        Title="" Height="600" Width="800" Icon="..\icons\application_view_tile.png" WindowStyle="None" ShowInTaskbar="False" Topmost="False" x:Name="window"  DataContext="{Binding RelativeSource={RelativeSource Self}}">
+        Height="600" Width="800" Icon="..\icons\application_view_tile.png" WindowStyle="None" ShowInTaskbar="False" Topmost="False" x:Name="window"  DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
     <Window.InputBindings>
+        
+        
         <KeyBinding Key="F5" Command="{Binding Commands[Refresh]}"  />
         <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding Commands[Export]}"   />
         <KeyBinding Key="Delete" Modifiers="Ctrl" Command="{Binding Commands[Delete]}"  />
         <KeyBinding Key="Space" Command="{Binding Commands[ControlsVisibility]}"  />
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding Commands[Save]}"  />
+        <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding Commands[Undo]}"  />
+        <KeyBinding Key="W" Modifiers="Ctrl" Command="{Binding Commands[Properties]}"  />
+        <KeyBinding Key="P" Command="{Binding Commands[Properties]}"  />
+        
+        
     </Window.InputBindings>
     
     <Grid>
@@ -40,13 +47,14 @@
 
             <MenuItem Header="File">
                 <MenuItem Header="Add" ItemsSource="{x:Static v:VisualizationControl.List}" ItemContainerStyle="{DynamicResource AddChartStyle}"/>
+                <Separator />
                 <MenuItem Header="Save" InputGestureText="Ctrl+S" Command="{Binding Commands[Save]}" />
                 <MenuItem Header="Export" InputGestureText="Ctrl+E" Command="{Binding Commands[Export]}" />
                 <Separator />
                 <MenuItem Header="Delete" InputGestureText="Ctrl+Delete" Command="{Binding Commands[Delete]}" />
             </MenuItem>
 
-            <MenuItem Header="Tools" >
+            <MenuItem Header="Edit" >
 
                 <MenuItem.Resources>
 
@@ -54,24 +62,30 @@
 
                     <Style TargetType="{x:Type MenuItem}">
                         <Setter Property="Header" Value="{Binding Title}" />
-                        <Setter Property="InputGestureText" Value="{Binding Index}" />
                         <Setter Property="ItemsSource" Value="{Binding MenuItems}" />
-                        
+
                     </Style>
 
                 </MenuItem.Resources>
-
+                
                 <MenuItem.ItemsSource>
                     <CompositeCollection>
-                        <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}"  />
-                        <MenuItem Header="Show/Hide Controls" InputGestureText="Space" Command="{Binding Commands[ControlsVisibility]}"  />
-                        <MenuItem Header="Capture Mouse" IsCheckable="True" IsChecked="{Binding CaptureRightClick}"  />
-                        <Separator />
-                        <MenuItem Header="Properties" Command="{Binding Commands[Properties]}"  />
+                        <MenuItem Header="Undo" InputGestureText="Ctrl+Z" Command="{Binding Commands[Undo]}" />
                         <Separator />
                         <CollectionContainer Collection="{Binding Source={StaticResource ChildrenViewSource}}" />
                     </CompositeCollection>
                 </MenuItem.ItemsSource>
+                
+            </MenuItem>
+
+            <MenuItem Header="Tools" >                
+
+                <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}"  />
+                <Separator />
+                <MenuItem Header="Show / Hide Controls" InputGestureText="Space" Command="{Binding Commands[ControlsVisibility]}"  />
+                <MenuItem Header="Capture Mouse" IsCheckable="True" IsChecked="{Binding CaptureRightClick}"  />
+                <Separator />
+                <MenuItem Header="Properties" InputGestureText="Ctrl + W, P" Command="{Binding Commands[Properties]}"  />
 
             </MenuItem>
 

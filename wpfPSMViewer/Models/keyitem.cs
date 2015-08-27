@@ -1,4 +1,10 @@
-﻿using System;
+﻿/// <copyright file="keyitem.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>A wrapper class around the struct <see cref="Key"/> </summary>
+/// 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,13 +13,33 @@ using PSMonitor.Stores;
 using System.Collections.ObjectModel;
 using PSMonitor;
 using PSMViewer.ViewModels;
+using System.Windows.Threading;
+using System.Threading;
 
 namespace PSMViewer.Models
 {
     
     public class KeyItem : Key, IReload
     {
-        
+
+        private Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
+        public Dispatcher Dispatcher
+        {
+            get
+            {
+                return _dispatcher;
+            }
+        }
+
+        private CancellationTokenSource _c = new CancellationTokenSource();
+        public CancellationTokenSource Cancel
+        {
+            get
+            {
+                return _c;
+            }
+        }
+
         private KeyItem _parent = null;
         public KeyItem Parent {
 

@@ -1,4 +1,11 @@
-﻿using OxyPlot;
+﻿/// <copyright file="barBase.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>A base for widgets using OxyPlot (Column, Bar)</summary>
+/// 
+
+using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using PSMViewer.Models;

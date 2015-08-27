@@ -1,4 +1,10 @@
-﻿using OxyPlot;
+﻿/// <copyright file="oxythickness_double.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>A converter to convert between <c>double</c> and <see cref="OxyThickness"/></summary>
+/// 
+using OxyPlot;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

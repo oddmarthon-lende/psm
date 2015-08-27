@@ -1,31 +1,76 @@
-﻿using PSMViewer.Models;
+﻿/// <copyright file="tree.xaml.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Code behind for the KeyItem\Key tree</summary>
+/// 
+
+using PSMViewer.Models;
 using PSMViewer.ViewModels;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace PSMViewer
 {
-    
+
     public partial class Tree : TreeView, IReload
     {
+        
+        private CancellationTokenSource _c = new CancellationTokenSource();
+        public CancellationTokenSource Cancel
+        {
+            get
+            {
+                return _c;
+            }
+        }
+
         public Tree()
         {
             InitializeComponent();
 
             AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(Reload));
-            
+
+            AddHandler(TreeViewItem.PreviewMouseMoveEvent, new RoutedEventHandler((sender, e) =>
+            {
+
+                MouseEventArgs m = (MouseEventArgs)e;
+
+                switch(m.LeftButton)
+                {
+
+                    case MouseButtonState.Pressed:
+                                                
+                        DragDrop.DoDragDrop((DependencyObject)m.Source, _key.Path, DragDropEffects.Link);
+
+                        break;
+                }
+                
+
+            }));
+
+            SelectedItemChanged += Tree_SelectedItemChanged;
+
+        }
+
+        private void Tree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+
+            if (SelectedValue is KeyItem)
+                _key = (KeyItem)SelectedValue;
+                        
+        }
+
+        private KeyItem _key = null;
+        public KeyItem Key
+        {
+            get
+            {
+                return _key;
+            }
         }
 
         private Window _window = null;
@@ -63,7 +108,7 @@ namespace PSMViewer
         }
 
         public void Reload()
-        {
+        {            
             ((KeyItem)rootItem.DataContext).Reload();
         }
 
@@ -105,16 +150,12 @@ namespace PSMViewer
 
         private void Ok_Button_Click(object sender, RoutedEventArgs e)
         {
-
-            if( !(SelectedValue is KeyItem) )
-                SelectedValuePath = null;
-
             Window.Close();
         }
 
         private void Cancel_Button_Click(object sender, RoutedEventArgs e)
         {
-            SelectedValuePath = null;
+            _key = null;
             Window.Close();
         }
         

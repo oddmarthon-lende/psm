@@ -1,4 +1,11 @@
-﻿using PSMonitor;
+﻿/// <copyright file="controls.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Controls used when loading data from the <see cref="PSM.Store"/></summary>
+/// 
+
+using PSMonitor;
 using PSMViewer.Models;
 using System;
 using System.Collections;
@@ -16,24 +23,49 @@ using System.Windows.Threading;
 namespace PSMViewer.ViewModels
 {
 
+
+    public delegate void LoadEventHandler(IReload reloadable);
     public delegate void RequestedActivationEventHandler(Controls sender);
     public delegate void DataChangedEventHandler(object sender);
 
-    public abstract class Controls : IReload, IDisposable, INotifyPropertyChanged
+    /// <summary>
+    /// A base class for data controls
+    /// </summary>
+    public abstract class Controls : DispatcherObject, IReload, IDisposable, INotifyPropertyChanged
     {
+                
+         
+        private CancellationTokenSource _c = new CancellationTokenSource();
+        public CancellationTokenSource Cancel
+        {
+            get
+            {
+                return _c;
+            }
+        }
 
         private static List<Controls> Instances = new List<Controls>();
 
         public event RequestedActivationEventHandler ActivationRequested;
         public event PropertyChangedEventHandler     PropertyChanged;
         public event DataChangedEventHandler         DataChanged;
-
-        protected Dispatcher Dispatcher = Dispatcher.CurrentDispatcher;
-
+        public event LoadEventHandler                Load;
+        
         public Controls()
         {
             Instances.Add(this);
             PSM.Store.DataReceived += Store_DataReceived;
+        }
+
+        public Controls(LoadEventHandler Handler) : this()
+        {
+            Load += Handler;
+        }
+
+        protected void OnReload(Controls controls)
+        {
+            if (Load != null)
+                Load(controls);
         }
 
         private void Store_DataReceived(Envelope data)
@@ -212,6 +244,11 @@ namespace PSMViewer.ViewModels
         }
     }
 
+    /// <summary>
+    /// A generic class for data controls
+    /// </summary>
+    /// <typeparam name="T">DateTime or a number type</typeparam>
+    /// <typeparam name="TCount">Timespan or a number type</typeparam>
     public class Controls<T, TCount> : Controls, INotifyPropertyChanged
     {
 
@@ -452,7 +489,7 @@ namespace PSMViewer.ViewModels
                     return false;
             }
 
-            Reload();
+            OnReload(this);
 
             return true;
 
@@ -482,7 +519,7 @@ namespace PSMViewer.ViewModels
                     return false;
             }
 
-            Reload();
+            OnReload(this);
 
             return true;
 
