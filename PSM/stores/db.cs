@@ -9,6 +9,10 @@ using System.Collections;
 
 namespace PSMonitor.Stores
 {
+
+    /// <summary>
+    /// Database Store
+    /// </summary>
     public class DB : IStore
     {
         public event DataReceivedHandler DataReceived;

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using Microsoft.AspNet.SignalR.Client;
+using System.Web;
 
 namespace PSMonitor.Stores
 {
@@ -76,9 +77,9 @@ namespace PSMonitor.Stores
             {
 
                 
-                string uri = start != null && end != null ?
+                string uri = HttpUtility.UrlEncode(start != null && end != null ?
                     String.Format("/data/{0}/{1}/{2}/", path, ToUnixTimestamp(start.Value) * 1000, ToUnixTimestamp(end.Value) * 1000) :
-                    String.Format("/data/{0}/", path);
+                    String.Format("/data/{0}/", path));
 
                 client.DeleteAsync(uri).ContinueWith(async task =>
                 {
@@ -155,18 +156,19 @@ namespace PSMonitor.Stores
 
         private IEnumerable<Entry> Get_(string path, object start, object end)
         {
-
+            
             DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Entry[]));
             Entry[] entries                 = new Entry[0];
 
             using (HttpClient client = CreateClient())
             {
-
-                string uri = start != null && end != null && typeof(DateTime).Equals(start.GetType()) && typeof(DateTime).Equals(end.GetType()) ?
+                
+                string uri = HttpUtility.UrlEncode(start != null && end != null && typeof(DateTime).Equals(start.GetType()) && typeof(DateTime).Equals(end.GetType()) ?
                     String.Format("/data/{0}/{1}/{2}/time", path, ToUnixTimestamp((DateTime)start) * 1000, ToUnixTimestamp((DateTime)end) * 1000) : start != null && end != null && typeof(long).Equals(start.GetType()) && typeof(long).Equals(end.GetType()) ?
                     String.Format("/data/{0}/{1}/{2}/index", path, (long)start, (long)end) :
-                    String.Format("/data/{0}/", path);
+                    String.Format("/data/{0}/", path));
 
+               
                 client.GetStreamAsync(uri).ContinueWith(task =>
                 {
                     
@@ -329,7 +331,7 @@ namespace PSMonitor.Stores
             using (HttpClient client = CreateClient())
             {
 
-                string uri =  path.Length == 0 ? "/keys/" : String.Format("/keys/{0}/", path);
+                string uri = HttpUtility.UrlEncode(path.Length == 0 ? "/keys/" : String.Format("/keys/{0}/", path));
 
                 client.GetStreamAsync(uri).ContinueWith(task =>
                 {
