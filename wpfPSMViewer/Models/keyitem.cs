@@ -22,6 +22,8 @@ namespace PSMViewer.Models
     public class KeyItem : Key, IReload
     {
 
+        public ReloadStatus Status { get; set; } = ReloadStatus.Unknown;
+
         private Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
         public Dispatcher Dispatcher
         {

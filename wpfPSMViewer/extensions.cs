@@ -1,4 +1,5 @@
-﻿/// <copyright file="extensions.cs" company="Baker Hughes Incorporated">
+﻿using PSMViewer.ViewModels;
+/// <copyright file="extensions.cs" company="Baker Hughes Incorporated">
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
@@ -6,6 +7,7 @@
 /// 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -16,12 +18,119 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace PSMViewer
 {
 
     public static class Extensions
     {
+
+        /// <summary>
+        /// Reloads objects that implements the IReload interface and displays a messagebox if any error occurs.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// 
+        public static void OnReload(this Control control, IReload obj)
+        {
+            OnReload(control, obj, (error) => {
+                MessageBox.Show(error.GetBaseException().Message, error.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+            });
+
+        }
+
+        /// <summary>
+        /// Reloads objects that implements the IReload interface and forward any exception to the <paramref name="ErrorHandler"/>
+        /// </summary>
+        /// <param name="obj">The object that implements the <see cref="IReload"/> interface </param>
+        /// <param name="ErrorHandler"></param>
+        public static void OnReload(this Control control, IReload obj, Action<Exception> ErrorHandler)
+        {
+
+            obj.Dispatcher.Invoke(delegate
+            {
+                obj.Status = ReloadStatus.Loading;
+            });
+
+            obj.Dispatcher.InvokeAsync(obj.Reload, DispatcherPriority.Background, obj.Cancel.Token).Task.ContinueWith(task =>
+            {
+
+                switch (task.Status)
+                {
+
+                    case TaskStatus.Faulted:
+
+                        obj.Dispatcher.Invoke(delegate
+                        {
+
+                            obj.Status = ReloadStatus.Error;
+                            ErrorHandler(task.Exception);                           
+
+                        });
+
+                        break;                    
+
+                }
+
+                obj.Dispatcher.Invoke(delegate
+                {
+                    obj.Status = ReloadStatus.Idle;
+                });
+
+
+            });
+
+        }
+
+        /// <summary>
+        /// Set the property value using the objects dispatcher. Useful if the current thread is not the owner of the object, because some properties will be inaccessible.
+        /// </summary>
+        /// <param name="obj">The object</param>
+        /// <param name="name">The property name</param>
+        /// <returns>The value</returns>
+        public static void SetValue(this DispatcherObject obj, string name, object value)
+        {
+
+            obj.Dispatcher.Invoke(delegate
+            {
+
+                foreach (PropertyDescriptor p in TypeDescriptor.GetProperties(obj, new Attribute[] { new PropertyFilterAttribute(PropertyFilterOptions.Valid) }))
+                {
+
+                    if (p.Name == name)
+                        p.SetValue(obj, value);
+
+                }
+
+            });
+
+        }
+
+        /// <summary>
+        /// Get the property value using the objects dispatcher. Useful if the current thread is not the owner of the object, because some properties will be inaccessible.
+        /// </summary>
+        /// <param name="obj">The object</param>
+        /// <param name="name">The property name</param>
+        /// <returns>The value</returns>
+        public static object GetValue(this DispatcherObject obj, string name)
+        {
+
+            return obj.Dispatcher.Invoke<object>(delegate
+            {
+
+                foreach (PropertyDescriptor p in TypeDescriptor.GetProperties(obj, new Attribute[] { new PropertyFilterAttribute(PropertyFilterOptions.Valid) }))
+                {
+
+                    if (p.Name == name)
+                        return p.GetValue(obj);
+
+                }
+
+                return null;
+
+            });
+
+        }
 
         /// <summary>
         /// Creates a thumbnail image of the elements contents

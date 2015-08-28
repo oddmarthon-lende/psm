@@ -147,7 +147,18 @@ namespace PSMViewer.Visualizations
 
         #region Dependency Properties
 
-        
+
+
+        public ReloadStatus Status
+        {
+            get { return (ReloadStatus)GetValue(StatusProperty); }
+            set { SetValue(StatusProperty, value); }
+        }
+        public static readonly DependencyProperty StatusProperty =
+            DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(VisualizationControl), new PropertyMetadata(ReloadStatus.Idle));
+
+
+
         public Visibility HorizontalArrowsVisibility
         {
             get { return (Visibility)GetValue(HorizontalArrowsVisibilityProperty); }
@@ -285,7 +296,7 @@ namespace PSMViewer.Visualizations
             get
             {
                 try {
-                    return ((VisualizationWindow)this.Owner).Children.IndexOf(this);
+                    return ((VisualizationWindow)Owner).Children.IndexOf(this);
                 }
                 catch(Exception)
                 {
@@ -509,6 +520,7 @@ namespace PSMViewer.Visualizations
                     if (load != null)
                         pair.Value.Load += load;
 
+                    pair.Value.IsActive = true;
                     pair.Value.DataChanged += Value_DataChanged;
                 }
 
@@ -683,7 +695,7 @@ namespace PSMViewer.Visualizations
 
                     window.Title = String.Format("Add Key [{0}]", Title);
 
-                    OnReload(tree);
+                    this.OnReload(tree);
 
                     tree.Window.ShowDialog();
 
@@ -722,19 +734,14 @@ namespace PSMViewer.Visualizations
                     break;
             }
 
-            OnReload(this);
+            this.OnReload(this);
 
         }
         
         #endregion
 
         protected Func<object, object, bool> canExecute = delegate { return true; };
-
-        protected void OnReload(IReload reloadable)
-        {
-            reloadable.Dispatcher.InvokeAsync(reloadable.Reload);
-        }
-
+        
         /// <summary>
         /// The default constructor
         /// </summary>
@@ -817,8 +824,8 @@ namespace PSMViewer.Visualizations
                 Refresh();
             };
 
-            this.Drop += VisualizationControl_Drop;
-                        
+            this.Drop += VisualizationControl_Drop;            
+
         }
         
         /// <summary>
@@ -890,7 +897,7 @@ namespace PSMViewer.Visualizations
         }
 
         /// <summary>
-        /// Refreshed the rendering, no data is updated by this method.
+        /// Refresh the rendering, no data should be updated by this method.
         /// </summary>
         public virtual void Refresh()
         {
@@ -969,7 +976,8 @@ namespace PSMViewer.Visualizations
                 TemplateProperty,
                 IsEnabledProperty,
                 AllowDropProperty,
-                VisibilityProperty
+                VisibilityProperty,
+                StatusProperty
             };
 
             foreach (DependencyProperty p in properties)
@@ -995,7 +1003,7 @@ namespace PSMViewer.Visualizations
 
                 key.Children.CollectionChanged += Children_CollectionChanged;
 
-                OnReload(key);
+                this.OnReload(key);
 
                 return null;
             }
@@ -1005,7 +1013,7 @@ namespace PSMViewer.Visualizations
             if (control == null)
             {
 
-                control = new MultiControl(key, OnReload, collection);
+                control = new MultiControl(key, this.OnReload, collection);
 
                 controls.Add(control);
 
@@ -1070,19 +1078,19 @@ namespace PSMViewer.Visualizations
         }
 
         /// <summary>
-        /// Reload data and keys
+        /// IReload.Reload data and keys
         /// </summary>
         public virtual void Reload()
         {
-
+            
             HorizontalArrowsVisibility = Visibility.Collapsed;
 
             object Start = null;
             object Count = null;
 
-            switch(SelectedControlType)
+            switch (SelectedControlType)
             {
-                
+
                 case ControlType.Index:
 
                     Start = StartIndex;
@@ -1101,14 +1109,14 @@ namespace PSMViewer.Visualizations
             {
 
                 Controls control = m.Get(SelectedControlType, Start, Count);
-                KeyItem key     = m.Key;
-                
-                key.Reload();
-                control.Reload();
+                KeyItem key = m.Key;
+
+                this.OnReload(key);
+                this.OnReload(control);
             }
 
             Refresh();
-
+            
         }
                 
         /// <summary>

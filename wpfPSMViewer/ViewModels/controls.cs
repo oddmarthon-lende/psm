@@ -33,8 +33,9 @@ namespace PSMViewer.ViewModels
     /// </summary>
     public abstract class Controls : DispatcherObject, IReload, IDisposable, INotifyPropertyChanged
     {
-                
-         
+
+        public ReloadStatus Status { get; set; } = ReloadStatus.Idle;
+
         private CancellationTokenSource _c = new CancellationTokenSource();
         public CancellationTokenSource Cancel
         {
@@ -53,8 +54,25 @@ namespace PSMViewer.ViewModels
         
         public Controls()
         {
+
             Instances.Add(this);
+
             PSM.Store.DataReceived += Store_DataReceived;
+
+            Dispatcher.Hooks.OperationStarted += delegate
+            {
+                Status = ReloadStatus.Loading;
+            };
+
+            Dispatcher.Hooks.OperationCompleted += delegate
+            {
+                Status = ReloadStatus.Idle;
+            };
+
+            Dispatcher.UnhandledException += delegate
+            {
+                Status = ReloadStatus.Error;
+            };
         }
 
         public Controls(LoadEventHandler Handler) : this()

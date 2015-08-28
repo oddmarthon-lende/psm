@@ -277,6 +277,7 @@ namespace PSMViewer.Visualizations
         /// <returns>The added control</returns>
         public override MultiControl Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
         {
+
             MultiControl controls = base.Add(key, collection);
 
             if(controls != null)

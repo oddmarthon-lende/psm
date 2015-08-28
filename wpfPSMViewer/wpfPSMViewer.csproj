@@ -97,9 +97,11 @@
     </ApplicationDefinition>
     <Compile Include="Converters\oxycolor_solidcolorbrush.cs" />
     <Compile Include="Converters\oxythickness_double.cs" />
+    <Compile Include="Converters\reloadstatustoboolean.cs" />
     <Compile Include="extensions.cs" />
     <Compile Include="iundo.cs" />
     <Compile Include="layoutanchorablestate.cs" />
+    <Compile Include="propertywrapper.cs" />
     <Compile Include="Utilities\bindingwrapper.cs" />
     <Compile Include="Dialogs\properties.xaml.cs">
       <DependentUpon>properties.xaml</DependentUpon>

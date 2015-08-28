@@ -41,23 +41,14 @@
         <ContextMenu x:Name="treeContextMenu">
 
             <ContextMenu.Resources>
-                
+
                 <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="SetChartTypeStyle" TargetType="{x:Type MenuItem}">
                     <Setter Property="Command" Value="{Binding Commands[SetChartType], ElementName=window}"/>
                 </Style>
 
-                <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="ChartToNewWindowStyle" TargetType="{x:Type MenuItem}">
-                    <Setter Property="Command" Value="{Binding Commands[ChartToNewWindow], ElementName=window}"/>
-                </Style>
-                
             </ContextMenu.Resources>
 
             <MenuItem Header="Chart Type" ItemsSource="{x:Static v:VisualizationControl.List}" IsVisibleChanged="ChartTypeMenuItem_IsVisibleChanged" ItemContainerStyle="{DynamicResource SetChartTypeStyle}" />
-
-            <MenuItem Header="Add Chart">
-                <MenuItem Header="To New Window" ItemsSource="{x:Static v:VisualizationControl.List}" ItemContainerStyle="{DynamicResource ChartToNewWindowStyle}" />
-            </MenuItem>
-
 
         </ContextMenu>
 
@@ -88,7 +79,7 @@
 
                 <ToolBarTray.Resources>
                     <Style TargetType="{x:Type ToolBar}">
-                        <Setter Property="IsEnabled" Value="{Binding isActive}" />
+                        <Setter Property="IsEnabled" Value="{Binding IsActive}" />
                         <Setter Property="IsHitTestVisible" Value="True" />
                     </Style>
                 </ToolBarTray.Resources>

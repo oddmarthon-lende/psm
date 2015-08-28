@@ -8,8 +8,20 @@
 using System.Threading;
 using System.Windows.Threading;
 
-namespace PSMViewer.ViewModels
+namespace PSMViewer
 {
+
+    /// <summary>
+    /// Defines loading status
+    /// </summary>
+    public enum ReloadStatus
+    {
+        Unknown,
+        Loading,
+        Error,
+        Idle
+    }
+
     /// <summary>
     /// Reload interface
     /// </summary>
@@ -18,6 +30,8 @@ namespace PSMViewer.ViewModels
 
         Dispatcher Dispatcher { get; }
         CancellationTokenSource Cancel { get; }
+
+        ReloadStatus Status { get; set; }
 
         void Reload();
 

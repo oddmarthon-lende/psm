@@ -29,20 +29,14 @@ using System.Linq;
 using System.Collections.Specialized;
 using Xceed.Wpf.AvalonDock.Layout;
 using System.Threading;
+using System.Windows.Media.Imaging;
+using System.Windows.Data;
+using PSMViewer.Utilities;
 
 namespace PSMViewer
 {
         
-    /// <summary>
-    /// Defines the window status
-    /// </summary>
-    public enum Status
-    {
-        Loading,
-        Error,
-        Idle
-    }
-
+    
     public partial class MainWindow : Window, INotifyPropertyChanged, IReload
     {
 
@@ -134,27 +128,65 @@ namespace PSMViewer
 
         #endregion
 
-        private Status _status = Status.Idle;
+
         /// <summary>
         /// Used to show a status in the bottom of the window
         /// </summary>
-        public Status Status
+        public ReloadStatus Status
         {
-            get { return _status; }
-            private set { SetField(ref _status, value); }
-        }              
+            get { return (ReloadStatus)GetValue(StatusProperty); }
+            set { SetValue(StatusProperty, value); }
+        }
+        public static readonly DependencyProperty StatusProperty =
+            DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(MainWindow), new PropertyMetadata(ReloadStatus.Idle));
 
-        private ObservableCollection<Window> _windows = new ObservableCollection<Window>();
+
+
+        private ObservableCollection<VisualizationWindow> _windows = new ObservableCollection<VisualizationWindow>();
         /// <summary>
         /// Contains all the data visualization windows 
         /// </summary>
-        public ObservableCollection<Window> Windows
+        public IEnumerable<WindowInfo> Windows
         {
+
             get
             {
-                return _windows;
+
+                return _windows.Select(w => {
+                    return new WindowInfo(w);
+                });
+
             }
-            set { _windows = value; }
+            
+        }
+
+        /// <summary>
+        /// Used to read properties from the windows objects, because they were created in a different thread.        
+        /// </summary>
+        public class WindowInfo : DispatcherObjectPropertyWrapper
+        {
+            public VisualizationWindow Window { get; private set; }
+
+            public string Title {
+
+                get
+                {
+                    return (string)Window.GetValue("Title");
+                }
+            }
+
+            public BitmapSource Thumbnail {
+
+                get
+                {
+                    return (BitmapSource)Window.GetValue("Thumbnail");
+                }
+            }
+
+            public WindowInfo(VisualizationWindow window) : base(window)
+            {
+                this.Window = window;
+            }
         }
 
         /// <summary>
@@ -181,7 +213,7 @@ namespace PSMViewer
         /// </summary>
         public MainWindow()
         {
-            
+
             Func<object, object, bool> canExecute = delegate { return true; };
 
             Commands.Add("Windows", new RelayCommand(ExecuteCommand, canExecute, CommandType.WINDOWS));
@@ -191,7 +223,6 @@ namespace PSMViewer
             Commands.Add("About", new RelayCommand(ExecuteCommand, canExecute, CommandType.ABOUT));
             Commands.Add("RefreshTable", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH_TABLE));
             Commands.Add("RefreshTree", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH_TREE));
-            Commands.Add("ChartToNewWindow", new RelayCommand(ExecuteCommand, ContextMenu_CanExecute, CommandType.CHART_TO_NEW_WINDOW));
             Commands.Add("SetChartType", new RelayCommand(ExecuteCommand, ContextMenu_CanExecute, CommandType.SET_CHART_TYPE));
             Commands.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
             Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
@@ -199,19 +230,46 @@ namespace PSMViewer
 
             InitializeComponent();
 
-            AddHandler(TreeView.SelectedItemChangedEvent, new RoutedPropertyChangedEventHandler<object>(treeView_SelectedItemChanged));
-            
             Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             NameScope.SetNameScope(treeContextMenu, NameScope.GetNameScope(this));
 
-            this.Loaded += delegate { Reload(this); };
+            this.Loaded += delegate { this.OnReload(this); };
             this.Closing += (sender, e) =>
             {
                 Commands["Exit"].Execute(null);
             };
 
-            ((Main)DataContext).Timebased.Load += Reload;
-            ((Main)DataContext).Indexbased.Load += Reload;
+            ((Main)DataContext).Timebased.Load += this.OnReload;
+            ((Main)DataContext).Indexbased.Load += this.OnReload;
+
+            _windows.CollectionChanged += delegate
+            {
+                OnPropertyChanged("Windows");
+            };
+
+            // Bind to the treeView Key property and update the data context
+            treeView.SetBinding(Tree.KeyProperty, new Binding("Value")
+            {
+                Source = new BindingWrapper<KeyItem>(
+
+                    key =>
+                    {
+
+                        Main context = (Main)this.DataContext;
+
+                        if (key == null || key.Type == null) return key;
+
+                        context.Selected = key;
+
+                        Visualize(key);
+                        this.OnReload(context);
+
+                        return key;
+
+                    }),
+                Mode = BindingMode.OneWayToSource
+            });
+
 
         }
         
@@ -243,13 +301,14 @@ namespace PSMViewer
 
                     Thread thread = new Thread(new ParameterizedThreadStart((s) =>
                     {
+
                         VisualizationWindow w = new VisualizationWindow() {
                             ControlsVisibility = Visibility.Visible
                         };
 
                         Dispatcher.InvokeAsync(delegate
                         {
-                            Windows.Add(w);
+                            _windows.Add(w);
                             w.Dispatcher.InvokeAsync(w.Show);
                         });
 
@@ -264,12 +323,10 @@ namespace PSMViewer
 
                 case CommandType.WINDOWS:
 
-                    window = (VisualizationWindow)parameter;
+                    window = ((WindowInfo)parameter).Window;
 
-                    window.Show();
-                    window.Focus();
-
-                    Reload(window);
+                    window.Dispatcher.InvokeAsync(window.Focus);
+                    this.OnReload(window);
 
                     break;
 
@@ -293,7 +350,7 @@ namespace PSMViewer
 
                     IsolatedStorageFile store = IsolatedStorageFile.GetUserStoreForDomain();
                     
-                    foreach (VisualizationWindow w in Windows)
+                    foreach (VisualizationWindow w in _windows)
                     {
                         using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(WindowsFolderFormat, String.Format("{0}.xaml", w.Id)), FileMode.Create))
                         {
@@ -336,18 +393,6 @@ namespace PSMViewer
 
                     break;
 
-                case CommandType.CHART_TO_NEW_WINDOW:
-
-                    VisualizationControl chart = (VisualizationControl)Activator.CreateInstance(((VisualizationControl.InheritorInfo)parameter).Type);
-                    window = new VisualizationWindow(chart) { Title = key.Type == null ? key.Path : key.Parent.Path };
-
-                    Windows.Add(window);
-                    chart.Add(key);
-                    window.Show();
-                    Reload(window);
-
-                    break;
-
                 case CommandType.SET_CHART_TYPE:
 
                     VisualizationControl.InheritorInfo info = (VisualizationControl.InheritorInfo)parameter;
@@ -368,11 +413,11 @@ namespace PSMViewer
                     break;
 
                 case CommandType.REFRESH_TABLE:
-                    Reload((IReload)this.DataContext);
+                    this.OnReload((IReload)this.DataContext);
                     break;
 
                 case CommandType.REFRESH_TREE:
-                    Reload(treeView);
+                    this.OnReload(treeView);
                     break;
 
                 case CommandType.EXIT:
@@ -406,7 +451,7 @@ namespace PSMViewer
 
             treeView.Reload();
 
-            Windows.Clear();
+            _windows.Clear();
 
             // Load windows
             foreach (var filename in UserStore.GetFileNames(String.Format(WindowsFolderFormat, '*')))
@@ -471,8 +516,7 @@ namespace PSMViewer
             using (StreamReader reader = new StreamReader(stream))
             {
 
-                Thread thread = new Thread(new ParameterizedThreadStart((s) =>
-                    {
+                Thread thread = new Thread(new ParameterizedThreadStart((s) => {
 
                         VisualizationWindow w = (VisualizationWindow)XamlReader.Parse((string)s);
                         Guid Id = w.Id;
@@ -482,18 +526,19 @@ namespace PSMViewer
                         d.InvokeAsync(delegate
                         {
 
-                            if ((new List<Window>(mainWindow.Windows)).Find((v) => { return ((VisualizationWindow)v).Id == Id; }) != null)
+                            if ((new List<Window>(mainWindow._windows)).Find((v) => { return ((VisualizationWindow)v).Id == Id; }) != null)
+
                             {
                                 w.Dispatcher.Invoke(delegate
                                 {
                                     w.Id = new Guid();
                                 });
 
-                                MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", w.Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
+                                MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
                             }
 
-                            mainWindow.Reload(w);
-                            mainWindow.Windows.Add(w);
+                            mainWindow.OnReload(w);
+                            mainWindow._windows.Add(w);
 
                         });
 
@@ -540,9 +585,10 @@ namespace PSMViewer
         /// <param name="delete">If set to false, will not remove the saved file from the filesystem if any.</param>
         public void Remove(VisualizationWindow window, bool delete = true)
         {
-            
-            window.Close();
-            Windows.Remove(window);
+
+            window.Dispatcher.InvokeAsync(window.Close);
+
+            _windows.Remove(window);
 
             if (delete)
             {
@@ -557,46 +603,7 @@ namespace PSMViewer
         }
 
         #endregion
-
-        /// <summary>
-        /// Reloads objects that implements the IReload interface and handles any errors
-        /// </summary>
-        /// <param name="obj"></param>
-        public void Reload(IReload obj)
-        {
-            
-            Status = Status.Loading;
-
-            obj.Dispatcher.InvokeAsync(obj.Reload, DispatcherPriority.Background, obj.Cancel.Token).Task.ContinueWith(task =>
-            {
-
-                switch (task.Status)
-                {
-
-                    case TaskStatus.Faulted:
-
-                        Dispatcher.Invoke(delegate
-                        {
-                            Status = Status.Error;
-                            MessageBox.Show(task.Exception.GetBaseException().Message, task.Exception.Message, MessageBoxButton.OK, MessageBoxImage.Error);
-
-                        });                       
-
-                        break;
-                        
-                    default:
-
-                        Dispatcher.Invoke(delegate
-                        {
-                            Status = Status.Idle;
-                        });
-                            
-                        break;
-                }
-
-            });
-
-        }
+                
 
         /// <summary>
         /// Adds a chart to visualize the current data in the window
@@ -676,32 +683,6 @@ namespace PSMViewer
             }
         }
 
-        /// <summary>
-        /// Used to update the chart when the selected key changes in the tree
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void treeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-            KeyItem key;
-            
-            try {
-                key = (KeyItem)e.NewValue;
-            }
-            catch(Exception)
-            {
-                return;
-            }
-            
-            Main context = (Main)this.DataContext;
-
-            if (key == null || key.Type == null) return;
-
-            context.Selected = key;
-            
-            Visualize(key);
-            Reload(context);
-        }
 
         /// <summary>
         /// Used Support drag and dropping of exported files onto the mainwindow.
@@ -742,7 +723,7 @@ namespace PSMViewer
         {
             try
             {
-                return treeView.SelectedValue != null;
+                return treeView.Key != null;
             }
             catch (Exception) { }
 

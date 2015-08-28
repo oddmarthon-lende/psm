@@ -88,6 +88,8 @@
                 <MenuItem Header="Properties" InputGestureText="Ctrl + W, P" Command="{Binding Commands[Properties]}"  />
 
             </MenuItem>
+            
+            <TextBlock Text="{Binding Status}" />
 
         </Menu>
 

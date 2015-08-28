@@ -15,70 +15,35 @@ using System.Windows.Input;
 
 namespace PSMViewer
 {
-
+    /// <summary>
+    /// Treeview of the PSM Store keys
+    /// </summary>
     public partial class Tree : TreeView, IReload
     {
-        
-        private CancellationTokenSource _c = new CancellationTokenSource();
-        public CancellationTokenSource Cancel
-        {
-            get
-            {
-                return _c;
-            }
-        }
-
-        public Tree()
-        {
-            InitializeComponent();
-
-            AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(Reload));
-
-            AddHandler(TreeViewItem.PreviewMouseMoveEvent, new RoutedEventHandler((sender, e) =>
-            {
-
-                MouseEventArgs m = (MouseEventArgs)e;
-
-                switch(m.LeftButton)
-                {
-
-                    case MouseButtonState.Pressed:
-                                                
-                        DragDrop.DoDragDrop((DependencyObject)m.Source, _key.Path, DragDropEffects.Link);
-
-                        break;
-                }
-                
-
-            }));
-
-            SelectedItemChanged += Tree_SelectedItemChanged;
-
-        }
-
-        private void Tree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-
-            if (SelectedValue is KeyItem)
-                _key = (KeyItem)SelectedValue;
-                        
-        }
-
-        private KeyItem _key = null;
+        /// <summary>
+        /// The currently selected key
+        /// </summary>
         public KeyItem Key
         {
-            get
-            {
-                return _key;
-            }
+            get { return (KeyItem)GetValue(KeyProperty); }
+            private set { SetValue(KeyProperty, value); }
         }
+        /// <summary>
+        /// Identifiees the Tree.Key property
+        /// </summary>
+        public static readonly DependencyProperty KeyProperty =
+            DependencyProperty.Register("Key", typeof(KeyItem), typeof(Tree), new PropertyMetadata(null));
+
 
         private Window _window = null;
+        /// <summary>
+        /// Gets a window containing the treeview
+        /// </summary>
         public Window Window
         {
             get
             {
-                if(_window == null)
+                if (_window == null)
                 {
 
                     _window = new Window()
@@ -94,19 +59,80 @@ namespace PSMViewer
 
                 }
                 return _window;
-            }            
+            }
         }
 
+        /// <summary>
+        /// IReload.Status
+        /// </summary>
+        public ReloadStatus Status { get; set; } = ReloadStatus.Unknown;
+
+        private CancellationTokenSource _c = new CancellationTokenSource();
+        /// <summary>
+        /// IReload.Cancel
+        /// </summary>
+        public CancellationTokenSource Cancel
+        {
+            get
+            {
+                return _c;
+            }
+        }
+               
+        /// <summary>
+        /// The default contructor
+        /// </summary>
+        public Tree()
+        {
+
+            InitializeComponent();
+
+            AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(Reload));
+
+            AddHandler(TreeViewItem.PreviewMouseMoveEvent, new RoutedEventHandler((sender, e) =>
+            {
+
+                MouseEventArgs m = (MouseEventArgs)e;
+
+                switch(m.LeftButton)
+                {
+
+                    case MouseButtonState.Pressed:
+                                                
+                        DragDrop.DoDragDrop((DependencyObject)m.Source, Key.Path, DragDropEffects.Link);
+
+                        break;
+                }
+                
+
+            }));
+
+            SelectedItemChanged += Tree_SelectedItemChanged;
+
+        }
+        
+        /// <summary>
+        /// IReload.Next
+        /// </summary>
+        /// <returns><c>False</c></returns>
         public bool Next()
         {
             return false;
         }
 
+        /// <summary>
+        /// IReload.Previous (required by the interface)
+        /// </summary>
+        /// <returns><c>False</c></returns>
         public bool Previous()
         {
             return false;
-        }
+        }        
 
+        /// <summary>
+        /// IReload.Reload
+        /// Reloads the root item
+        /// </summary>
         public void Reload()
         {            
             ((KeyItem)rootItem.DataContext).Reload();
@@ -137,9 +163,11 @@ namespace PSMViewer
             return key;
         }
 
+        #region EventHandlers
+
         private void Reload(object sender, RoutedEventArgs e)
         {
-            GetDataContext(e).Reload();
+            this.OnReload(GetDataContext(e));
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -155,9 +183,19 @@ namespace PSMViewer
 
         private void Cancel_Button_Click(object sender, RoutedEventArgs e)
         {
-            _key = null;
+            Key = null;
             Window.Close();
         }
-        
+
+        private void Tree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+
+            if (SelectedValue is KeyItem)
+                Key = (KeyItem)SelectedValue;
+
+        }
+
+        #endregion
+
     }
 }

@@ -112,7 +112,6 @@ namespace PSMViewer
     /// </summary>
     public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IUndo
     {
-
         
         private CancellationTokenSource _c = new CancellationTokenSource();
         public CancellationTokenSource Cancel
@@ -201,7 +200,19 @@ namespace PSMViewer
             }
 
         }
+
+
+
+        public ReloadStatus Status
+        {
+            get { return (ReloadStatus)GetValue(StatusProperty); }
+            set { SetValue(StatusProperty, value); }
+        }
+        public static readonly DependencyProperty StatusProperty =
+            DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(VisualizationWindow), new PropertyMetadata(ReloadStatus.Idle));
+
         
+
         public Visibility ControlsVisibility
         {
             get { return (Visibility)GetValue(ControlsVisibilityProperty); }
@@ -290,11 +301,7 @@ namespace PSMViewer
         };
 
         #endregion
-
-        protected void OnReload(IReload reloadable) {
-            reloadable.Dispatcher.InvokeAsync(reloadable.Reload);
-        }
-
+        
         public VisualizationWindow() : base()
         {
             Visibility = Visibility.Visible;
@@ -324,6 +331,11 @@ namespace PSMViewer
             this.DataContext = this;            
 
             this.Closing += VisualizationWindow_Closing;
+
+            Dispatcher.Hooks.OperationStarted += delegate
+            {
+                Status = ReloadStatus.Loading;
+            };
 
             #region Bindings
 
@@ -391,7 +403,7 @@ namespace PSMViewer
                                     widget.HorizontalArrowsVisibility = Visibility.Collapsed;
                                 }
 
-                                 OnReload(this);
+                                 this.OnReload(this);
 
                             }
 
@@ -432,7 +444,7 @@ namespace PSMViewer
         private void Widget_MouseDblClick(object sender, MouseEventArgs e)
         {
             VisualizationControl w = ((VisualizationControl)sender);
-
+            
             if(w.HorizontalArrowsVisibility != Visibility.Visible)
             {
                 w.HorizontalArrowsVisibility = Visibility.Visible;
@@ -442,21 +454,11 @@ namespace PSMViewer
                 
                 w.HorizontalArrowsVisibility = Visibility.Collapsed;
 
-                OnReload(w);
+                this.OnReload(w);
             }
             
         }
-
-        /// <summary>
-        /// Hides the left/right arrows
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Widget_MouseEnter(object sender, MouseEventArgs e)
-        {
-            VisualizationControl w = ((VisualizationControl)sender);
-            
-        }
+               
 
         /// <summary>
         /// Called when the window close event is triggered. Cancels the close and hides instead.
@@ -658,7 +660,7 @@ namespace PSMViewer
 
                     Children.Add(chart);
 
-                    OnReload(chart);
+                    this.OnReload(chart);
 
                     foreach(object item in chart.ContextMenu.Items)
                     {
@@ -700,12 +702,15 @@ namespace PSMViewer
 
                 case CommandType.DELETE:
 
-                    ((MainWindow)App.Current.MainWindow).Remove(this);
+                    App.Current.Dispatcher.InvokeAsync(delegate
+                    {
+                        ((MainWindow)App.Current.MainWindow).Remove(this);
+                    });
+
                     break;
 
                 case CommandType.REFRESH:
-
-                    OnReload(this);
+                    this.OnReload(this);
                     break;
 
                 case CommandType.PROPERTIES:
@@ -769,7 +774,8 @@ namespace PSMViewer
                 TopmostProperty,
                 NameProperty,
                 CaptureRightClickProperty,
-                ShowActivatedProperty
+                ShowActivatedProperty,
+                StatusProperty
 
             };
 
@@ -789,7 +795,7 @@ namespace PSMViewer
         {
             foreach(IReload chart in Children)
             {
-                chart.Reload();
+                this.OnReload(chart);
             }
         }
 

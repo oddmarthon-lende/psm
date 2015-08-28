@@ -5,11 +5,14 @@
              xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
              xmlns:v="clr-namespace:PSMViewer.Visualizations"
+             xmlns:c="clr-namespace:PSMViewer.Converters"
              xmlns:oxy="http://oxyplot.org/wpf"
              StartupUri="Windows\MainWindow.xaml">
     
     <Application.Resources>
-                
+
+        <c:ReloadStatusToBooleanConverter x:Key="StatusConverter" />
+
         <Image Source="{Binding Icon}" x:Key="Icon" x:Shared="False" />
 
         <Style TargetType="{x:Type MenuItem}" x:Key="ChartsMenuItemStyle">
@@ -96,6 +99,7 @@
         <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}" >
             
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+
                 
                 <Grid.ColumnDefinitions>                    
                     <ColumnDefinition Width="100*" />                    
@@ -140,7 +144,6 @@
                         
                     </Grid.Resources>
                     
-
                     <Button  Grid.Column="0" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Command="{Binding Commands[Previous]}" Visibility="{TemplateBinding HorizontalArrowsVisibility}" >
                         <Image Source="images/left.png" Width="27" Height="44" />
                     </Button>
@@ -159,7 +162,9 @@
 
 
                 </Grid>
-                
+
+                <toolkit:BusyIndicator Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" IsBusy="{TemplateBinding Status, Converter={StaticResource StatusConverter}}" />
+
             </Grid>
             
         </ControlTemplate>
