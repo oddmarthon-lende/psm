@@ -26,12 +26,20 @@ using System.Windows.Media;
 using System.Windows.Data;
 using PSMViewer.Utilities;
 using System.Threading;
+using System.Windows.Threading;
 
 namespace PSMViewer
 {
 
+    /// <summary>
+    /// A collection of <see cref="VisualizationControl"/>
+    /// </summary>
     public class VisualizationControlList : ObservableCollection<VisualizationControl> { }
 
+    /// <summary>
+    /// A wrapper for <see cref="System.Windows.Controls.RowDefinition"/>.
+    /// Used to hide all properties other the <see cref="System.Windows.Controls.RowDefinition.Height"/> for the user in the properties window.
+    /// </summary>
     public class RowDefinition
     {
         public System.Windows.Controls.RowDefinition Source { get; private set; }
@@ -68,6 +76,10 @@ namespace PSMViewer
         }
     }
 
+    /// <summary>
+    /// A wrapper for <see cref="System.Windows.Controls.ColumnDefinition"/>.
+    /// Used to hide all properties other than <see cref="System.Windows.Controls.ColumnDefinition.Width"/> for the user in the properties window.
+    /// </summary>
     public class ColumnDefinition
     {
         public System.Windows.Controls.ColumnDefinition Source { get; private set; }
@@ -103,31 +115,45 @@ namespace PSMViewer
         }
     }
 
+    /// <summary>
+    /// An observable collection of <see cref="RowDefinition"/>'s
+    /// </summary>
     public class RowDefinitionList        : ObservableCollection<RowDefinition> { }
 
+    /// <summary>
+    /// An observable collection of <see cref="ColumnDefinition"/>'s
+    /// </summary>
     public class ColumnDefinitionList     : ObservableCollection<ColumnDefinition> { }
         
     /// <summary>
     /// A window that can contain many <see cref="VisualizationControl"/>
     /// </summary>
-    public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IUndo
+    public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IUndo, IPropertyProvider
     {
         
-        private CancellationTokenSource _c = new CancellationTokenSource();
+        
+        /// <summary>
+        /// <see cref="IReload.Cancel"/>
+        /// </summary>
         public CancellationTokenSource Cancel
         {
-            get
-            {
-                return _c;
-            }
-        }
+            get;
+            private set;
+        } = new CancellationTokenSource();
 
         #region Properties              
 
         #region INotifyPropertyChanged
 
+        /// <summary>
+        /// <see cref="INotifyPropertyChanged.PropertyChanged"/>
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Triggers the <see cref="PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName"></param>
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
@@ -143,9 +169,16 @@ namespace PSMViewer
 
         #endregion
 
+        /// <summary>
+        /// A unique idenfifier for this window
+        /// </summary>
         public Guid Id { get; set; } = Guid.NewGuid();
 
         private VisualizationControlList _children = null;
+
+        /// <summary>
+        /// All <see cref="VisualizationControl"/> contained within this window.
+        /// </summary>
         public VisualizationControlList Children {
 
             get {
@@ -164,6 +197,10 @@ namespace PSMViewer
         }
         
         private RowDefinitionList _rowdefs = null;
+
+        /// <summary>
+        /// All <see cref="RowDefinition"/> defined for this window
+        /// </summary>
         public RowDefinitionList RowDefinitions
         {
 
@@ -183,6 +220,10 @@ namespace PSMViewer
         }
 
         private ColumnDefinitionList _coldefs = null;
+
+        /// <summary>
+        /// All <see cref="ColumnDefinition"/> defined for this window
+        /// </summary>
         public ColumnDefinitionList ColumnDefinitions {
 
             get
@@ -201,52 +242,85 @@ namespace PSMViewer
 
         }
 
-
-
+        /// <summary>
+        /// <see cref="IReload.Status"/>
+        /// </summary>
         public ReloadStatus Status
         {
-            get { return (ReloadStatus)GetValue(StatusProperty); }
-            set { SetValue(StatusProperty, value); }
+            get
+            {
+                return (ReloadStatus)GetValue(StatusProperty);
+            }
+
+            set
+            {
+                SetValue(StatusProperty, value);
+            }
         }
+        /// <summary>
+        /// Identifies the <see cref="Status"/> dependency property
+        /// </summary>
         public static readonly DependencyProperty StatusProperty =
             DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(VisualizationWindow), new PropertyMetadata(ReloadStatus.Idle));
-
         
-
+        
+        /// <summary>
+        /// Determines whether the menu bar and if the window border should be visible. 
+        /// </summary>
         public Visibility ControlsVisibility
         {
             get { return (Visibility)GetValue(ControlsVisibilityProperty); }
             set { SetValue(ControlsVisibilityProperty, value); }
         }
+
+        /// <summary>
+        /// Identifies the <see cref="VisualizationWindow.ControlsVisibility"/> dependency property
+        /// </summary>
         public static readonly DependencyProperty ControlsVisibilityProperty =
             DependencyProperty.Register("ControlsVisibility", typeof(Visibility), typeof(VisualizationWindow), new PropertyMetadata(Visibility.Collapsed));
 
         
-
+        /// <summary>
+        /// Re-implemented the <see cref="UIElement.InputBindings"/> property as a dependency property to prevent it from being serialized.
+        /// </summary>
         public new InputBindingCollection InputBindings
         {
             get { return (InputBindingCollection)GetValue(InputBindingsProperty); }
             set { SetValue(InputBindingsProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="VisualizationWindow.InputBindings"/> dependency property
+        /// </summary>
         public static readonly DependencyProperty InputBindingsProperty =
             DependencyProperty.Register("InputBindings", typeof(InputBindingCollection), typeof(VisualizationWindow), new PropertyMetadata(null));
 
 
+        /// <summary>
+        /// Re-implemented the <see cref="UIElement.CommandBindings"/> property as a dependency property to prevent it from being serialized.
+        /// </summary>
         public new CommandBindingCollection CommandBindings
         {
             get { return (CommandBindingCollection)GetValue(CommandBindingsProperty); }
             set { SetValue(CommandBindingsProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="VisualizationWindow.InputBindings"/> dependency property
+        /// </summary>
         public static readonly DependencyProperty CommandBindingsProperty =
             DependencyProperty.Register("CommandBindings", typeof(CommandBindingCollection), typeof(VisualizationWindow), new PropertyMetadata(null));
 
                 
-                
+        /// <summary>
+        /// When set to <c>True</c>, the mouse clicks will be captured and mouse event on the widget itself will not be fired.
+        /// </summary>
         public bool CaptureRightClick
         {
             get { return (bool)GetValue(CaptureRightClickProperty); }
             set { SetValue(CaptureRightClickProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="VisualizationWindow.CaptureRightClick"/> dependency property
+        /// </summary>
         public static readonly DependencyProperty CaptureRightClickProperty =
             DependencyProperty.Register("CaptureRightClick", typeof(bool), typeof(VisualizationWindow), new PropertyMetadata(false));
 
@@ -262,9 +336,7 @@ namespace PSMViewer
         {
             get
             {
-
-                Show();
-
+                
                 int w = 320;
                 double ratio = ActualWidth / ActualHeight;
                 
@@ -283,7 +355,10 @@ namespace PSMViewer
 
         #region PropertyDefinitions
 
-        private static PropertyDefinition[] Properties = new PropertyDefinition[] {
+        /// <summary>
+        /// The property definitions for this window that will be visible to the user.
+        /// </summary>
+        public PropertyDefinition[] Properties { get; private set; } = new PropertyDefinition[] {
             new PropertyDefinition() {
                 Category = "Common",
                 TargetProperties = new List<object>(new string[] { "Title", "FontStyle", "FontFamily", "FontWeight", "FontSize", "ShowInTaskbar" })
@@ -302,8 +377,12 @@ namespace PSMViewer
 
         #endregion
         
+        /// <summary>
+        /// The default constructor
+        /// </summary>
         public VisualizationWindow() : base()
         {
+            
             Visibility = Visibility.Visible;
             ShowActivated = false;
 
@@ -328,14 +407,8 @@ namespace PSMViewer
 
             InitializeComponent();
             
-            this.DataContext = this;            
-
-            this.Closing += VisualizationWindow_Closing;
-
-            Dispatcher.Hooks.OperationStarted += delegate
-            {
-                Status = ReloadStatus.Loading;
-            };
+            this.DataContext = this;
+            this.Closing += VisualizationWindow_Closing;                       
 
             #region Bindings
 
@@ -415,7 +488,7 @@ namespace PSMViewer
             #endregion
 
         }
-
+        
         /// <summary>
         /// A constuctor that can be passed <see cref="VisualizationControl"/> objects as parameters and are added to the window.
         /// </summary>
@@ -546,6 +619,9 @@ namespace PSMViewer
 
                         grid.Children.Add(widget);
 
+                        DependencyPropertyDescriptor.FromProperty(DependencyPropertyDescriptor.FromName("Status", typeof(VisualizationControl), widget.GetType())).AddValueChanged(widget, Widget_StatusChanged);
+
+
                     }
             }
 
@@ -554,6 +630,23 @@ namespace PSMViewer
                 widget.Refresh();
             }
 
+        }
+
+        public void Widget_StatusChanged(object sender, EventArgs e)
+        {
+            
+            foreach (VisualizationControl widget in Children)
+            {
+
+                if (widget.Status != ReloadStatus.Idle)
+                {
+                    Status = widget.Status;
+                    return;
+                }                   
+
+            }
+
+            Status = ReloadStatus.Idle;
         }
                
 
@@ -655,7 +748,7 @@ namespace PSMViewer
                 case CommandType.ADD:
 
                     VisualizationControl chart = (VisualizationControl)Activator.CreateInstance(((VisualizationControl.InheritorInfo)parameter).Type);
-
+                    
                     chart.Owner = this;
 
                     Children.Add(chart);
@@ -717,7 +810,7 @@ namespace PSMViewer
 
                     PushState();
 
-                    prpWindow = (new PropertiesWindow(this, Properties)
+                    prpWindow = (new PropertiesWindow(this)
                     {
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
@@ -741,9 +834,9 @@ namespace PSMViewer
             }
 
         }
-
+        
         #endregion
-                
+
         /// <summary>
         /// Used to specify that content should not be serialized when serialzing to XAML.
         /// </summary>

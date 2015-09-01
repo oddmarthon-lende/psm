@@ -67,18 +67,16 @@ namespace PSMViewer
         /// </summary>
         public ReloadStatus Status { get; set; } = ReloadStatus.Unknown;
 
-        private CancellationTokenSource _c = new CancellationTokenSource();
+        
         /// <summary>
         /// IReload.Cancel
         /// </summary>
         public CancellationTokenSource Cancel
         {
-            get
-            {
-                return _c;
-            }
-        }
-               
+            get;
+            private set;
+        } = new CancellationTokenSource();
+
         /// <summary>
         /// The default contructor
         /// </summary>

@@ -7,19 +7,12 @@
 
 using System;
 using System.Collections.Generic;
-using PSMonitor;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Data;
-using System.Globalization;
-using System.Collections;
-using System.Linq;
 using PSMViewer.Models;
 
 namespace PSMViewer.ViewModels
 {
-    
+
     public class Main : Controls, INotifyPropertyChanged
     {
         
@@ -36,12 +29,13 @@ namespace PSMViewer.ViewModels
             Indexbased = new Controls<long, long>(Entries, 0L, 100L);
 
             this.PropertyChanged += Changed;
-            
+
+            Timebased.PropertyChanged += Changed;
+            Indexbased.PropertyChanged += Changed;
+
             Timebased.ActivationRequested += Activate;
             Indexbased.ActivationRequested += Activate;
-
-            Indexbased.Activate();
-
+            
         }
 
         private void Activate(Controls sender)
@@ -51,8 +45,29 @@ namespace PSMViewer.ViewModels
 
         private void Changed(object sender, PropertyChangedEventArgs e)
         {
-            
-            if (e.PropertyName == "Selected")
+
+            if(sender == Indexbased || sender == Timebased)
+            {
+
+                if (e.PropertyName == "Status")
+                {
+
+                    foreach (Controls c in new Controls[] { Indexbased, Timebased })
+                    {
+
+                        if (c.Status != ReloadStatus.Idle)
+                        {
+                            Status = c.Status;
+                            return;
+                        }
+                    }
+
+                }
+
+                Status = ReloadStatus.Idle;                
+                
+            }            
+            else if (e.PropertyName == "Selected")
             {
                 if(sender == this)
                     Timebased.Selected = Indexbased.Selected = this.Selected;

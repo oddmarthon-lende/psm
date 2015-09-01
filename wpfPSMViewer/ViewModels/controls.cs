@@ -24,8 +24,20 @@ namespace PSMViewer.ViewModels
 {
 
 
-    public delegate void LoadEventHandler(IReload reloadable);
+    /// <summary>
+    /// The handler that will be called when a reload request is made to update the data
+    /// </summary>
+    /// <param name="reloadable">The object that implements <see cref="IReload"/> interface</param>
+    public delegate void LoadHandler(IReload reloadable);
+    /// <summary>
+    /// Event handler that is called when the controls are activated
+    /// </summary>
+    /// <param name="sender">The <see cref="Controls"/></param>
     public delegate void RequestedActivationEventHandler(Controls sender);
+    /// <summary>
+    /// Handles DataChanged events
+    /// </summary>
+    /// <param name="sender"></param>
     public delegate void DataChangedEventHandler(object sender);
 
     /// <summary>
@@ -34,58 +46,97 @@ namespace PSMViewer.ViewModels
     public abstract class Controls : DispatcherObject, IReload, IDisposable, INotifyPropertyChanged
     {
 
-        public ReloadStatus Status { get; set; } = ReloadStatus.Idle;
+        private ReloadStatus _status = ReloadStatus.Idle;
+        /// <summary>
+        /// <see cref="IReload.Status"/>
+        /// </summary>
+        public virtual ReloadStatus Status {
+
+            get {
+                return _status;
+            }
+
+            set
+            {
+                SetField(ref _status, value);
+            }
+
+        }
 
         private CancellationTokenSource _c = new CancellationTokenSource();
+        /// <summary>
+        /// <see cref="IReload.Cancel"/>
+        /// </summary>
         public CancellationTokenSource Cancel
         {
             get
             {
                 return _c;
             }
+
+            protected set
+            {
+                _c = value;
+            }
         }
 
-        private static List<Controls> Instances = new List<Controls>();
+        /// <summary>
+        /// Hold references to all controls that has been instantiated.
+        /// </summary>
+        private static List<KeyValuePair<object, Controls>> Instances = new List<KeyValuePair<object, Controls>>();
 
+        /// <summary>
+        /// The ActivationRequested will be emitted when a controls <see cref="Controls.Activate"/> method is called.
+        /// </summary>
         public event RequestedActivationEventHandler ActivationRequested;
+        /// <summary>
+        /// <see cref="INotifyPropertyChanged.PropertyChanged"/>
+        /// </summary>
         public event PropertyChangedEventHandler     PropertyChanged;
+        /// <summary>
+        /// The DataChanged event will be emitted when the data is updated
+        /// </summary>
         public event DataChangedEventHandler         DataChanged;
-        public event LoadEventHandler                Load;
+
+        /// <summary>
+        /// The handler that will call the <see cref="IReload.Reload"/> method and set the <see cref="IReload.Status"/>
+        /// </summary>
+        public LoadHandler Load
+        {
+            get; set;
+        } = null;
         
+        /// <summary>
+        /// The constructor
+        /// </summary>
         public Controls()
         {
-
-            Instances.Add(this);
-
-            PSM.Store.DataReceived += Store_DataReceived;
-
-            Dispatcher.Hooks.OperationStarted += delegate
-            {
-                Status = ReloadStatus.Loading;
-            };
-
-            Dispatcher.Hooks.OperationCompleted += delegate
-            {
-                Status = ReloadStatus.Idle;
-            };
-
-            Dispatcher.UnhandledException += delegate
-            {
-                Status = ReloadStatus.Error;
-            };
+            PSM.Store.DataReceived += Store_DataReceived;                        
         }
 
-        public Controls(LoadEventHandler Handler) : this()
+        /// <summary>
+        /// A constructor that takes a <see cref="LoadHandler"/> as an argument
+        /// </summary>
+        /// <param name="Handler">The handler</param>
+        public Controls(LoadHandler Handler) : this()
         {
             Load += Handler;
         }
 
+        /// <summary>
+        /// Triggers the <see cref="Load"/> handler
+        /// </summary>
+        /// <param name="controls"></param>
         protected void OnReload(Controls controls)
         {
             if (Load != null)
                 Load(controls);
         }
 
+        /// <summary>
+        /// Handler the <see cref="PSM.Store.DataReceived"/> event
+        /// </summary>
+        /// <param name="data">The data envelope that was received</param>
         private void Store_DataReceived(Envelope data)
         {
             if(Dispatcher.Thread != Thread.CurrentThread)
@@ -105,37 +156,50 @@ namespace PSMViewer.ViewModels
             }
         }
 
+        /// <summary>
+        /// Append a data entry
+        /// </summary>
+        /// <param name="item"></param>
         protected virtual void Append(EntryItem item) {
 
             if (!IsActive) return;
-            
-            Entries.Insert(0, item);  
-                      
-            OnDataChanged(null, null);
+            Entries.Insert(0, item);
         }
 
+        /// <summary>
+        /// Destructor/Finalize method
+        /// </summary>
         ~Controls()
         {
             Dispose();
         }
 
+        /// <summary>
+        /// <see cref="IDisposable.Dispose"/>
+        /// </summary>
         public virtual void Dispose()
         {
 
-            Instances.Remove(this);
+            Instances.TakeWhile((pair) =>
+            {
+                return pair.Value == this;
+            });
 
             PSM.Store.DataReceived -= Store_DataReceived;
 
-            if (entries != null)
-                entries.CollectionChanged -= OnDataChanged;
+            if (_entries != null)
+                _entries.CollectionChanged -= OnDataChanged;
 
             GC.SuppressFinalize(this);
         }
 
-        #region Data Changed Eventemitter
+        #region Data Changed Eventemitter        
         
         private DispatcherOperation OnDataChangedDispatcherOperation = null;
 
+        /// <summary>
+        /// Invoked by the <see cref="IReload.Dispatcher"/>, when the data is updated.
+        /// </summary>
         private void InvokeDataChanged ()
         {
             DataChangedEventHandler handler = DataChanged;
@@ -146,14 +210,23 @@ namespace PSMViewer.ViewModels
             OnDataChangedDispatcherOperation = null;
         }
 
+        /// <summary>
+        /// Triggers the datachanged event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         protected virtual void OnDataChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             if ( OnDataChangedDispatcherOperation == null)
                 OnDataChangedDispatcherOperation = Dispatcher.InvokeAsync(InvokeDataChanged);
-
         }
+
         #endregion
 
+        /// <summary>
+        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName"></param>
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
@@ -170,6 +243,9 @@ namespace PSMViewer.ViewModels
         }
 
         private KeyItem _selected = null;
+        /// <summary>
+        /// The currently selected <see cref="KeyItem"/> that this control handles the data for.
+        /// </summary>
         public virtual KeyItem Selected
         {
             get { return _selected; }
@@ -180,6 +256,9 @@ namespace PSMViewer.ViewModels
         }
 
         private object _start = null;
+        /// <summary>
+        /// The starting index from which to start to load data.
+        /// </summary>
         public virtual object Start
         {
             get
@@ -193,6 +272,9 @@ namespace PSMViewer.ViewModels
         }
 
         private object _end = null;
+        /// <summary>
+        /// The end index from which to end the loading of data.
+        /// </summary>
         public virtual object End {
             get
             {
@@ -204,6 +286,9 @@ namespace PSMViewer.ViewModels
         }
 
         private object _count = null;
+        /// <summary>
+        /// A length that describes the data interval
+        /// </summary>
         public virtual object Count
         {
             get { return _count; }
@@ -213,21 +298,72 @@ namespace PSMViewer.ViewModels
             }
         }
 
+        /// <summary>
+        /// Reload data for the specified key using the <see cref="Start"/> and <see cref="End"/> properties.
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <returns>The data</returns>
         public abstract IEnumerable<EntryItem> Reload(KeyItem key);
+
+        /// <summary>
+        /// Reloads the data.
+        /// </summary>
         public abstract void Reload();
+
+        /// <summary>
+        /// Move to the next result set.
+        /// </summary>
+        /// <returns></returns>
         public abstract bool Next();
+
+        /// <summary>
+        /// Move to the next result set.
+        /// </summary>
+        /// <returns></returns>
         public abstract bool Previous();
 
-        public virtual void Activate() {
-
-            Instances.ForEach(c => { c.IsActive = c == this; });
-
+        /// <summary>
+        /// Triggers the <see cref="ActivationRequested"/> event.
+        /// </summary>
+        protected virtual void OnActivationRequested()
+        {
             if (ActivationRequested != null)
                 ActivationRequested(this);
+        }
 
+       /// <summary>
+       /// Set this control's <see cref="IsActive"/> property to <c>True</c> and other controls with the same <paramref name="context"/> to <c>False</c>
+       /// </summary>
+       /// <param name="context">An object that identifies which context this control belongs to.</param>
+        public virtual void Activate(object context) {
+
+
+            if (context == null)
+                throw new ArgumentNullException("context cannot be null");
+
+            KeyValuePair<object, Controls> p = new KeyValuePair<object, Controls>(context, this);
+
+            if (!Instances.Contains(p))
+                Instances.Add(p);
+
+            foreach (KeyValuePair<object, Controls> pair in Instances) {
+
+                
+
+                if (pair.Key != context)
+                    continue;
+
+                pair.Value.IsActive = pair.Value == this;
+
+            }
+
+            OnActivationRequested();
         }
 
         private bool _active = false;
+        /// <summary>
+        /// Is this control active? 
+        /// </summary>
         public virtual bool IsActive
         {
             get
@@ -240,24 +376,27 @@ namespace PSMViewer.ViewModels
             }
         }
 
-        private ObservableCollection<EntryItem> entries = new ObservableCollection<EntryItem>();
+        private ObservableCollection<EntryItem> _entries = new ObservableCollection<EntryItem>();
+        /// <summary>
+        /// A reference to the collection that holds the data.
+        /// </summary>
         public ObservableCollection<EntryItem> Entries
         {
             get
             {
-                return entries;
+                return _entries;
             }
             set
             {
-                if(entries != null)
+                if(_entries != null)
                 {
-                    entries.CollectionChanged -= OnDataChanged;
+                    _entries.CollectionChanged -= OnDataChanged;
                 }
 
-                entries = value;
+                _entries = value;
 
-                if(entries != null)
-                    entries.CollectionChanged += OnDataChanged;
+                if(_entries != null)
+                    _entries.CollectionChanged += OnDataChanged;
             }
         }
     }
@@ -270,7 +409,27 @@ namespace PSMViewer.ViewModels
     public class Controls<T, TCount> : Controls, INotifyPropertyChanged
     {
 
+        private ReloadStatus _status = ReloadStatus.Idle;
+        /// <summary>
+        /// <see cref="Controls.Status"/>
+        /// </summary>
+        public override ReloadStatus Status
+        {
+            get
+            {
+                return ReloadTask != null ? _status : base.Status;
+            }
+
+            set
+            {
+                base.Status = value;
+            }
+        }
+
         private object _start = null;
+        /// <summary>
+        /// <see cref="Controls.Start"/>
+        /// </summary>
         public override object Start
         {
             get
@@ -317,6 +476,9 @@ namespace PSMViewer.ViewModels
             }
         }
         
+        /// <summary>
+        /// <see cref="Controls.End"/>
+        /// </summary>
         public override object End
         {
 
@@ -384,6 +546,10 @@ namespace PSMViewer.ViewModels
         }
 
         private object _count = default(TCount);
+
+        /// <summary>
+        /// <see cref="Controls.Count"/>
+        /// </summary>
         public override object Count
         {
             get { return _count; }
@@ -398,6 +564,7 @@ namespace PSMViewer.ViewModels
             }
         }
 
+        
         public Controls(ObservableCollection<EntryItem> Entries, object Start, object Count)
         {
             this.Entries = Entries??this.Entries;
@@ -410,8 +577,12 @@ namespace PSMViewer.ViewModels
             Selected = other.Selected;
         }
 
+        /// <summary>
+        /// <see cref="Controls.Reload(KeyItem)"/>
+        /// </summary>
         public override IEnumerable<EntryItem> Reload(KeyItem key)
         {
+
             IEnumerable<Entry> enumerable = null;
 
             if (key != null)
@@ -473,14 +644,69 @@ namespace PSMViewer.ViewModels
             base.Append(item);
         }
 
-        public override void Reload()
-        {
-            Entries.Clear();
+        private Task<IEnumerable<EntryItem>> ReloadTask = null;
 
-            foreach (EntryItem entry in Reload(Selected)??Entries)
+        public override async void Reload()
+        {
+
+            IEnumerable<EntryItem> data = null;
+
+            if (ReloadTask != null)
+            {
+                Cancel.Cancel();
+                Cancel = new CancellationTokenSource();
+            }                
+
+            try {
+
+                ReloadTask = Task.Factory.StartNew<IEnumerable<EntryItem>>(delegate
+                {
+
+                    while (true)
+                    {
+                        
+                        try
+                        {
+                            return Reload(Selected);
+                        }
+                        catch (Exception error) {
+
+                            Dispatcher.Invoke(delegate
+                            {
+                                SetField(ref _status, ReloadStatus.Error, "Status");
+                            });
+                            
+                            Logger.error(error);
+
+                        }
+
+                    }
+
+                }, Cancel.Token);
+
+                await Dispatcher.InvokeAsync(delegate
+                {
+                    SetField(ref _status, ReloadStatus.Loading, "Status");
+                });
+
+                data = await ReloadTask;
+
+            }
+            catch(TaskCanceledException)
+            {
+                return;
+            }       
+
+            Entries.Clear();            
+
+            foreach (EntryItem entry in data ?? Entries)
             {
                 Entries.Add(entry);
             }
+
+            SetField(ref _status, ReloadStatus.Idle, "Status");
+            ReloadTask = null;
+
         }
 
         public override bool Next()

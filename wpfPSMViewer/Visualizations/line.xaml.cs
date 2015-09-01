@@ -20,7 +20,7 @@ namespace PSMViewer.Visualizations
                 
             this.SeriesAdded += Line_SeriesAdded;
 
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
             {
                 Category = "Line.Stroke",
                 TargetProperties = new List<object>(new string[] { "StrokeThickness", "LineStyle" })

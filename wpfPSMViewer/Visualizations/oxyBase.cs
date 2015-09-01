@@ -749,7 +749,7 @@ namespace PSMViewer.Visualizations
 
             #endregion
 
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
             {
                
                 Category = "Plot",
@@ -761,7 +761,7 @@ namespace PSMViewer.Visualizations
                 })
             });
 
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
             {
                 IsExpandable = true,
                 Category = "Plot",

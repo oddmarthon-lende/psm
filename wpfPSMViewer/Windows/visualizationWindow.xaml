@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PSMViewer"
         xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:v="clr-namespace:PSMViewer.Visualizations"
-        mc:Ignorable="d"
+        mc:Ignorable="d" Cursor="{Binding Status, Converter={StaticResource CursorConverter}}"
         Height="600" Width="800" Icon="..\icons\application_view_tile.png" WindowStyle="None" ShowInTaskbar="False" Topmost="False" x:Name="window"  DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
     <Window.InputBindings>
@@ -89,8 +89,6 @@
 
             </MenuItem>
             
-            <TextBlock Text="{Binding Status}" />
-
         </Menu>
 
         <Grid x:Name="grid" Grid.Row="1" Grid.Column="0" />

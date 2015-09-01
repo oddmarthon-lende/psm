@@ -1,18 +1,14 @@
-﻿using PSMViewer.ViewModels;
-/// <copyright file="extensions.cs" company="Baker Hughes Incorporated">
+﻿/// <copyright file="extensions.cs" company="Baker Hughes Incorporated">
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
 /// <summary>Extensions</summary>
 /// 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,7 +25,7 @@ namespace PSMViewer
         /// <summary>
         /// Reloads objects that implements the IReload interface and displays a messagebox if any error occurs.
         /// </summary>
-        /// <param name="obj"></param>
+        /// <param name="obj">The object that implements the <see cref="IReload"/> interface</param>
         /// 
         public static void OnReload(this Control control, IReload obj)
         {
@@ -43,7 +39,7 @@ namespace PSMViewer
         /// Reloads objects that implements the IReload interface and forward any exception to the <paramref name="ErrorHandler"/>
         /// </summary>
         /// <param name="obj">The object that implements the <see cref="IReload"/> interface </param>
-        /// <param name="ErrorHandler"></param>
+        /// <param name="ErrorHandler">The delegate that will handle any exceptions that occur.</param>
         public static void OnReload(this Control control, IReload obj, Action<Exception> ErrorHandler)
         {
 
@@ -60,7 +56,7 @@ namespace PSMViewer
 
                     case TaskStatus.Faulted:
 
-                        obj.Dispatcher.Invoke(delegate
+                        obj.Dispatcher.InvokeAsync(delegate
                         {
 
                             obj.Status = ReloadStatus.Error;

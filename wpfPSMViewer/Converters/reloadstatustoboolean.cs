@@ -1,16 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿/// <copyright file="reloadstatustoboolean.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>A converter to convert between <see cref="PSMViewer.ReloadStatus"/> and <see cref="System.Boolean"/> </summary>
+/// 
+using System;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 
 namespace PSMViewer.Converters
 {
+    /// <summary>
+    /// <see cref="IValueConverter"/>
+    /// </summary>
     class ReloadStatusToBooleanConverter : IValueConverter
     {
 
+        
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if(value is ReloadStatus)

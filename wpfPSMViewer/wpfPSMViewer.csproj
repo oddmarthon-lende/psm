@@ -98,6 +98,7 @@
     <Compile Include="Converters\oxycolor_solidcolorbrush.cs" />
     <Compile Include="Converters\oxythickness_double.cs" />
     <Compile Include="Converters\reloadstatustoboolean.cs" />
+    <Compile Include="Converters\reloadstatustocursor.cs" />
     <Compile Include="extensions.cs" />
     <Compile Include="iundo.cs" />
     <Compile Include="layoutanchorablestate.cs" />
@@ -1250,7 +1251,7 @@
     <Resource Include="icons\zoom_out.png" />
   </ItemGroup>
   <ItemGroup>
-    <SplashScreen Include="splash.png" />
+    <None Include="splash.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="images\left.png" />

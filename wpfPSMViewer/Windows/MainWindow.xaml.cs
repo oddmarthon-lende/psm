@@ -39,7 +39,7 @@ namespace PSMViewer
     
     public partial class MainWindow : Window, INotifyPropertyChanged, IReload
     {
-
+        
         
         private CancellationTokenSource _c = new CancellationTokenSource();
         public CancellationTokenSource Cancel
@@ -241,6 +241,12 @@ namespace PSMViewer
 
             ((Main)DataContext).Timebased.Load += this.OnReload;
             ((Main)DataContext).Indexbased.Load += this.OnReload;
+            
+            ((Main)DataContext).PropertyChanged += (sender, e) =>
+            {
+                if(e.PropertyName == "Status")
+                    Status = ((IReload)sender).Status;
+            };
 
             _windows.CollectionChanged += delegate
             {
@@ -354,7 +360,10 @@ namespace PSMViewer
                     {
                         using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(WindowsFolderFormat, String.Format("{0}.xaml", w.Id)), FileMode.Create))
                         {
-                            Export(w, stream);
+                            w.Dispatcher.Invoke(delegate
+                            {
+                                Export(w, stream);
+                            });
                         }
                     }
 
@@ -509,10 +518,10 @@ namespace PSMViewer
         /// <param name="stream">The serialized text stream containing the XAML to de-serialize</param>
         private static void Import(Stream stream)
         {
-
+            
             MainWindow mainWindow = (MainWindow)App.Current.MainWindow;
             Dispatcher d = mainWindow.Dispatcher;
-
+            
             using (StreamReader reader = new StreamReader(stream))
             {
 
@@ -676,7 +685,7 @@ namespace PSMViewer
 
                 if (VisualTreeHelper.GetDescendantBounds(toolbar).Contains(e.GetPosition(toolbar)))
                 {
-                    ((Controls)toolbar.DataContext).Activate();
+                    ((Controls)toolbar.DataContext).Activate(this);
                 }
 
 
@@ -687,8 +696,8 @@ namespace PSMViewer
         /// <summary>
         /// Used Support drag and dropping of exported files onto the mainwindow.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <param name="sender">The sending <see cref="Window"/></param>
+        /// <param name="e">The drag arguments</param>
         private void window_Drop(object sender, DragEventArgs e)
         {
 

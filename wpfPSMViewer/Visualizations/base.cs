@@ -38,15 +38,15 @@ namespace PSMViewer.Visualizations
     /// </summary>
     public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged, IUndo
     {
-                
-        private CancellationTokenSource _c = new CancellationTokenSource();
+
+        /// <summary>
+        /// <see cref="IReload.Cancel"/>
+        /// </summary>
         public CancellationTokenSource Cancel
         {
-            get
-            {
-                return _c;
-            }
-        }
+            get;
+            protected set;
+        } = new CancellationTokenSource();
 
         #region Static Properties and Methods
 
@@ -128,12 +128,22 @@ namespace PSMViewer.Visualizations
         #endregion
 
         #region INotifyPropertyChanged
+
+        /// <summary>
+        /// <see cref="INotifyPropertyChanged.PropertyChanged"/>
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName"></param>
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
+
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
@@ -141,6 +151,7 @@ namespace PSMViewer.Visualizations
             OnPropertyChanged(propertyName);
             return true;
         }
+
         #endregion
 
         #region Properties
@@ -148,17 +159,28 @@ namespace PSMViewer.Visualizations
         #region Dependency Properties
 
 
-
+        /// <summary>
+        /// <see cref="IReload.Status"/>
+        /// </summary>
         public ReloadStatus Status
         {
-            get { return (ReloadStatus)GetValue(StatusProperty); }
-            set { SetValue(StatusProperty, value); }
+            get {
+                return (ReloadStatus)GetValue(StatusProperty);
+            }
+            set {
+                SetValue(StatusProperty, value);
+            }
         }
+        /// <summary>
+        /// Identifies the <see cref="Status"/> dependency property
+        /// </summary>
         public static readonly DependencyProperty StatusProperty =
             DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(VisualizationControl), new PropertyMetadata(ReloadStatus.Idle));
+        
 
-
-
+        /// <summary>
+        /// The visibility of the right and left navigation arrows
+        /// </summary>
         public Visibility HorizontalArrowsVisibility
         {
             get { return (Visibility)GetValue(HorizontalArrowsVisibilityProperty); }
@@ -166,6 +188,9 @@ namespace PSMViewer.Visualizations
                 SetValue(HorizontalArrowsVisibilityProperty, value);
             }
         }
+        /// <summary>
+        /// Identifies the <see cref="HorizontalArrowsVisibility"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty HorizontalArrowsVisibilityProperty =
             DependencyProperty.Register("HorizontalArrowsVisibility", typeof(Visibility), typeof(VisualizationControl), new FrameworkPropertyMetadata(Visibility.Collapsed, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) =>
             {
@@ -308,7 +333,7 @@ namespace PSMViewer.Visualizations
         /// <summary>
         /// Holds a list of <typeparamref name="PropertyDefinition"/> objects that will be exposed to the user.
         /// </summary>
-        protected List<PropertyDefinition> PropertyDefinitions { get; set; } = new List<PropertyDefinition>();
+        protected List<PropertyDefinition> Properties { get; set; } = new List<PropertyDefinition>();
         
         private KeyItemPathList keys = new KeyItemPathList();
         /// <summary>
@@ -503,7 +528,7 @@ namespace PSMViewer.Visualizations
             /// </summary>
             /// <param name="key">The <typeparamref name="KeyItem"/> this <typeparamref name="MultiControl"/> is for</param>
             /// <param name="Entries">An alternate collection for the data. Used to share a collection between different controls.</param>
-            public MultiControl(KeyItem key, LoadEventHandler load = null, ObservableCollection<EntryItem> Entries = null)
+            public MultiControl(KeyItem key, LoadHandler load = null, ObservableCollection<EntryItem> Entries = null)
             {
 
                 this.Key = key;
@@ -519,8 +544,7 @@ namespace PSMViewer.Visualizations
 
                     if (load != null)
                         pair.Value.Load += load;
-
-                    pair.Value.IsActive = true;
+                                        
                     pair.Value.DataChanged += Value_DataChanged;
                 }
 
@@ -589,6 +613,8 @@ namespace PSMViewer.Visualizations
                 if(c != null)
                 {
 
+                    c.Activate(this);
+
                     if(Start != null)
                         c.Start = Start;
 
@@ -599,6 +625,9 @@ namespace PSMViewer.Visualizations
                 return c;
             }
 
+            /// <summary>
+            /// Cleans up and releases any resource used by this object.
+            /// </summary>
             public void Dispose()
             {
 
@@ -721,7 +750,7 @@ namespace PSMViewer.Visualizations
 
                     PushState();                    
 
-                    prpWindow = (new PropertiesWindow(this, PropertyDefinitions.ToArray())
+                    prpWindow = (new PropertiesWindow(this, Properties.ToArray())
                     {
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
@@ -768,31 +797,31 @@ namespace PSMViewer.Visualizations
 
             #region PropertyDefinitions
 
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
                 {
                     Category = "Layout",
                     TargetProperties = new List<object>(new string[] { "Row", "RowSpan", "Column", "ColumnSpan", "Margin" })
                 });
 
-                PropertyDefinitions.Add(new PropertyDefinition()
+                Properties.Add(new PropertyDefinition()
                 { 
                     Category = "Controls",
                     TargetProperties = new List<object>(new string[] { "Timespan", "Count", "StartIndex", "SelectedControlType" })
                 });
 
-                PropertyDefinitions.Add(new PropertyDefinition()
+                Properties.Add(new PropertyDefinition()
                 {
                     Category = "Common",
                     TargetProperties = new List<object>(new string[] { "FontStyle", "FontFamily", "FontWeight", "FontSize", "BorderThickness" })
                 });
 
-                PropertyDefinitions.Add(new PropertyDefinition()
+                Properties.Add(new PropertyDefinition()
                 {
                     Category = "Title",
                     TargetProperties = new List<object>(new string[] { "Title", "SubTitle", "TitleVisibility", "TitleFontSize", "SubTitleFontSize", "TitleFontWeight"  })
                 }); 
 
-                PropertyDefinitions.Add(new PropertyDefinition()
+                Properties.Add(new PropertyDefinition()
                 {
                     IsExpandable = true,
                     Category = "Colors",
@@ -1013,8 +1042,7 @@ namespace PSMViewer.Visualizations
             if (control == null)
             {
 
-                control = new MultiControl(key, this.OnReload, collection);
-
+                control = new MultiControl(key, this.OnReload, collection);                
                 controls.Add(control);
 
                 if (key.Parent != null && !keys.Contains(key.Parent.Path))
@@ -1109,6 +1137,10 @@ namespace PSMViewer.Visualizations
             {
 
                 Controls control = m.Get(SelectedControlType, Start, Count);
+
+                control.PropertyChanged -= Control_PropertyChanged;
+                control.PropertyChanged += Control_PropertyChanged;
+
                 KeyItem key = m.Key;
 
                 this.OnReload(key);
@@ -1118,7 +1150,33 @@ namespace PSMViewer.Visualizations
             Refresh();
             
         }
+
+        private void Control_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            
+            if (e.PropertyName == "Status")
+            {
+
+                foreach (MultiControl controls in Controls)
+                {
+
+                    IReload reloadable = controls.Get(SelectedControlType);
+
+                    if (reloadable.Status != ReloadStatus.Idle)
+                    {
+                        Status = reloadable.Status;
+                        return;
+                    }
+
+                }
+
+                Status = ReloadStatus.Idle;
+            }
                 
+
+            
+        }
+
         /// <summary>
         /// Loads the next results
         /// </summary>

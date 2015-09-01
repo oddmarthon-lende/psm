@@ -19,7 +19,7 @@ namespace PSMViewer.Visualizations
 
             this.SeriesAdded += StairStep_SeriesAdded;
 
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
             {
                 Category = "Stairstep.Stroke",
                 TargetProperties = new List<object>(new string[] { "StrokeThickness", "LineStyle" })

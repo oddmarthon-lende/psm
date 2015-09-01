@@ -5,32 +5,30 @@
 /// <author>Odd Marthon Lende</author>
 /// <summary>Code behind for the Properties Window</summary>
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 
 namespace PSMViewer
 {
 
+    /// <summary>
+    /// The interface
+    /// </summary>
     public interface IPropertyProvider
     {
         PropertyDefinition[] Properties { get; }
     }
 
+    /// <summary>
+    /// A simple properties window that display a property grid
+    /// </summary>
     public partial class PropertiesWindow : Window
     {
         
+        /// <summary>
+        /// Holds the property definitions that will be visible to the user
+        /// </summary>
         public PropertyDefinition[] PropertyDefinitions
         {
             get
@@ -52,6 +50,9 @@ namespace PSMViewer
 
         }
 
+        /// <summary>
+        /// Gets a refrerence to the propertygrid
+        /// </summary>
         public PropertyGrid PropertyGrid
         {
             get
@@ -60,11 +61,17 @@ namespace PSMViewer
             }
         }
         
-        public PropertiesWindow(IPropertyProvider provider) : this((object)provider, provider.Properties)
-        {
-            
-        }
+        /// <summary>
+        /// A constructor that takes an <see cref="IPropertyProvider"/> as an argument
+        /// </summary>
+        /// <param name="provider"></param>
+        public PropertiesWindow(IPropertyProvider provider) : this((object)provider, provider.Properties) { }
 
+        /// <summary>
+        /// A constructor that takes the object and property definitions as its arguments.
+        /// </summary>
+        /// <param name="SelectedObject">The object to show properties for</param>
+        /// <param name="Definitions">The properties that will be visible to the user.</param>
         public PropertiesWindow(object SelectedObject, PropertyDefinition[] Definitions)
         {
             InitializeComponent();

@@ -280,7 +280,7 @@ namespace PSMViewer.Visualizations
 
             MultiControl controls = base.Add(key, collection);
 
-            if(controls != null)
+            if(controls != null && Aggregate )
                 controls.DataChanged += Controls_DataChanged;
             
             return controls;
@@ -329,19 +329,19 @@ namespace PSMViewer.Visualizations
             
             InitializeComponent();
                         
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
             {
                 Category = "Text",
                 TargetProperties = new List<object>(new string[] { "Aggregate", "KeyFontSize", "PathFontSize", "LineColor" })
             });
 
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
             {
                 Category = "Text.Layout",
                 TargetProperties = new List<object>(new string[] { "Orientation", "ShowKey", "ShowPath" })
             });
 
-            PropertyDefinitions.Add(new PropertyDefinition()
+            Properties.Add(new PropertyDefinition()
             { 
 
                 IsExpandable = true,
