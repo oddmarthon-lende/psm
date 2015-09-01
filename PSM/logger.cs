@@ -11,21 +11,26 @@ namespace PSMonitor
     {       
 
         private static object lock0 = new object();
-
-        private static string s { get { return Assembly.GetExecutingAssembly().FullName; } }
-        private static string l { get { return "Application"; } }
+        
+        private static string Source { get { return Assembly.GetEntryAssembly().GetName().Name; } }
+        private static string LogName { get { return "Application"; } }
 
         public static event Log OnLog;
         
         private static void write(string msg, EventLogEntryType t)
         {
-
+            
             string entryType = "";
 
-            if (!EventLog.SourceExists(s))
-                EventLog.CreateEventSource(s, l);
-
-            EventLog.WriteEntry(s, msg, t);
+            try
+            {
+                EventLog.WriteEntry(Source, msg, t);
+            }
+            catch (Exception)
+            {
+                EventLog.CreateEventSource(Source, LogName);
+            }
+            
 
             lock (lock0)
             {
