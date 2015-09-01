@@ -32,3 +32,6 @@ GO
 
 CREATE NONCLUSTERED INDEX IX_values_KeyId ON [dbo].[values] ([KeyId]);
 GO
+
+CREATE NONCLUSTERED INDEX IX_values_Timestamp ON [dbo].[values] ([Timestamp]);
+GO
