@@ -8,8 +8,12 @@ using System.Collections.Concurrent;
 
 namespace PSMonitor
 {
-
-    public delegate void DataReceivedHandler(Envelope data);
+    /// <summary>
+    /// The realtime data handler delegate that is invoked when new data arrives.
+    /// </summary>
+    /// <param name="data">The data that is being transferred.</param>
+    /// <returns>A starting index from which the next transfer occurs.</returns>
+    public delegate object RealTimeData(Envelope data);
     
     class ScriptExecutionContext : IDisposable
     {
@@ -21,7 +25,7 @@ namespace PSMonitor
         private volatile PowerShell   powerShell;
         private volatile ConcurrentQueue<Entry> queue;
         private List<Thread> threads;
-        private DataReceivedHandler OnData;
+        private RealTimeData OnData;
 
         private bool disposed = false;
         
@@ -256,7 +260,7 @@ namespace PSMonitor
             while (queue.Count > 0 && !queue.TryDequeue(out entry));
         }
 
-        public void Execute(DataReceivedHandler handler)
+        public void Execute(RealTimeData handler)
         {
 
             OnData = handler;

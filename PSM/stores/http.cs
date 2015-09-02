@@ -17,8 +17,7 @@ namespace PSMonitor.Stores
 
     public class HTTP : IStore
     {
-        public event DataReceivedHandler DataReceived;
-
+        
         private static DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Envelope[]));
 
         private ConcurrentQueue<Envelope> queue;
@@ -48,10 +47,10 @@ namespace PSMonitor.Stores
             hub.CreateHubProxy("DataReceivedHub").On<Envelope>("OnData",
                 (data) => {
 
-                    DataReceivedHandler handler = DataReceived;
+                    //DataReceivedHandler handler = DataReceived;
 
-                    if (handler != null)
-                        handler(data);
+                    //if (handler != null)
+                    //    handler(data);
 
                 });
             
@@ -355,6 +354,21 @@ namespace PSMonitor.Stores
             }
 
             return keys;
+        }
+
+        public void Register(object context, string path, object startingIndex, RealTimeData handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Unregister(object context)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Unregister(object context, string path)
+        {
+            throw new NotImplementedException();
         }
     }
 

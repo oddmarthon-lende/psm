@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using PSMonitor.Stores;
 using System.Configuration;
 using System.Diagnostics;
+using System.Threading;
 
 namespace PSMonitor
 {
@@ -14,7 +15,7 @@ namespace PSMonitor
     public class Setup : ConfigurationSection
     {
         
-        private static ExeConfigurationFileMap map = new ExeConfigurationFileMap() { ExeConfigFilename = Path.Combine(System.IO.Directory.GetCurrentDirectory(), "psm.config") };
+        private static ExeConfigurationFileMap map = new ExeConfigurationFileMap() { ExeConfigFilename = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "psm.config") };
         protected static Configuration config = ConfigurationManager.OpenMappedExeConfiguration(map, ConfigurationUserLevel.None);
 
         public Setup ()
@@ -89,32 +90,37 @@ namespace PSMonitor
         }
 
         protected Entries entries { get; set; }
-        protected Timer timer { get; set; }
+        protected System.Timers.Timer timer { get; set; }
         private List<Script> scripts { get; set; }
 
-        private static IStore _Store = null;
+        private static ConcurrentDictionary<Thread, IStore> _Store = new ConcurrentDictionary<Thread, IStore>();
         public static IStore Store {
 
             get {
 
-                if(_Store == null) { 
+                Thread thread   = Thread.CurrentThread;
+                IStore instance = null;
+                
+                if (!_Store.ContainsKey(thread)) {
 
                     Type store = Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
 
                     if (store != null)
-                    {
+                    {                        
 
                         store.FindInterfaces((m, f) =>
                         {
                             if (m.Equals(f))
                             {
-                                _Store = (IStore)Activator.CreateInstance(store);
+                                instance = (IStore)Activator.CreateInstance(store);
                                 return true;
                             }
 
                             return false;
 
                         }, typeof(IStore));
+
+                        while(!_Store.TryAdd(thread, instance));
 
                     }
                     else
@@ -124,7 +130,10 @@ namespace PSMonitor
 
                 }
 
-                return _Store;
+                if (_Store.ContainsKey(thread))
+                    while (!_Store.TryGetValue(thread, out instance));
+
+                return instance;
 
             }
 
@@ -137,7 +146,7 @@ namespace PSMonitor
 
             entries        = new Entries();
             scripts        = new List<Script>();
-            timer          = new Timer(Setup.Master.timerFrequency);
+            timer          = new System.Timers.Timer(Setup.Master.timerFrequency);
             timer.Elapsed += new ElapsedEventHandler(OnTick);
 
             
@@ -211,7 +220,7 @@ namespace PSMonitor
             
         }
 
-        protected void OnData(Envelope data)
+        protected object OnData(Envelope data)
         {
 
             if(Store != null)
@@ -229,6 +238,8 @@ namespace PSMonitor
             }
             else 
                 entries.Add(data);
+
+            return null;
         }
 
         protected void OnTick(object src, ElapsedEventArgs e)

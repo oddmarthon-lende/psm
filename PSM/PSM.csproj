@@ -65,6 +65,8 @@
     <Compile Include="envelope.cs" />
     <Compile Include="execution_context.cs" />
     <Compile Include="commands.cs" />
+    <Compile Include="path.cs" />
+    <Compile Include="Stores\advantage.cs" />
     <Compile Include="Stores\db.cs" />
     <Compile Include="Stores\istore.cs" />
     <Compile Include="logger.cs" />
