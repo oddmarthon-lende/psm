@@ -139,6 +139,7 @@
     <Compile Include="Visualizations\text.xaml.cs">
       <DependentUpon>text.xaml</DependentUpon>
     </Compile>
+    <Compile Include="windowinfo.cs" />
     <Compile Include="windowstate.cs" />
     <Compile Include="Windows\visualizationwindow.xaml.cs">
       <DependentUpon>visualizationwindow.xaml</DependentUpon>
@@ -146,7 +147,7 @@
     <Compile Include="Models\entryitem.cs" />
     <Compile Include="Models\keyitem.cs" />
     <Compile Include="commands.cs" />
-    <Compile Include="ViewModels\controls.cs" />
+    <Compile Include="controls.cs" />
     <Compile Include="ViewModels\main.cs" />
     <Page Include="Dialogs\properties.xaml">
       <SubType>Designer</SubType>

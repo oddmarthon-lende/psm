@@ -29,6 +29,7 @@
         <KeyBinding Modifiers="Alt" Key="Right" Command="{Binding Commands[Next], ElementName=window}"  />
         <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding Commands[Previous], ElementName=window}"  />
         <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding Commands[NewWindow], ElementName=window}"  />
+        <KeyBinding Key="Pause" Command="{Binding Commands[Stop], ElementName=window}"  />
         
     </Window.InputBindings>
 
@@ -124,9 +125,13 @@
                             <MenuItem Header="About" Command="{Binding Commands[About], ElementName=window}" />
                         </MenuItem>
                     </Menu>
-
+                    <Button Command="{Binding Commands[Stop], ElementName=window}">
+                        <Image Source="../icons/stop.png" />
+                    </Button>
+                    
                 </ToolBar>
 
+                
                 <StaticResource ResourceKey="IndexNavigationToolBar" />
                 <StaticResource ResourceKey="TimeNavigationToolBar" />
 

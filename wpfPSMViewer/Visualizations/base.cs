@@ -179,7 +179,7 @@ namespace PSMViewer.Visualizations
         
 
         /// <summary>
-        /// The visibility of the right and left navigation arrows
+        /// The visibility of the right and left navigation arrows that are overlayed the control
         /// </summary>
         public Visibility HorizontalArrowsVisibility
         {
@@ -206,18 +206,25 @@ namespace PSMViewer.Visualizations
 
 
 
-
+        /// <summary>
+        /// The visibility of the up and down navigation arrows that are overlayed the control
+        /// </summary>
         public Visibility VerticalArrowsVisibility
         {
             get { return (Visibility)GetValue(VerticalArrowsVisibilityProperty); }
             set { SetValue(VerticalArrowsVisibilityProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="VerticalArrowsVisibility"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty VerticalArrowsVisibilityProperty =
             DependencyProperty.Register("VerticalArrowsVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Collapsed));
         
         
                 
-
+        /// <summary>
+        /// The title, which can be show at the top of the control
+        /// </summary>
         public string Title
         {
             get {
@@ -227,6 +234,9 @@ namespace PSMViewer.Visualizations
                 SetValue(TitleProperty, value);
             }
         }
+        /// <summary>
+        /// Identifies the <see cref="Title"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register("Title", typeof(string), typeof(VisualizationControl), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) =>
             {
@@ -241,70 +251,115 @@ namespace PSMViewer.Visualizations
 
 
 
-
+        /// <summary>
+        /// The subtitle, which can be display together with the <see cref="Title"/>  at the top of the control
+        /// </summary>
         public string SubTitle
         {
             get { return (string)GetValue(SubTitleProperty); }
             set { SetValue(SubTitleProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="SubTitle"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty SubTitleProperty =
             DependencyProperty.Register("SubTitle", typeof(string), typeof(VisualizationControl), new PropertyMetadata(null));
 
 
-
-        
-
+        /// <summary>
+        /// The font size of the <see cref="Title"/>
+        /// </summary>
         public double TitleFontSize
         {
             get { return (double)GetValue(TitleFontSizeProperty); }
             set { SetValue(TitleFontSizeProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="TitleFontSize"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty TitleFontSizeProperty =
             DependencyProperty.Register("TitleFontSize", typeof(double), typeof(VisualizationControl), new PropertyMetadata(14D));
 
 
 
 
-
+        /// <summary>
+        /// The font size of the <see cref="SubTitle"/>
+        /// </summary>
         public double SubTitleFontSize
         {
             get { return (double)GetValue(SubTitleFontSizeProperty); }
             set { SetValue(SubTitleFontSizeProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="SubTitleFontSize"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty SubTitleFontSizeProperty =
             DependencyProperty.Register("SubTitleFontSize", typeof(double), typeof(VisualizationControl), new PropertyMetadata(12D));
 
 
 
-
+        /// <summary>
+        /// Sets the font weight of the <see cref="Title"/> and <see cref="SubTitle"/> that can be displayed at the top of the control.
+        /// </summary>
         public FontWeight TitleFontWeight
         {
             get { return (FontWeight)GetValue(TitleFontWeightProperty); }
             set { SetValue(TitleFontWeightProperty, value); }
-        }public static readonly DependencyProperty TitleFontWeightProperty =
+        }
+        /// <summary>
+        /// Identifies the <see cref="TitleFontWeight"/> property.
+        /// </summary>
+        public static readonly DependencyProperty TitleFontWeightProperty =
             DependencyProperty.Register("TitleFontWeight", typeof(FontWeight), typeof(VisualizationControl), new PropertyMetadata(FontWeights.Bold));
 
 
 
-
+        /// <summary>
+        /// Sets the visibility of the <see cref="Title"/> and <see cref="SubTitle"/> that can be displayed at the top of the control.
+        /// </summary>
         public Visibility TitleVisibility
         {
             get { return (Visibility)GetValue(TitleVisibilityProperty); }
             set { SetValue(TitleVisibilityProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="TitleVisibility"/> dependency property
+        /// </summary>
         public static readonly DependencyProperty TitleVisibilityProperty =
             DependencyProperty.Register("TitleVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Collapsed));
 
 
 
+        /// <summary>
+        /// The conversion factor to apply to values that allow this.
+        /// </summary>
+        public double ConversionFactor
+        {
+            get { return (double)GetValue(ConversionFactorProperty); }
+            set { SetValue(ConversionFactorProperty, value); }
+        }
+        public static readonly DependencyProperty ConversionFactorProperty =
+            DependencyProperty.Register("ConversionFactor", typeof(double), typeof(VisualizationControl), new PropertyMetadata(1D));
+        
 
+
+        /// <summary>
+        /// The owner of this control
+        /// </summary>
         public Window Owner
         {
             get { return (Window)GetValue(OwnerProperty); }
             set { SetValue(OwnerProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="Owner"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty OwnerProperty =
             DependencyProperty.Register("Owner", typeof(Window), typeof(VisualizationControl), new PropertyMetadata(null));
+
+
+
 
         #endregion
 
@@ -467,6 +522,151 @@ namespace PSMViewer.Visualizations
             Index
         }
 
+        /// <summary>
+        /// A thumbnail of the controls contents
+        /// </summary>
+        public BitmapSource Thumbnail
+        {
+
+            get
+            {
+                return this.GetThumbnail();
+            }
+
+        }
+
+        /// <summary>
+        /// A multicontrol can handle the different <typeparamref name="ControlType"/> in one object.
+        /// Each key gets a <typeparamref name="MultiControl"/> when added to the <typeparamref name="VisualizationControl"/>
+        /// </summary>
+        public class MultiControl : IDisposable, IUndo
+        {
+            public KeyItem Key { get; private set; }
+            public ObservableCollection<EntryItem> Entries { get; set; }
+            public event DataChangedEventHandler DataChanged;
+
+            private Dictionary<ControlType, Controls> Controls = new Dictionary<ControlType, ViewModels.Controls>();
+
+            /// <summary>
+            /// The constructor
+            /// </summary>
+            /// <param name="key">The <typeparamref name="KeyItem"/> this <typeparamref name="MultiControl"/> is for</param>
+            /// <param name="Entries">An alternate collection for the data. Used to share a collection between different controls.</param>
+            public MultiControl(KeyItem key, LoadHandler load = null, ObservableCollection<EntryItem> Entries = null)
+            {
+
+                this.Key = key;
+                this.Entries = Entries ?? new ObservableCollection<EntryItem>();
+
+                Controls.Add(ControlType.Index, new Controls<long, long>(this.Entries, 0, 1) { Selected = key });
+                Controls.Add(ControlType.Time, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan()) { Selected = key });
+
+                Stack = new Stack<Dictionary<ControlType, ViewModels.Controls>>();
+
+                foreach (var pair in Controls)
+                {
+
+                    if (load != null)
+                        pair.Value.Load += load;
+
+                    pair.Value.DataChanged += Value_DataChanged;
+                }
+
+            }
+
+            private Stack<Dictionary<ControlType, ViewModels.Controls>> Stack;
+
+            /// <summary>
+            /// Make a copy of the current state and push it to the stack
+            /// </summary>
+            public void PushState()
+            {
+
+                Dictionary<ControlType, Controls> c = new Dictionary<ControlType, ViewModels.Controls>();
+
+                Stack.Push(c);
+
+                foreach (KeyValuePair<ControlType, Controls> pair in Controls)
+                {
+                    c[pair.Key] = (Controls)Activator.CreateInstance(pair.Value.GetType(), Controls[pair.Key]);
+                    c[pair.Key].DataChanged += Value_DataChanged;
+                }
+            }
+
+            /// <summary>
+            /// Pop off the stack and restore the saved state
+            /// </summary>
+            public void PopState()
+            {
+
+                Dictionary<ControlType, Controls> c = Stack.Pop();
+
+                if (c != null)
+                {
+                    foreach (KeyValuePair<ControlType, Controls> pair in c)
+                    {
+                        Controls[pair.Key].Dispose();
+                        Controls[pair.Key] = c[pair.Key];
+                    }
+
+                }
+            }
+
+            /// <summary>
+            /// Called when the data has changed for a control type
+            /// </summary>
+            /// <param name="sender"></param>
+            private void Value_DataChanged(object sender)
+            {
+                if (DataChanged != null)
+                    DataChanged(sender);
+            }
+
+            /// <summary>
+            /// Gets the controls
+            /// </summary>
+            /// <param name="type"></param>
+            /// <param name="Start"></param>
+            /// <param name="Count"></param>
+            /// <returns>The controls</returns>
+            public Controls Get(ControlType type, object Start = null, object Count = null)
+            {
+
+                Controls c = Controls[type];
+
+                if (c != null)
+                {
+
+                    c.Activate(this);
+
+                    if (Start != null)
+                        c.Start = Start;
+
+                    if (Count != null)
+                        c.Count = Count;
+                }
+
+                return c;
+            }
+
+            /// <summary>
+            /// Cleans up and releases any resource used by this object.
+            /// </summary>
+            public void Dispose()
+            {
+
+                foreach (var pair in Controls)
+                {
+                    pair.Value.DataChanged -= Value_DataChanged;
+                }
+
+                foreach (var pair in Controls)
+                {
+                    pair.Value.Dispose();
+                }
+            }
+        }
+
         #region Commands
 
         /// <summary>
@@ -497,152 +697,7 @@ namespace PSMViewer.Visualizations
             DOWN,
             UP
         }
-
-        /// <summary>
-        /// An image of the windows contents
-        /// </summary>
-        public BitmapSource Image
-        {
-            get
-            {
-
-                return this.GetThumbnailImage((int)ActualWidth, (int)ActualHeight);
-
-            }
-        }
-
-        /// <summary>
-        /// A multicontrol can handle the different <typeparamref name="ControlType"/> in one object.
-        /// Each key gets a <typeparamref name="MultiControl"/> when added to the <typeparamref name="VisualizationControl"/>
-        /// </summary>
-        public class MultiControl : IDisposable, IUndo
-        {
-            public KeyItem Key { get; private set; }
-            public ObservableCollection<EntryItem> Entries { get; set; }           
-            public event DataChangedEventHandler DataChanged;
-            
-            private Dictionary<ControlType, Controls> Controls = new Dictionary<ControlType, ViewModels.Controls>();
-
-            /// <summary>
-            /// The constructor
-            /// </summary>
-            /// <param name="key">The <typeparamref name="KeyItem"/> this <typeparamref name="MultiControl"/> is for</param>
-            /// <param name="Entries">An alternate collection for the data. Used to share a collection between different controls.</param>
-            public MultiControl(KeyItem key, LoadHandler load = null, ObservableCollection<EntryItem> Entries = null)
-            {
-
-                this.Key = key;
-                this.Entries = Entries ?? new ObservableCollection<EntryItem>();
-
-                Controls.Add(ControlType.Index, new Controls<long, long>(this.Entries, 0, 1) { Selected = key });
-                Controls.Add(ControlType.Time, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan()) { Selected = key });
-
-                Stack = new Stack<Dictionary<ControlType, ViewModels.Controls>>();
-                                
-                foreach (var pair in Controls)
-                {
-
-                    if (load != null)
-                        pair.Value.Load += load;
-                                        
-                    pair.Value.DataChanged += Value_DataChanged;
-                }
-
-            }
-
-            private Stack<Dictionary<ControlType, ViewModels.Controls>> Stack;
-
-            /// <summary>
-            /// Make a copy of the current state and push it to the stack
-            /// </summary>
-            public void PushState()
-            {
-
-                Dictionary<ControlType, Controls> c = new Dictionary<ControlType, ViewModels.Controls>();
-
-                Stack.Push(c);
-
-                foreach(KeyValuePair<ControlType, Controls> pair in Controls)
-                {
-                    c[pair.Key] = (Controls)Activator.CreateInstance(pair.Value.GetType(), Controls[pair.Key]);
-                    c[pair.Key].DataChanged += Value_DataChanged;
-                }
-            }
-
-            /// <summary>
-            /// Pop off the stack and restore the saved state
-            /// </summary>
-            public void PopState()
-            {
-
-                Dictionary<ControlType, Controls> c = Stack.Pop();
                 
-                if (c != null)
-                {
-                    foreach (KeyValuePair<ControlType, Controls> pair in c)
-                    {
-                        Controls[pair.Key].Dispose();
-                        Controls[pair.Key] = c[pair.Key];
-                    }
-                    
-                }
-            }
-
-            /// <summary>
-            /// Called when the data has changed for a control type
-            /// </summary>
-            /// <param name="sender"></param>
-            private void Value_DataChanged(object sender)
-            {
-                if (DataChanged != null)
-                    DataChanged(sender);  
-            }
-
-            /// <summary>
-            /// Gets the controls
-            /// </summary>
-            /// <param name="type"></param>
-            /// <param name="Start"></param>
-            /// <param name="Count"></param>
-            /// <returns>The controls</returns>
-            public Controls Get(ControlType type, object Start = null, object Count = null)
-            {
-                
-                Controls c = Controls[type];
-
-                if(c != null)
-                {
-
-                    c.Activate(this);
-
-                    if(Start != null)
-                        c.Start = Start;
-
-                    if(Count != null)
-                        c.Count = Count;
-                }
-
-                return c;
-            }
-
-            /// <summary>
-            /// Cleans up and releases any resource used by this object.
-            /// </summary>
-            public void Dispose()
-            {
-
-                foreach (var pair in Controls)
-                {
-                    pair.Value.DataChanged -= Value_DataChanged;
-                }
-
-                foreach (var pair in Controls)
-                {
-                    pair.Value.Dispose();
-                }
-            }
-        }
-
         /// <summary>
         /// A read only wrapper around the <typeparamref name="CommandCollection"/> <see cref="CommandsSource"/>
         /// </summary>
@@ -671,8 +726,7 @@ namespace PSMViewer.Visualizations
 
             Tree tree = null;
             Window window = null;
-            PropertiesWindow prpWindow;
-
+            
             switch (cmd)
             {
 
@@ -683,9 +737,10 @@ namespace PSMViewer.Visualizations
                     window = tree.Window;
 
                     window.WindowStyle = WindowStyle.ToolWindow;
+                    window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                     window.Owner = this.Owner;
-                    window.Width = this.Owner.Width * .5;
-                    window.Height = this.Owner.Height * .95;
+                    window.Width = Math.Sqrt(this.Owner.Width * this.Owner.Height);
+                    window.Height = window.Width;
 
                     break;
 
@@ -749,16 +804,18 @@ namespace PSMViewer.Visualizations
                 case CommandType.PROPERTIES:
 
                     PushState();                    
-
-                    prpWindow = (new PropertiesWindow(this, Properties.ToArray())
+                    
+                    window = (new PropertiesWindow(this, Properties.ToArray())
                     {
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
                         Owner = this.Owner,
-                        Width = this.Owner.ActualWidth * .75
+                        Width = Math.Sqrt(this.Owner.Width * this.Owner.Height)
                     });
 
-                    prpWindow.ShowDialog();
+                    window.Height = window.Width;
+
+                    window.ShowDialog();
                     
                     break;
             }
@@ -828,7 +885,14 @@ namespace PSMViewer.Visualizations
                     TargetProperties = new List<object>(new string[] { "Background", "Foreground", "BorderBrush" })
                 });
 
-            
+                Properties.Add(new PropertyDefinition()
+                {
+                    IsExpandable = true,
+                    Category = "Data",
+                    TargetProperties = new List<object>(new string[] { "ConversionFactor" })
+                });
+
+
 
             #endregion
 
@@ -976,7 +1040,7 @@ namespace PSMViewer.Visualizations
         /// <summary>
         /// Overridden so that the content is not serialized when the object is saved to disk
         /// </summary>
-        /// <returns><c>False</c></returns>
+        /// <returns><c>false</c></returns>
         public override bool ShouldSerializeContent()
         {
             return false;
@@ -986,7 +1050,7 @@ namespace PSMViewer.Visualizations
         /// Used to disable serialization of some properties that are unwanted in the serialized document when save to disk
         /// </summary>
         /// <param name="dp">The property</param>
-        /// <returns><c>False</c> if the property should not be serialized</returns>
+        /// <returns><c>false</c> if the property should not be serialized</returns>
         protected override bool ShouldSerializeProperty(DependencyProperty dp)
         {
 
@@ -1145,6 +1209,7 @@ namespace PSMViewer.Visualizations
 
                 this.OnReload(key);
                 this.OnReload(control);
+
             }
 
             Refresh();
@@ -1180,7 +1245,7 @@ namespace PSMViewer.Visualizations
         /// <summary>
         /// Loads the next results
         /// </summary>
-        /// <returns><c>False</c> if there is more data to be loaded in this direction</returns>
+        /// <returns><c>false</c> if there is more data to be loaded in this direction</returns>
         public virtual bool Next()
         {
             bool yn = false;
@@ -1196,7 +1261,7 @@ namespace PSMViewer.Visualizations
         /// <summary>
         /// Loads the previous results
         /// </summary>
-        /// <returns><c>False</c> if there is more data to be loaded in this direction</returns>
+        /// <returns><c>false</c> if there is more data to be loaded in this direction</returns>
         public virtual bool Previous()
         {
 
@@ -1265,6 +1330,46 @@ namespace PSMViewer.Visualizations
         public override string ToString()
         {
             return String.IsNullOrEmpty(Title) ? String.Format("<{0}> [{1}]", GetType().Name, Id) : Title;
+        }
+
+        protected static double ConvertEntryValueToDouble(EntryItem entry, double Factor = 1D)
+        {
+
+            double value = 0D;
+
+            switch (entry.Value.GetType().Name.ToLower())
+            {
+                case "string":
+
+                    //try
+                    //{
+                    //    if(entry.Value is string)
+                    //    {
+                    //        value = Convert.ToDouble((string)entry.Value);
+                    //    }
+                            
+                    //}
+                    //catch (FormatException)
+                    //{
+                    //    if (entry.Value is string)
+                    //        value = Convert.ToDouble(((string)entry.Value).Length);
+                    //}
+                    //catch (Exception) { }
+
+                    break;
+
+                default:
+
+                    try {
+                        value = Convert.ToDouble(entry.Value);
+                    }
+                    catch(Exception) { }
+
+                    break;
+
+            }
+
+            return value * Factor;
         }
     }
 }

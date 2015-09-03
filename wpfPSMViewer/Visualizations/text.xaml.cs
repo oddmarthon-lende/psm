@@ -50,7 +50,7 @@ namespace PSMViewer.Converters
             
             try
             {
-                if(Parent.Highlighting.HighlightThresholdExceeded)
+                if(Parent.Highlighting.HighlightThresholdExceeded && !(data.Value is string))
                     d_value = System.Convert.ToDouble(data.Value);
             }
             catch(Exception) { }

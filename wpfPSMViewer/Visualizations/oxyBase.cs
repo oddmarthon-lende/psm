@@ -463,6 +463,59 @@ namespace PSMViewer.Visualizations
         public static readonly DependencyProperty ToolTipForegroundProperty =
            DependencyProperty.Register("ToolTipForeground", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
+
+
+
+        public string YAxisLabel
+        {
+            get { return (string)GetValue(YAxisLabelProperty); }
+            set { SetValue(YAxisLabelProperty, value); }
+        }
+        public static readonly DependencyProperty YAxisLabelProperty =
+            DependencyProperty.Register("YAxisLabel", typeof(string), typeof(OxyBase<T>), new PropertyMetadata(null));
+
+
+
+        public string XAxisLabel
+        {
+            get { return (string)GetValue(XAxisLabelProperty); }
+            set { SetValue(XAxisLabelProperty, value); }
+        }
+        public static readonly DependencyProperty XAxisLabelProperty =
+            DependencyProperty.Register("XAxisLabel", typeof(string), typeof(OxyBase<T>), new PropertyMetadata(null));
+
+
+
+
+        /// <summary>
+        /// Y-Scale maximum value
+        /// </summary>
+        public double Maximum
+        {
+            get { return (double)GetValue(MaximumProperty); }
+            set { SetValue(MaximumProperty, value); }
+        }
+        /// <summary>
+        /// Identifies the <see cref="Maximum"/> dependency property
+        /// </summary>
+        public static readonly DependencyProperty MaximumProperty =
+            DependencyProperty.Register("Maximum", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(double.NaN));
+
+
+        /// <summary>
+        /// The Y-Scale minimum value
+        /// </summary>
+        public double Minimum
+        {
+            get { return (double)GetValue(MinimumProperty); }
+            set { SetValue(MinimumProperty, value); }
+        }
+        /// <summary>
+        /// Identifies the <see cref="Minimum"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty MinimumProperty =
+            DependencyProperty.Register("Minimum", typeof(double), typeof(OxyBase<T>), new PropertyMetadata(double.NaN));
+
         #endregion
 
         public OxyBase() : base()
@@ -476,8 +529,10 @@ namespace PSMViewer.Visualizations
             Colors = new SolidColorBrushList(Model.DefaultColors);
 
             Model.Axes.Add(new DateTimeAxis { Position = AxisPosition.Bottom, Angle = 45 });
-            Model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Angle = -45 });                                   
+            Model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Angle = -45 });
+
             Model.InvalidatePlot(false);
+
             Model.Background = OxyColor.FromArgb(0, 0, 0, 0);
             
             #region Wrapped Bindings
@@ -744,7 +799,96 @@ namespace PSMViewer.Visualizations
             ),
                 Mode = BindingMode.OneWayToSource
             });
-                      
+
+            SetBinding(MaximumProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                max => {
+
+                    foreach (Axis axis in Model.Axes)
+                    {
+                        if( !(axis is DateTimeAxis) )
+                        {
+                            axis.Maximum = max;
+                        }
+                    }
+                        
+
+                    return max;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(MinimumProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<double>(
+
+                min => {
+
+                    foreach (Axis axis in Model.Axes)
+                    {
+                        if (!(axis is DateTimeAxis))
+                        {
+                            axis.Minimum = min;
+                        }
+                    }
+
+
+                    return min;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+            SetBinding(YAxisLabelProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<string>(
+
+                label => {
+
+                    foreach (Axis axis in Model.Axes)
+                    {
+                        if (axis.Position == AxisPosition.Left)
+                        {
+                            axis.Title = label;
+                        }
+                    }
+
+
+                    return label;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
+
+            SetBinding(XAxisLabelProperty, new Binding("Value")
+            {
+                Source = new Utilities.BindingWrapper<string>(
+
+                label => {
+
+                    foreach (Axis axis in Model.Axes)
+                    {
+                        if (axis.Position == AxisPosition.Bottom)
+                        {
+                            axis.Title = label;
+                        }
+                    }
+
+
+                    return label;
+
+                }
+            ),
+                Mode = BindingMode.OneWayToSource
+            });
+
 
 
             #endregion
@@ -767,6 +911,15 @@ namespace PSMViewer.Visualizations
                 Category = "Plot",
                 TargetProperties = new List<object>(new string[] {
                     "PlotAreaBorderThickness"
+                })
+            });
+
+            Properties.Add(new PropertyDefinition()
+            {
+                IsExpandable = false,
+                Category = "Plot.Axis",
+                TargetProperties = new List<object>(new string[] {
+                    "Maximum", "Minimum", "XAxisLabel", "YAxisLabel"
                 })
             });
 
@@ -867,7 +1020,7 @@ namespace PSMViewer.Visualizations
 
                                 EntryItem entry = (EntryItem)obj;
 
-                                return new DataPoint(DateTimeAxis.ToDouble(entry.Timestamp), ConvertEntryValueToDouble(entry));
+                                return new DataPoint(DateTimeAxis.ToDouble(entry.Timestamp), ConvertEntryValueToDouble(entry, ConversionFactor));
                             };
 
                         this.Series.Add(new KeyValuePair<KeyItem, T>(m.Key, (T)(object)series));
@@ -892,38 +1045,7 @@ namespace PSMViewer.Visualizations
             s.Background = OxyColor.FromArgb(0, 0, 0, 0);
 
             return s;
-        }
-
-        protected static double ConvertEntryValueToDouble(EntryItem entry)
-        {
-
-            double value = 0D;
-
-            switch (entry.Value.GetType().Name.ToLower())
-            {
-                case "string":
-
-                    try
-                    {
-                        value = Convert.ToDouble((string)entry.Value);
-                    }
-                    catch(Exception)
-                    {
-                        value = Convert.ToDouble(((string)entry.Value).Length);
-                    }                    
-                    
-                    break;
-
-                default:
-
-                    value = Convert.ToDouble(entry.Value);
-
-                    break;
-
-            }
-
-            return value;
-        }
+        }       
 
         
     }

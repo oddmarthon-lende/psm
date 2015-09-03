@@ -37,25 +37,35 @@ namespace PSMViewer
 {
         
     
-    public partial class MainWindow : Window, INotifyPropertyChanged, IReload
+    public sealed partial class MainWindow : Window, INotifyPropertyChanged, IReload
     {
         
         
-        private CancellationTokenSource _c = new CancellationTokenSource();
-        public CancellationTokenSource Cancel
-        {
-            get
-            {
-                return _c;
-            }
-        }
+        /// <summary>
+        /// <see cref="IReload.Cancel"/>
+        /// </summary>
+        public CancellationTokenSource Cancel { get; private set; } = new CancellationTokenSource();
 
         #region Static Properties and Methods
 
+        /// <summary>
+        /// The default extension in file dialogs
+        /// </summary>
         public static string DefaultExt = ".xaml";
+        
+        /// <summary>
+        /// The default filter in file dialogs
+        /// </summary>
         public static string Filter = "XAML documents (.xaml)|*.xaml";
 
+        /// <summary>
+        /// A format string used with <see cref="string.Format(string, object[])"/> to format the path to stored windows.
+        /// </summary>
         static string WindowsFolderFormat = @"windows\{0}";
+
+        /// <summary>
+        /// The isolated storage file store for this application.
+        /// </summary>
         static IsolatedStorageFile UserStore = IsolatedStorageFile.GetUserStoreForDomain();
 
         /// <summary>
@@ -101,6 +111,12 @@ namespace PSMViewer
 
         }
 
+
+        /// <summary>
+        /// Gets the chart type for the key and create a new instance.
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <returns>A new instance of the chart type if set, else <c>null</c></returns>
         private static VisualizationControl Restore(KeyItem key)
         {
             Type t = GetChartType(key);
@@ -111,14 +127,22 @@ namespace PSMViewer
 
         #region INotifyPropertyChanged
 
+        /// <summary>
+        /// <see cref="INotifyPropertyChanged.PropertyChanged"/>
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected virtual void OnPropertyChanged(string propertyName)
+        /// <summary>
+        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName">The property name that was changed</param>
+        private void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
-        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
+
+        private bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
             field = value;
@@ -137,6 +161,9 @@ namespace PSMViewer
             get { return (ReloadStatus)GetValue(StatusProperty); }
             set { SetValue(StatusProperty, value); }
         }
+        /// <summary>
+        /// Identifies the <see cref="Status"/> dependency property.
+        /// </summary>
         public static readonly DependencyProperty StatusProperty =
             DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(MainWindow), new PropertyMetadata(ReloadStatus.Idle));
 
@@ -159,53 +186,61 @@ namespace PSMViewer
             }
             
         }
-
-        /// <summary>
-        /// Used to read properties from the windows objects, because they were created in a different thread.        
-        /// </summary>
-        public class WindowInfo : DispatcherObjectPropertyWrapper
-        {
-            public VisualizationWindow Window { get; private set; }
-
-            public string Title {
-
-                get
-                {
-                    return (string)Window.GetValue("Title");
-                }
-            }
-
-            public BitmapSource Thumbnail {
-
-                get
-                {
-                    return (BitmapSource)Window.GetValue("Thumbnail");
-                }
-            }
-
-            public WindowInfo(VisualizationWindow window) : base(window)
-            {
-                this.Window = window;
-            }
-        }
+        
 
         /// <summary>
         /// Used to identify commands
         /// </summary>
         private enum CommandType
         {
+            /// <summary>
+            /// Show the about dialog.
+            /// </summary>
             ABOUT,
+            /// <summary>
+            /// Import XAML files
+            /// </summary>
             IMPORT,
+            /// <summary>
+            /// Refresh the table
+            /// </summary>
             REFRESH_TABLE,
+            /// <summary>
+            /// Refresh the key tree
+            /// </summary>
             REFRESH_TREE,
+            /// <summary>
+            /// Move to next result set.
+            /// </summary>
             NEXT,
+            /// <summary>
+            /// Move to previous result set.
+            /// </summary>
             PREVIOUS,
+            /// <summary>
+            /// Activate a window
+            /// </summary>
             WINDOWS,
+            /// <summary>
+            /// Exit the application
+            /// </summary>
             EXIT,
+            /// <summary>
+            /// Save everything to disk
+            /// </summary>
             SAVE,
-            CHART_TO_NEW_WINDOW,
+            /// <summary>
+            /// Set the chart type for a key, so that it will automatically use this type whenever data is loaded into the main window.
+            /// </summary>
             SET_CHART_TYPE,
-            NEW_WINDOW
+            /// <summary>
+            /// Create a new window
+            /// </summary>
+            NEW_WINDOW,
+            /// <summary>
+            /// Stop receiving realtime updates.
+            /// </summary>
+            STOP
         }
 
         /// <summary>
@@ -227,6 +262,7 @@ namespace PSMViewer
             Commands.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
             Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
             Commands.Add("NewWindow", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEW_WINDOW));
+            Commands.Add("Stop", new RelayCommand(ExecuteCommand, canExecute, CommandType.STOP));
 
             InitializeComponent();
 
@@ -241,7 +277,9 @@ namespace PSMViewer
 
             ((Main)DataContext).Timebased.Load += this.OnReload;
             ((Main)DataContext).Indexbased.Load += this.OnReload;
-            
+
+            ((Main)DataContext).Indexbased.Activate(this);
+
             ((Main)DataContext).PropertyChanged += (sender, e) =>
             {
                 if(e.PropertyName == "Status")
@@ -275,8 +313,7 @@ namespace PSMViewer
                     }),
                 Mode = BindingMode.OneWayToSource
             });
-
-
+            
         }
         
         #region Commands
@@ -295,16 +332,23 @@ namespace PSMViewer
         {
 
             RelayCommand cmd = (RelayCommand)sender;
-            Main context = (Main)this.DataContext;
+            Main ViewModel = (Main)this.DataContext;
             KeyItem key = (KeyItem)treeView.SelectedValue;
             VisualizationWindow window = null;
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
 
-                // Creates a new blank window in a new thread
+                case CommandType.STOP:
+
+                    ViewModel.Stop();
+
+                    break;
+
+                
                 case CommandType.NEW_WINDOW:
 
+                    // Creates a new blank window in a new thread
                     Thread thread = new Thread(new ParameterizedThreadStart((s) =>
                     {
 
@@ -329,10 +373,10 @@ namespace PSMViewer
 
                 case CommandType.WINDOWS:
 
-                    window = ((WindowInfo)parameter).Window;
+                    window = (VisualizationWindow)((WindowInfo)parameter).Window;
 
+                    window.Dispatcher.InvokeAsync(window.Show);
                     window.Dispatcher.InvokeAsync(window.Focus);
-                    this.OnReload(window);
 
                     break;
 
@@ -513,9 +557,9 @@ namespace PSMViewer
         }
 
         /// <summary>
-        /// Import a window into a new thread from the provided stream
+        /// Imports a window into a new thread from the provided stream that contains the XAML to deserialize
         /// </summary>
-        /// <param name="stream">The serialized text stream containing the XAML to de-serialize</param>
+        /// <param name="stream">The serialized text stream containing the XAML to deserialize</param>
         private static void Import(Stream stream)
         {
             
@@ -540,7 +584,7 @@ namespace PSMViewer
                             {
                                 w.Dispatcher.Invoke(delegate
                                 {
-                                    w.Id = new Guid();
+                                    w.Id = Guid.NewGuid();
                                 });
 
                                 MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -727,7 +771,7 @@ namespace PSMViewer
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="parameter"></param>
-        /// <returns><c>True</c> if it can execute, <c>False</c> if not.. </returns>
+        /// <returns><c>true</c> if it can execute, <c>false</c> if not.. </returns>
         private bool ContextMenu_CanExecute(object sender, object parameter)
         {
             try
@@ -744,7 +788,7 @@ namespace PSMViewer
         /// <summary>
         /// Move to next results
         /// </summary>
-        /// <returns><c>True</c> if there is more data, <c>False</c> if not</returns>
+        /// <returns><c>true</c> if there is more data, <c>false</c> if not</returns>
         public bool Next()
         {
             return ((Main)this.DataContext).Next();
@@ -753,7 +797,7 @@ namespace PSMViewer
         /// <summary>
         /// Move to previous results
         /// </summary>
-        /// <returns><c>True</c> if there is more data, <c>False</c> if not</returns>
+        /// <returns><c>true</c> if there is more data, <c>false</c> if not</returns>
         public bool Previous()
         {
             return ((Main)this.DataContext).Previous();

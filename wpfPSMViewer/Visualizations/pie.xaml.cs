@@ -35,7 +35,7 @@ namespace PSMViewer.Visualizations
             {
                 get
                 {
-                    return ConvertEntryValueToDouble(this);
+                    return ConvertEntryValueToDouble(this, Pie.ConversionFactor);
                 }
             }
 
@@ -51,6 +51,7 @@ namespace PSMViewer.Visualizations
 
         public Pie()
         {           
+
             Model.Axes.Clear();            
             InitializeComponent();
 

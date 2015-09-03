@@ -19,30 +19,32 @@ using System.Threading;
 namespace PSMViewer.Models
 {
     
+    /// <summary>
+    /// The <see cref="Key"/> wrapper class.
+    /// </summary>
     public class KeyItem : Key, IReload
     {
 
+        /// <summary>
+        /// <see cref="IReload.Status"/>
+        /// </summary>
         public ReloadStatus Status { get; set; } = ReloadStatus.Unknown;
+        
+        /// <summary>
+        /// <see cref="IReload.Dispatcher"/>
+        /// </summary>
+        public Dispatcher Dispatcher { get; private set; } = Dispatcher.CurrentDispatcher;
 
-        private Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
-        public Dispatcher Dispatcher
-        {
-            get
-            {
-                return _dispatcher;
-            }
-        }
-
-        private CancellationTokenSource _c = new CancellationTokenSource();
-        public CancellationTokenSource Cancel
-        {
-            get
-            {
-                return _c;
-            }
-        }
+        /// <summary>
+        /// <see cref="IReload.Cancel"/>
+        /// </summary>
+        public CancellationTokenSource Cancel { get; private set; } = new CancellationTokenSource();
 
         private KeyItem _parent = null;
+
+        /// <summary>
+        /// Gets a reference to the parent key if there is any
+        /// </summary>
         public KeyItem Parent {
 
             get {
@@ -66,7 +68,13 @@ namespace PSMViewer.Models
 
         }
 
+        /// <summary>
+        /// Backing field for the <see cref="Children"/> property
+        /// </summary>
         private ObservableCollection<KeyItem> _children = new ObservableCollection<KeyItem>();
+        /// <summary>
+        /// A collection of <see cref="KeyItem"/>'s that are the children of this key.
+        /// </summary>
         public ObservableCollection<KeyItem> Children
         {
 
@@ -78,6 +86,10 @@ namespace PSMViewer.Models
         }
         
         private string _path = null;
+
+        /// <summary>
+        /// Gets the full path to this key.
+        /// </summary>
         public string Path
         {
             get
@@ -113,10 +125,29 @@ namespace PSMViewer.Models
             }
         }
 
+        /// <summary>
+        /// The default constructor
+        /// </summary>
         public KeyItem() : base(null, null) { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="key">The <see cref="Key"/> to wrap</param>
         public KeyItem(Key key) : base(key.Name, key.Type) { }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="key">The key name</param>
+        /// <param name="type">The data type for values</param>
         public KeyItem(string key, Type type) : base(key, type) { }
                 
+        /// <summary>
+        /// Creates a new <see cref="KeyItem"/> from a <c>string</c>
+        /// </summary>
+        /// <param name="Path">The path</param>
+        /// <returns>The <see cref="KeyItem"/> that was created from the provided path.</returns>
         public static KeyItem CreateFromPath(string Path)
         {
 
@@ -136,6 +167,9 @@ namespace PSMViewer.Models
             return null;
         }
 
+        /// <summary>
+        /// Reloads the children
+        /// </summary>
         public void Reload()
         {
 
@@ -148,16 +182,28 @@ namespace PSMViewer.Models
 
         }
 
+        /// <summary>
+        /// <see cref="IReload.Next"/>
+        /// </summary>
+        /// <returns></returns>
         public bool Next()
         {
             return false;
         }
 
+        /// <summary>
+        /// <see cref="IReload.Previous"/>
+        /// </summary>
+        /// <returns></returns>
         public bool Previous()
         {
             return false;
         }
 
+        /// <summary>
+        /// Overrides the <see cref="object.ToString"/> method
+        /// </summary>
+        /// <returns>The path</returns>
         public override string ToString()
         {
             return Path;

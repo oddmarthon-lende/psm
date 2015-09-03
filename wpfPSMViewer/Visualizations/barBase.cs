@@ -117,7 +117,7 @@ namespace PSMViewer.Visualizations
                         dynamic item = Activator.CreateInstance(typeof(TItem));
 
                         item.CategoryIndex = Categories.IndexOf(m.Key.Name.ToLower());
-                        item.Value = ConvertEntryValueToDouble(entry);
+                        item.Value = ConvertEntryValueToDouble(entry, ConversionFactor);
 
                         return (TItem)item;
                     });

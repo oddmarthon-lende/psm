@@ -8,7 +8,6 @@ using System;
 using System.Windows;
 using PSMViewer.Visualizations;
 using System.Collections.Specialized;
-using PSMViewer.ViewModels;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Windows.Input;
@@ -19,14 +18,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.IO.IsolatedStorage;
 using System.IO;
-using System.Drawing;
 using System.Windows.Media.Imaging;
-using System.Drawing.Imaging;
-using System.Windows.Media;
 using System.Windows.Data;
 using PSMViewer.Utilities;
 using System.Threading;
-using System.Windows.Threading;
 
 namespace PSMViewer
 {
@@ -311,7 +306,7 @@ namespace PSMViewer
 
                 
         /// <summary>
-        /// When set to <c>True</c>, the mouse clicks will be captured and mouse event on the widget itself will not be fired.
+        /// When set to <c>true</c>, the mouse clicks will be captured and mouse event on the widget itself will not be fired.
         /// </summary>
         public bool CaptureRightClick
         {
@@ -328,20 +323,15 @@ namespace PSMViewer
         /// Hold the Tracker instance used to find which widget is under the mouse pointer.
         /// </summary>
         private Tracker _tracker = null;
-
+                
         /// <summary>
-        /// An image of the windows contents
+        /// A thumbnail with a predefined size of the windows contents.
         /// </summary>
         public BitmapSource Thumbnail
         {
             get
             {
-                
-                int w = 320;
-                double ratio = ActualWidth / ActualHeight;
-                
-                return this.GetThumbnailImage(w, (int)(w / ratio));
-
+                return this.GetThumbnail();
             }
         }
         
@@ -505,10 +495,10 @@ namespace PSMViewer
             }
 
         }
-
         
+                
         #region Event Handlers
-        
+
         /// <summary>
         /// Shows the left/right arrows
         /// </summary>
@@ -516,6 +506,7 @@ namespace PSMViewer
         /// <param name="e"></param>
         private void Widget_MouseDblClick(object sender, MouseEventArgs e)
         {
+
             VisualizationControl w = ((VisualizationControl)sender);
             
             if(w.HorizontalArrowsVisibility != Visibility.Visible)
@@ -619,7 +610,7 @@ namespace PSMViewer
 
                         grid.Children.Add(widget);
 
-                        DependencyPropertyDescriptor.FromProperty(DependencyPropertyDescriptor.FromName("Status", typeof(VisualizationControl), widget.GetType())).AddValueChanged(widget, Widget_StatusChanged);
+                        DependencyPropertyDescriptor.FromProperty(VisualizationControl.StatusProperty, widget.GetType()).AddValueChanged(widget, Widget_StatusChanged);
 
 
                     }
@@ -632,6 +623,11 @@ namespace PSMViewer
 
         }
 
+        /// <summary>
+        /// Propagates the <see cref="VisualizationControl.Status"/> up to <see cref="Status"/>.
+        /// </summary>
+        /// <param name="sender">The sender of the event</param>
+        /// <param name="e">The event arguments</param>
         public void Widget_StatusChanged(object sender, EventArgs e)
         {
             
@@ -649,7 +645,6 @@ namespace PSMViewer
             Status = ReloadStatus.Idle;
         }
                
-
         #endregion
 
         #region Commands
@@ -705,7 +700,8 @@ namespace PSMViewer
             /// </summary>
             UNDO
         }
-
+               
+        
         /// <summary>
         /// The execute event handler that is called by <see cref="RelayCommand"/>
         /// </summary>
@@ -716,7 +712,7 @@ namespace PSMViewer
             
             PropertiesWindow prpWindow;
             RelayCommand cmd = (RelayCommand)sender;
-            
+                       
             switch ((CommandType)cmd.Arguments[0].Value)
             {
 
@@ -809,14 +805,15 @@ namespace PSMViewer
                 case CommandType.PROPERTIES:
 
                     PushState();
-
+                    
                     prpWindow = (new PropertiesWindow(this)
                     {
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
                         Owner = this,
-                        Width = this.ActualHeight * .75,
-                        Height = this.ActualWidth * .75
+                        Width = SystemParameters.FullPrimaryScreenWidth * .5,
+                        Height = SystemParameters.FullPrimaryScreenHeight * .5,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen
                     });
 
                     prpWindow.ShowDialog();
@@ -840,7 +837,7 @@ namespace PSMViewer
         /// <summary>
         /// Used to specify that content should not be serialized when serialzing to XAML.
         /// </summary>
-        /// <returns><c>False</c> so that content will not be serialized to XAML</returns>
+        /// <returns><c>false</c> so that content will not be serialized to XAML</returns>
         public override bool ShouldSerializeContent()
         {
             return false;
@@ -850,7 +847,7 @@ namespace PSMViewer
         /// Used to disable serialization of selected properties to XAML.
         /// </summary>
         /// <param name="dp">The Dependency Property</param>
-        /// <returns><c>True</c> if the property should be serialize, <c>False</c> if not.</returns>
+        /// <returns><c>true</c> if the property should be serialize, <c>false</c> if not.</returns>
         protected override bool ShouldSerializeProperty(DependencyProperty dp)
         {
             //ControlsVisibility
@@ -862,7 +859,6 @@ namespace PSMViewer
                 IconProperty,
                 CommandBindingsProperty,
                 InputBindingsProperty,
-                VisibilityProperty,
                 WindowStyleProperty,
                 TopmostProperty,
                 NameProperty,

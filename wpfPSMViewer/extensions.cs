@@ -29,7 +29,8 @@ namespace PSMViewer
         /// 
         public static void OnReload(this Control control, IReload obj)
         {
-            OnReload(control, obj, (error) => {
+            OnReload(control, obj, (error) =>
+            {
                 MessageBox.Show(error.GetBaseException().Message, error.Message, MessageBoxButton.OK, MessageBoxImage.Error);
             });
 
@@ -60,11 +61,11 @@ namespace PSMViewer
                         {
 
                             obj.Status = ReloadStatus.Error;
-                            ErrorHandler(task.Exception);                           
+                            ErrorHandler(task.Exception);
 
                         });
 
-                        break;                    
+                        break;
 
                 }
 
@@ -135,63 +136,59 @@ namespace PSMViewer
         /// <param name="thumbWidth"></param>
         /// <param name="thumbHeight"></param>
         /// <returns>A thumbnail image bitmap source of the <see cref="ContentControl"/></returns>
-        public static BitmapSource GetThumbnailImage(this ContentControl v, int thumbWidth, int thumbHeight)
+        public static Stream GetThumbnailImageStream(this ContentControl v, int thumbWidth, int thumbHeight)
         {
 
             int width = (int)((FrameworkElement)v.Content).ActualWidth;
             int height = (int)((FrameworkElement)v.Content).ActualHeight;
 
-            if (!v.IsVisible || width == 0 || height == 0)
-                return null;
-
             System.Windows.Media.PixelFormat pf = System.Windows.Media.PixelFormats.Pbgra32;
             int stride = (pf.BitsPerPixel / 8);
             Bitmap img = new Bitmap(width, height);
+
+            if (!v.IsVisible || width == 0 || height == 0)
+                return null;
+
             RenderTargetBitmap bmp = new RenderTargetBitmap(img.Width, img.Height, img.HorizontalResolution, img.VerticalResolution, pf);
 
             bmp.Render(v);
-                        
+
             Graphics g = Graphics.FromImage(img);
 
             g.FillRectangle(System.Drawing.Brushes.Black, new Rectangle(new System.Drawing.Point(0, 0), new System.Drawing.Size(img.Width, img.Height)));
-            
-            using (MemoryStream stream = new MemoryStream())
+
+            using (MemoryStream memorystream = new MemoryStream())
             {
 
                 BitmapEncoder encoder = new BmpBitmapEncoder();
 
                 encoder.Frames.Add(BitmapFrame.Create(bmp));
-                encoder.Save(stream);
-                
-               g.DrawImage(new Bitmap(stream), 0F, 0F);
-                
+                encoder.Save(memorystream);
+
+                g.DrawImage(new Bitmap(memorystream), 0F, 0F);
+
             }
-            
+
             g.Flush(System.Drawing.Drawing2D.FlushIntention.Flush);
-            
-            using (MemoryStream stream = new MemoryStream())
-            {
-                
-                img.GetThumbnailImage(thumbWidth, thumbHeight, null, IntPtr.Zero).Save(stream, ImageFormat.Bmp);
 
-                pf = PixelFormats.Bgr32;
-                stride = pf.BitsPerPixel / 8;
+            MemoryStream stream = new MemoryStream();
 
-                int size = thumbWidth * thumbHeight * stride;
+            img.GetThumbnailImage(thumbWidth, thumbHeight, null, IntPtr.Zero).Save(stream, ImageFormat.Bmp);
+                       
+            return stream;
+                        
+        }
 
-                byte[] dst = new byte[size];
-                byte[] src = stream.ToArray();
-                
-                int w = thumbWidth * stride;
-                int j = 0;
-                for (int i = size - w - 1; i >= 54; i -= w)
-                {
-                    Array.ConstrainedCopy(src, i, dst, j, w);
-                    j += w;
-                }
-
-                return BitmapSource.Create(thumbWidth, thumbHeight, img.HorizontalResolution, img.VerticalResolution, pf, null, dst, w);
-            }
+        /// <summary>
+        /// Gets a <see cref="BitmapSource"/> that can be used to create a thumbnail.
+        /// </summary>
+        /// <param name="width">The width of the generated thumbnail. Proportions will be kept.</param>
+        /// <returns>The bitmap source</returns>
+        public static BitmapSource GetThumbnail(this ContentControl control, int width = 320)
+        {
+            double ratio = control.ActualWidth / control.ActualHeight;
+            Stream stream = control.GetThumbnailImageStream(width, (int)(width / ratio));
+            return stream == null ? null : BitmapFrame.Create(stream);
         }
     }
 }

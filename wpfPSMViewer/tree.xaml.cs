@@ -112,7 +112,7 @@ namespace PSMViewer
         /// <summary>
         /// IReload.Next
         /// </summary>
-        /// <returns><c>False</c></returns>
+        /// <returns><c>false</c></returns>
         public bool Next()
         {
             return false;
@@ -121,7 +121,7 @@ namespace PSMViewer
         /// <summary>
         /// IReload.Previous (required by the interface)
         /// </summary>
-        /// <returns><c>False</c></returns>
+        /// <returns><c>false</c></returns>
         public bool Previous()
         {
             return false;

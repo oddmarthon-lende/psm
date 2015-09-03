@@ -8,14 +8,14 @@
 using PSMonitor;
 using PSMViewer.Models;
 using System;
-using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -63,22 +63,10 @@ namespace PSMViewer.ViewModels
 
         }
 
-        private CancellationTokenSource _c = new CancellationTokenSource();
         /// <summary>
         /// <see cref="IReload.Cancel"/>
         /// </summary>
-        public CancellationTokenSource Cancel
-        {
-            get
-            {
-                return _c;
-            }
-
-            protected set
-            {
-                _c = value;
-            }
-        }
+        public CancellationTokenSource Cancel { get; protected set; } = new CancellationTokenSource();
 
         /// <summary>
         /// Hold references to all controls that has been instantiated.
@@ -105,14 +93,52 @@ namespace PSMViewer.ViewModels
         {
             get; set;
         } = null;
-        
+
+        private bool _active = false;
+        /// <summary>
+        /// Is this control active? 
+        /// </summary>
+        public virtual bool IsActive
+        {
+            get
+            {
+                return _active;
+            }
+            set
+            {
+                SetField(ref _active, value);
+            }
+        }
+
+        private ObservableCollection<EntryItem> _entries = new ObservableCollection<EntryItem>();
+        /// <summary>
+        /// A reference to the collection that holds the data.
+        /// </summary>
+        public ObservableCollection<EntryItem> Entries
+        {
+            get
+            {
+                return _entries;
+            }
+            set
+            {
+                if (_entries != null)
+                {
+                    _entries.CollectionChanged -= OnDataChanged;
+                }
+
+                _entries = value;
+
+                if (_entries != null)
+                    _entries.CollectionChanged += OnDataChanged;
+            }
+        }
+
         /// <summary>
         /// The constructor
         /// </summary>
         public Controls()
-        {
-            PSM.Store.DataReceived += Store_DataReceived;                        
-        }
+        { }
 
         /// <summary>
         /// A constructor that takes a <see cref="LoadHandler"/> as an argument
@@ -132,30 +158,7 @@ namespace PSMViewer.ViewModels
             if (Load != null)
                 Load(controls);
         }
-
-        /// <summary>
-        /// Handler the <see cref="PSM.Store.DataReceived"/> event
-        /// </summary>
-        /// <param name="data">The data envelope that was received</param>
-        private void Store_DataReceived(Envelope data)
-        {
-            if(Dispatcher.Thread != Thread.CurrentThread)
-            {
-                Dispatcher.Invoke(() => Store_DataReceived(data));
-
-                return;
-            }
-
-            if(this.Selected != null && this.Selected.Parent != null && this.Selected.Parent.Path == data.Path)
-            {
-                foreach (Entry entry in data.Entries)
-                {
-                    if(this.Selected.Name == entry.Key)
-                        Append((EntryItem)entry);
-                }
-            }
-        }
-
+                
         /// <summary>
         /// Append a data entry
         /// </summary>
@@ -184,11 +187,11 @@ namespace PSMViewer.ViewModels
             {
                 return pair.Value == this;
             });
-
-            PSM.Store.DataReceived -= Store_DataReceived;
-
+                        
             if (_entries != null)
                 _entries.CollectionChanged -= OnDataChanged;
+
+            this.IsActive = false;
 
             GC.SuppressFinalize(this);
         }
@@ -196,7 +199,6 @@ namespace PSMViewer.ViewModels
         #region Data Changed Eventemitter        
         
         private DispatcherOperation OnDataChangedDispatcherOperation = null;
-
         /// <summary>
         /// Invoked by the <see cref="IReload.Dispatcher"/>, when the data is updated.
         /// </summary>
@@ -248,9 +250,12 @@ namespace PSMViewer.ViewModels
         /// </summary>
         public virtual KeyItem Selected
         {
-            get { return _selected; }
+            get {
+                return _selected;
+            }
             set
             {
+                PSM.Store.Unregister(this);
                 SetField<KeyItem>(ref _selected, value);
             }
         }
@@ -322,6 +327,11 @@ namespace PSMViewer.ViewModels
         /// <returns></returns>
         public abstract bool Previous();
 
+        public virtual void Stop()
+        {
+            PSM.Store.Unregister(this);
+        }
+
         /// <summary>
         /// Triggers the <see cref="ActivationRequested"/> event.
         /// </summary>
@@ -332,7 +342,7 @@ namespace PSMViewer.ViewModels
         }
 
        /// <summary>
-       /// Set this control's <see cref="IsActive"/> property to <c>True</c> and other controls with the same <paramref name="context"/> to <c>False</c>
+       /// Set this control's <see cref="IsActive"/> property to <c>true</c> and other controls with the same <paramref name="context"/> to <c>false</c>
        /// </summary>
        /// <param name="context">An object that identifies which context this control belongs to.</param>
         public virtual void Activate(object context) {
@@ -346,9 +356,7 @@ namespace PSMViewer.ViewModels
             if (!Instances.Contains(p))
                 Instances.Add(p);
 
-            foreach (KeyValuePair<object, Controls> pair in Instances) {
-
-                
+            foreach (KeyValuePair<object, Controls> pair in Instances) {               
 
                 if (pair.Key != context)
                     continue;
@@ -360,45 +368,7 @@ namespace PSMViewer.ViewModels
             OnActivationRequested();
         }
 
-        private bool _active = false;
-        /// <summary>
-        /// Is this control active? 
-        /// </summary>
-        public virtual bool IsActive
-        {
-            get
-            {
-                return _active;
-            }
-            set
-            {
-                SetField(ref _active, value);
-            }
-        }
-
-        private ObservableCollection<EntryItem> _entries = new ObservableCollection<EntryItem>();
-        /// <summary>
-        /// A reference to the collection that holds the data.
-        /// </summary>
-        public ObservableCollection<EntryItem> Entries
-        {
-            get
-            {
-                return _entries;
-            }
-            set
-            {
-                if(_entries != null)
-                {
-                    _entries.CollectionChanged -= OnDataChanged;
-                }
-
-                _entries = value;
-
-                if(_entries != null)
-                    _entries.CollectionChanged += OnDataChanged;
-            }
-        }
+        
     }
 
     /// <summary>
@@ -408,6 +378,14 @@ namespace PSMViewer.ViewModels
     /// <typeparam name="TCount">Timespan or a number type</typeparam>
     public class Controls<T, TCount> : Controls, INotifyPropertyChanged
     {
+
+        private string _typeName = typeof(T).Name.ToLower();
+
+        private Task<IEnumerable<EntryItem>> ReloadTask = null;
+
+        private Dictionary<string, Queue<Entry>> Data = new Dictionary<string, Queue<Entry>>();
+
+        private DispatcherOperation ProcessQueueOperation = null;
 
         private ReloadStatus _status = ReloadStatus.Idle;
         /// <summary>
@@ -564,7 +542,12 @@ namespace PSMViewer.ViewModels
             }
         }
 
-        
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="Entries"></param>
+        /// <param name="Start"></param>
+        /// <param name="Count"></param>
         public Controls(ObservableCollection<EntryItem> Entries, object Start, object Count)
         {
             this.Entries = Entries??this.Entries;
@@ -572,6 +555,10 @@ namespace PSMViewer.ViewModels
             this.Count = Count;
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="other"></param>
         public Controls(Controls<T, TCount> other) : this(other.Entries, other.Start, other.Count)
         {
             Selected = other.Selected;
@@ -609,17 +596,24 @@ namespace PSMViewer.ViewModels
             return enumerable == null ? null : enumerable.Select(entry => {
                 return (EntryItem)entry;
             });
-        }
+        }        
 
+        /// <summary>
+        /// <see cref="Controls.Append(EntryItem)"/>
+        /// </summary>
         protected override void Append(EntryItem item)
         {
 
-            switch (typeof(T).Name.ToLower())
+            switch (_typeName)
             {
 
                 case "datetime":
 
-                    if (item.Timestamp >= (DateTime)Start && item.Timestamp <= (DateTime)End)
+                    DateTime start = (DateTime)Start;
+                    DateTime end = (DateTime)End;
+                    DateTime ts = item.Timestamp;
+
+                    if (ts >= start && ts <= end)
                         break;
                     else
                         return;
@@ -630,11 +624,7 @@ namespace PSMViewer.ViewModels
                 case "int64":
                     {
 
-                        if ((long)Start > 0) return;
-
-                        while (Entries.Count >= (long)Count)
-                            Entries.RemoveAt(Entries.Count - 1);
-
+                        if ((long)Start > 0) return;                        
                         break;
 
                     }
@@ -642,14 +632,17 @@ namespace PSMViewer.ViewModels
             }
 
             base.Append(item);
-        }
+        }        
 
-        private Task<IEnumerable<EntryItem>> ReloadTask = null;
-
+        /// <summary>
+        /// <see cref="Controls.Reload"/>
+        /// </summary>
         public override async void Reload()
         {
 
             IEnumerable<EntryItem> data = null;
+
+            PSM.Store.Unregister(this);
 
             if (ReloadTask != null)
             {
@@ -697,18 +690,155 @@ namespace PSMViewer.ViewModels
                 return;
             }       
 
-            Entries.Clear();            
-
+            Entries.Clear();
+            
             foreach (EntryItem entry in data ?? Entries)
             {
                 Entries.Add(entry);
             }
 
+            DateTime StartReceiveIndex = Entries.Count > 0 ? Entries.Max((item) =>
+            {
+                return item.Timestamp;
+            }) : DateTime.Now;            
+
             SetField(ref _status, ReloadStatus.Idle, "Status");
             ReloadTask = null;
 
+            Debug.WriteLine("Loading... {0}", Selected);
+
+            Dispatcher.InvokeAsync(delegate
+            {
+
+                Debug.WriteLine("Registering... {0}", Selected);
+                PSM.Store.Register(this, Selected.ToString(), StartReceiveIndex, Store_DataReceived);
+
+            }, DispatcherPriority.ContextIdle);
+
+        }        
+
+        /// <summary>
+        /// Handles the receival of new data that is added to the store after the last reload
+        /// </summary>
+        /// <param name="data">The data envelope that was received</param>
+        /// <return>The highest timestamp in the dataset.</return>
+        private object Store_DataReceived(Envelope data)
+        {
+
+            if (IsActive)
+            {
+
+                if (!Data.ContainsKey(data.Path))
+                    Data.Add(data.Path, new Queue<Entry>());
+
+                Queue<Entry> queue;
+
+                Data.TryGetValue(data.Path, out queue);
+
+                foreach (Entry entry in data.Entries)
+                {
+                    queue.Enqueue(entry);
+                }
+
+                if(ProcessQueueOperation == null)
+                    ProcessQueueOperation = Dispatcher.InvokeAsync(ProcessQueue, DispatcherPriority.Normal);
+
+            }
+
+            return data.Entries.Max(entry => { return entry.Timestamp; });
+        }        
+
+        /// <summary>
+        /// Processes the queue and updates data
+        /// </summary>
+        private void ProcessQueue()
+        {          
+
+            Queue<Entry> queue;
+
+            ProcessQueueOperation = null;
+
+            if (!Data.TryGetValue(Selected.Parent.Path, out queue))
+                return;            
+
+            foreach (Entry entry in queue)
+            {
+                if (entry.Key == Selected.Name)
+                    Append((EntryItem)entry);
+            }
+
+            queue.Clear();
+
+            switch (_typeName)
+            {
+
+                case "datetime" :
+
+                    DateTime start = (DateTime)Start;
+                    DateTime end = (DateTime)End;
+                    
+                    EntryItem entry = null;
+
+                    int count = Entries.Count;
+
+                    while(count > 0)
+                    {
+
+                        entry = Entries.First();
+
+                        if(entry.Timestamp > end)
+                        {
+                            Entries.RemoveAt(0);
+                            count--;
+
+                            continue;
+                        }
+
+                        break;
+                    }
+
+                    count = Entries.Count;
+
+                    while (count > 0)
+                    {
+
+                        entry = Entries.Last();
+
+                        if (entry.Timestamp < start)
+                        {
+                            Entries.Remove(entry);
+                            count--;
+
+                            continue;
+                        }
+
+                        break;
+                    }                                    
+
+                    break;
+
+                case "byte"  :
+                case "int16" :
+                case "int32" :
+                case "int64" :
+                {
+
+                        while (Entries.Count > (long)Count)
+                            Entries.RemoveAt(Entries.Count - 1);
+
+                        break;
+
+                }
+
+            }
+            
+            
         }
 
+        /// <summary>
+        /// Move to the next result set
+        /// </summary>
+        /// <returns></returns>
         public override bool Next()
         {
 
@@ -739,6 +869,10 @@ namespace PSMViewer.ViewModels
 
         }
 
+        /// <summary>
+        /// Move to the previous result set
+        /// </summary>
+        /// <returns></returns>
         public override bool Previous()
         {
 

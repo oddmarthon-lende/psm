@@ -107,6 +107,14 @@ namespace PSMViewer.ViewModels
 
             return false;
         }
+
+        public override void Stop()
+        {
+            Timebased.Stop();
+            Indexbased.Stop();
+
+            base.Stop();
+        }
     }   
     
 
