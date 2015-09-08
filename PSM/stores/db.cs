@@ -14,8 +14,10 @@ namespace PSMonitor.Stores
     /// <summary>
     /// Database Store
     /// </summary>
-    public class DB : IStore
+    public class DB : Store
     {
+
+        #region Fields and Properties
 
         /// <summary>
         /// A class that implements the <see cref="IEnumerable{Entry}"/> and <see cref="IEnumerator{Entry}"/> interfaces and provides access to the results from the server through these interfaces.
@@ -130,61 +132,14 @@ namespace PSMonitor.Stores
             }
 
         }
-
-        /// <summary>
-        /// Extends the <see cref="PSMonitor.Path"/> with some added functionality
-        /// </summary>
-        protected class Path : PSMonitor.Path
+              
+        protected new class Path : Store.Path
         {
-            /// <summary>
-            /// The index used when polling for new data.
-            /// </summary>
-            public object StartIndex { get; set; }
 
             /// <summary>
-            /// The handler that will receive the data, when there is new data available.
+            /// <see cref="Store.Path.Path(PSMonitor.Path)"/>
             /// </summary>
-            public RealTimeData Handler { get; set; }
-
-            /// <summary>
-            /// The constructor
-            /// </summary>
-            /// <param name="path">The <see cref="PSMonitor.Path"/> to extend.</param>
-            public Path(PSMonitor.Path path)
-            {
-                this.Namespace = path.Namespace;
-                this.Key = path.Key;
-            }
-
-            /// <summary>
-            /// Adds the <see cref="PSMonitor.Path.Namespace"/> and <see cref="PSMonitor.Path.Key"/> as parameters to the provided <see cref="SqlCommand"/>.
-            /// </summary>
-            /// <param name="command">The command to add the parameters to.</param>
-            public void ToCommandParameters(SqlCommand command)
-            {
-
-                command.Parameters.Add(new SqlParameter("namespace", SqlDbType.VarChar)
-                {
-
-                    ParameterName = "@Namespace",
-                    Direction = ParameterDirection.Input,
-                    SqlDbType = SqlDbType.VarChar,
-                    SqlValue = this.Namespace
-
-
-                });
-
-                command.Parameters.Add(new SqlParameter("key", SqlDbType.VarChar)
-                {
-
-                    ParameterName = "@Key",
-                    Direction = ParameterDirection.Input,
-                    SqlDbType = SqlDbType.VarChar,
-                    SqlValue = this.Key
-
-                });
-
-            }
+            public Path(PSMonitor.Path path) : base(path) { }
 
             /// <summary>
             /// Converts a data record to <see cref="Entry" />
@@ -217,6 +172,35 @@ namespace PSMonitor.Stores
                 return new Path(PSMonitor.Path.Extract(path));
             }
 
+            /// <summary>
+            /// Adds the <see cref="PSMonitor.Path.Namespace"/> and <see cref="PSMonitor.Path.Key"/> as parameters to the provided <see cref="SqlCommand"/>.
+            /// </summary>
+            /// <param name="command">The command to add the parameters to.</param>
+            public void ToCommandParameters(SqlCommand command)
+            {
+
+                command.Parameters.Add(new SqlParameter("namespace", SqlDbType.VarChar)
+                {
+
+                    ParameterName = "@Namespace",
+                    Direction = ParameterDirection.Input,
+                    SqlDbType = SqlDbType.VarChar,
+                    SqlValue = this.Namespace
+
+
+                });
+
+                command.Parameters.Add(new SqlParameter("key", SqlDbType.VarChar)
+                {
+
+                    ParameterName = "@Key",
+                    Direction = ParameterDirection.Input,
+                    SqlDbType = SqlDbType.VarChar,
+                    SqlValue = this.Key
+
+                });
+
+            }
         }
 
         /// <summary>
@@ -227,12 +211,8 @@ namespace PSMonitor.Stores
         /// <summary>
         /// Holds the threads created by this instance
         /// </summary>
-        protected ConcurrentBag<Thread> threads;
-
-        /// <summary>
-        /// Holds the registered receivers of realtime data updates.
-        /// </summary>
-        protected ConcurrentDictionary<object, ConcurrentBag<Path>> Receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
+        protected IReadOnlyCollection<Thread> _threads;
+        
 
         /// <summary>
         /// Holds a time when cleanup was executed.
@@ -249,6 +229,10 @@ namespace PSMonitor.Stores
         /// </summary>
         private bool _disposed = false;
 
+        private Guid _id = Guid.NewGuid();
+
+        #endregion
+
         /// <summary>
         /// The constructor
         /// </summary>
@@ -263,25 +247,27 @@ namespace PSMonitor.Stores
                 VerifyConnection(connection);
             }
 
-            threads = new ConcurrentBag<Thread>();
+            List<Thread> threads = new List<Thread>();
 
             threads.Add(new Thread(Dispatch));
             threads.Add(new Thread(Cleanup));
             threads.Add(new Thread(Receive));
 
             int index = 0;
-            foreach(Thread thread in threads)
+            foreach (Thread thread in threads)
             {
-                thread.Name = String.Format("DB Store Thread #{0}", index++);
+                thread.Name = String.Format("DB Store [{0}] Thread #{1}", _id, index++);
                 thread.Start(this);
-            }                      
+            }
+
+            _threads = threads;
 
         }
 
         /// <summary>
         /// <see cref="IStore.Delete(string)"/>
         /// </summary>
-        public long Delete(string path)
+        public override long Delete(string path)
         {
             return Delete_(path, null, null);
         }
@@ -289,7 +275,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
         /// </summary>
-        public long Delete(string path, DateTime start, DateTime end)
+        public override long Delete(string path, DateTime start, DateTime end)
         {
             return Delete_(path, start, end);
         }
@@ -354,12 +340,12 @@ namespace PSMonitor.Stores
         /// <summary>
         /// Releases any resources created by this object
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
 
             _disposed = true;
 
-            foreach(Thread thread in threads)
+            foreach(Thread thread in _threads)
             {
                 thread.Interrupt();
                 Debug.WriteLine("DB Store : Waiting for threads to exit");
@@ -371,7 +357,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Get(string)"/>
         /// </summary>
-        public Entry Get(string path)
+        public override Entry Get(string path)
         {
 
             SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString"));
@@ -401,7 +387,7 @@ namespace PSMonitor.Stores
         /// <see cref="IStore.Get(string)"/>
         /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
         /// </summary>
-        protected IEnumerable<Entry> Get_(string path, object start, object end)
+        protected virtual IEnumerable<Entry> Get_(string path, object start, object end)
         {
             SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString"));
 
@@ -443,7 +429,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
         /// </summary>
-        public IEnumerable<Entry> Get(string path, DateTime start, DateTime end)
+        public override IEnumerable<Entry> Get(string path, DateTime start, DateTime end)
         {
             return Get_(path, start, end);
         }
@@ -451,92 +437,16 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Get(string, long, long)"/>
         /// </summary>
-        public IEnumerable<Entry> Get(string path, long start, long end)
+        public override IEnumerable<Entry> Get(string path, long start, long end)
         {
             return Get_(path, start, end);
         }
 
-        /// <summary>
-        /// <see cref="IStore.Register(object, string, object, RealTimeData)"/>
-        /// </summary>
-        public void Register(object context, string path, object startingIndex, RealTimeData handler)
-        {
-
-            ConcurrentBag<Path> paths = null;
-
-            foreach (object o in new object[] { context, path, startingIndex, handler })
-            {
-                if (o == null)
-                    throw new NullReferenceException();
-            }
-            
-            if (!Receivers.ContainsKey(context))
-            {
-                paths = new ConcurrentBag<Path>();
-                while (!Receivers.TryAdd(context, paths)) ;
-            }
-            else
-            {
-                while (!Receivers.TryGetValue(context, out paths));
-            }
-
-            Path p1 = Path.Extract(path);
-
-            if (!paths.Contains(p1))
-            {
-                paths.Add(p1);
-            }
-            else
-            {
-                
-                p1 = paths.Single((p2) =>
-                {
-                    return p2 == p1;
-                });
-            }
-
-            p1.StartIndex = startingIndex;
-            p1.Handler = handler;
-
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Unregister(object)"/>
-        /// </summary>
-        public void Unregister(object context)
-        {
-            ConcurrentBag<Path> list;
-
-            if (!Receivers.ContainsKey(context))
-                return;
-
-            while (!Receivers.TryRemove(context, out list));
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Unregister(object, string)"/>
-        /// </summary>
-        public void Unregister(object context, string path)
-        {
-
-            ConcurrentBag<Path> list;
-
-            if (!Receivers.ContainsKey(context))
-                return;
-
-            while (!Receivers.TryGetValue(context, out list));
-
-            Path p1 = Path.Extract(path);
-
-            list.TakeWhile((p2) => { return p1 == p2; });
-            
-
-        }
-
+        
         /// <summary>
         /// <see cref="IStore.Put(Envelope)"/>
         /// </summary>
-        public void Put(Envelope data)
+        public override void Put(Envelope data)
         {
 
             if (!_disposed)
@@ -547,7 +457,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.GetKeys(string)"/>
         /// </summary>
-        public Key[] GetKeys(string path)
+        public override Key[] GetKeys(string path)
         {
 
             using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
@@ -668,12 +578,12 @@ namespace PSMonitor.Stores
                 try
                 {
 
-                    foreach (KeyValuePair<object, ConcurrentBag<Path>> pair in context.Receivers)
+                    foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in context.Receivers)
                     {
 
-                        ConcurrentBag<Path> paths = pair.Value;
+                        ConcurrentBag<Store.Path> paths = pair.Value;
 
-                        foreach (Path path in paths)
+                        foreach (Store.Path path in paths)
                         {
 
                             using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
@@ -721,7 +631,7 @@ namespace PSMonitor.Stores
                                         SqlValue = path.Key
                                     });
 
-                                    Entry[] entries = new Entries(path, connection, command).ToArray();
+                                    Entry[] entries = new Entries(new Path(path), connection, command).ToArray();
 
                                     if (entries.Length > 0)
                                     {

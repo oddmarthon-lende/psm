@@ -6,8 +6,8 @@ using System.Collections;
 using System.Collections.Concurrent;
 using PSMonitor.Stores;
 using System.Configuration;
-using System.Diagnostics;
 using System.Threading;
+using System.Linq;
 
 namespace PSMonitor
 {
@@ -93,7 +93,8 @@ namespace PSMonitor
         protected System.Timers.Timer timer { get; set; }
         private List<Script> scripts { get; set; }
 
-        private static ConcurrentDictionary<Thread, IStore> _Store = new ConcurrentDictionary<Thread, IStore>();
+        private static ConcurrentDictionary<Thread, IStore> Pool = new ConcurrentDictionary<Thread, IStore>();
+
         public static IStore Store {
 
             get {
@@ -101,7 +102,7 @@ namespace PSMonitor
                 Thread thread   = Thread.CurrentThread;
                 IStore instance = null;
                 
-                if (!_Store.ContainsKey(thread)) {
+                if (!Pool.ContainsKey(thread)) {
 
                     Type store = Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
 
@@ -120,7 +121,8 @@ namespace PSMonitor
 
                         }, typeof(IStore));
 
-                        while(!_Store.TryAdd(thread, instance));
+                        while(!Pool.TryAdd(thread, instance));
+                                                
 
                     }
                     else
@@ -130,8 +132,20 @@ namespace PSMonitor
 
                 }
 
-                if (_Store.ContainsKey(thread))
-                    while (!_Store.TryGetValue(thread, out instance));
+                if (Pool.ContainsKey(thread))
+                    while (!Pool.TryGetValue(thread, out instance));
+
+                foreach(Thread t in (from pair in Pool select pair.Key))
+                {
+
+                    IStore store = null;
+
+                    if (!t.IsAlive && Pool.TryRemove(t, out store))
+                    {
+                        store.Dispose();
+                    }
+
+                }
 
                 return instance;
 
