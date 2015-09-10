@@ -390,6 +390,8 @@ namespace PSMonitor.Stores
                 thread.Join();
             }
 
+            base.Dispose();
+
         }
 
         /// <summary>

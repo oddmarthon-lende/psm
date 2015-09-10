@@ -236,7 +236,9 @@ namespace PSMonitor.Stores
                 IStore store;
 
                 if (pair.Value == this)
+                {
                     PSM.Pool.TryRemove(pair.Key, out store);
+                }                    
 
             }
 
