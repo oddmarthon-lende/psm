@@ -158,7 +158,7 @@ namespace PSMViewer.Models
 
             string p = String.Join(".", s);
 
-            foreach (Key k in PSM.Store.GetKeys(p))
+            foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).GetKeys(p))
             {
                 if(k.Name == key)
                     return new KeyItem(k) { _path = Path };
@@ -175,7 +175,7 @@ namespace PSMViewer.Models
 
             _children.Clear();
 
-            foreach (Key k in PSM.Store.GetKeys(Path))
+            foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).GetKeys(Path))
             {
                 _children.Add(new KeyItem(k) { _parent = this });
             }

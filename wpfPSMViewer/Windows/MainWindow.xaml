@@ -29,7 +29,9 @@
         <KeyBinding Modifiers="Alt" Key="Right" Command="{Binding Commands[Next], ElementName=window}"  />
         <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding Commands[Previous], ElementName=window}"  />
         <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding Commands[NewWindow], ElementName=window}"  />
-        <KeyBinding Key="Pause" Command="{Binding Commands[Stop], ElementName=window}"  />
+        <KeyBinding Key="Pause" Command="{Binding Commands[Stop], ElementName=window}"  />        
+        <KeyBinding Key="W" Modifiers="Ctrl" Command="{Binding Commands[Settings], ElementName=window}"  />
+        <KeyBinding Key="S" Command="{Binding Commands[Settings], ElementName=window}"  />
         
     </Window.InputBindings>
 
@@ -103,6 +105,8 @@
                             <Separator />
                             <MenuItem Header="Next" InputGestureText="Alt+Right" Command="{Binding Commands[Next], ElementName=window}"  />
                             <MenuItem Header="Previous" InputGestureText="Alt+Left" Command="{Binding Commands[Previous], ElementName=window}"  />
+                            <Separator />
+                            <MenuItem Header="Settings" InputGestureText="Ctrl+W, S" Command="{Binding Commands[Settings], ElementName=window}"  />
                         </MenuItem>
 
                         <MenuItem Header="Windows" ItemsSource="{Binding Windows, ElementName=window}">

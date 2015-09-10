@@ -15,7 +15,7 @@ namespace PSMonitor
             if (type != EventLogEntryType.Error && type != EventLogEntryType.FailureAudit)
                 return;
 
-            PSM.Store.Put(new Envelope()
+            PSM.Store().Put(new Envelope()
             {
 
                 Path = "@errors",
@@ -71,7 +71,7 @@ namespace PSMonitor
             }
             else
             {
-                Logger.failure("Directory does not exist");
+                Logger.Failure("Directory does not exist");
             }
         }
 

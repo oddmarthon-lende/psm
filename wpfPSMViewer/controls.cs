@@ -71,7 +71,7 @@ namespace PSMViewer.ViewModels
         /// <summary>
         /// Hold references to all controls that has been instantiated.
         /// </summary>
-        private static List<KeyValuePair<object, Controls>> Instances = new List<KeyValuePair<object, Controls>>();
+        private static ConcurrentBag<KeyValuePair<object, Controls>> Instances = new ConcurrentBag<KeyValuePair<object, Controls>>();
 
         /// <summary>
         /// The ActivationRequested will be emitted when a controls <see cref="Controls.Activate"/> method is called.
@@ -164,7 +164,7 @@ namespace PSMViewer.ViewModels
         /// </summary>
         /// <param name="item"></param>
         protected virtual void Append(EntryItem item) {
-
+            
             if (!IsActive) return;
             Entries.Insert(0, item);
         }
@@ -193,7 +193,10 @@ namespace PSMViewer.ViewModels
 
             this.IsActive = false;
 
+            PSM.Store(Dispatcher).Unregister(this);
+                        
             GC.SuppressFinalize(this);
+
         }
 
         #region Data Changed Eventemitter        
@@ -255,7 +258,7 @@ namespace PSMViewer.ViewModels
             }
             set
             {
-                PSM.Store.Unregister(this);
+                PSM.Store(Dispatcher).Unregister(this);
                 SetField<KeyItem>(ref _selected, value);
             }
         }
@@ -329,7 +332,7 @@ namespace PSMViewer.ViewModels
 
         public virtual void Stop()
         {
-            PSM.Store.Unregister(this);
+            PSM.Store(Dispatcher).Unregister(this);
         }
 
         /// <summary>
@@ -379,6 +382,9 @@ namespace PSMViewer.ViewModels
     public class Controls<T, TCount> : Controls, INotifyPropertyChanged
     {
 
+        /// <summary>
+        /// The type name of the type parameter <see cref="T"/>
+        /// </summary>
         private string _typeName = typeof(T).Name.ToLower();
 
         private Task<IEnumerable<EntryItem>> ReloadTask = null;
@@ -580,7 +586,7 @@ namespace PSMViewer.ViewModels
 
                     case "datetime":
 
-                        enumerable = (PSM.Store.Get(key.Path, (DateTime)Start, (DateTime)End));
+                        enumerable = (PSM.Store(Dispatcher).Get(key.Path, (DateTime)Start, (DateTime)End));
                         break;
 
                     case "byte":
@@ -588,7 +594,7 @@ namespace PSMViewer.ViewModels
                     case "int32":
                     case "int64":
 
-                        enumerable = (PSM.Store.Get(key.Path, (long)Start, (long)End));
+                        enumerable = (PSM.Store(Dispatcher).Get(key.Path, (long)Start, (long)End));
                         break;
                 }
             }
@@ -642,7 +648,7 @@ namespace PSMViewer.ViewModels
 
             IEnumerable<EntryItem> data = null;
 
-            PSM.Store.Unregister(this);
+            PSM.Store(Dispatcher).Unregister(this);
 
             if (ReloadTask != null)
             {
@@ -669,7 +675,7 @@ namespace PSMViewer.ViewModels
                                 SetField(ref _status, ReloadStatus.Error, "Status");
                             });
                             
-                            Logger.error(error);
+                            Logger.Error(error);
 
                         }
 
@@ -695,12 +701,7 @@ namespace PSMViewer.ViewModels
             foreach (EntryItem entry in data ?? Entries)
             {
                 Entries.Add(entry);
-            }
-
-            DateTime StartReceiveIndex = Entries.Count > 0 ? Entries.Max((item) =>
-            {
-                return item.Timestamp;
-            }) : DateTime.Now;            
+            }                                
 
             SetField(ref _status, ReloadStatus.Idle, "Status");
             ReloadTask = null;
@@ -711,7 +712,7 @@ namespace PSMViewer.ViewModels
             {
 
                 Debug.WriteLine("Registering... {0}", Selected);
-                PSM.Store.Register(this, Selected.ToString(), StartReceiveIndex, Store_DataReceived);
+                PSM.Store(Dispatcher).Register(this, Selected.ToString(), DateTime.Now, Received);
 
             }, DispatcherPriority.ContextIdle);
 
@@ -722,8 +723,11 @@ namespace PSMViewer.ViewModels
         /// </summary>
         /// <param name="data">The data envelope that was received</param>
         /// <return>The highest timestamp in the dataset.</return>
-        private object Store_DataReceived(Envelope data)
+        private object Received(Envelope data)
         {
+
+            if (Thread.CurrentThread != Dispatcher.Thread)
+                return Dispatcher.Invoke(new Func<Envelope, object>(Received), DispatcherPriority.Normal, data);
 
             if (IsActive)
             {
@@ -739,7 +743,7 @@ namespace PSMViewer.ViewModels
                 {
                     queue.Enqueue(entry);
                 }
-
+                
                 if(ProcessQueueOperation == null)
                     ProcessQueueOperation = Dispatcher.InvokeAsync(ProcessQueue, DispatcherPriority.Normal);
 

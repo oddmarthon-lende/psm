@@ -123,7 +123,7 @@ namespace PSMViewer
     /// <summary>
     /// A window that can contain many <see cref="VisualizationControl"/>
     /// </summary>
-    public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IUndo, IPropertyProvider
+    public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IUndo, IPropertyProvider, IDisposable
     {
         
         
@@ -710,7 +710,7 @@ namespace PSMViewer
         private void ExecuteCommand(object sender, object parameter)
         {
             
-            PropertiesWindow prpWindow;
+            Window window;
             RelayCommand cmd = (RelayCommand)sender;
                        
             switch ((CommandType)cmd.Arguments[0].Value)
@@ -806,7 +806,7 @@ namespace PSMViewer
 
                     PushState();
                     
-                    prpWindow = (new PropertiesWindow(this)
+                    window = (new PropertiesWindow(this)
                     {
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
@@ -816,7 +816,7 @@ namespace PSMViewer
                         WindowStartupLocation = WindowStartupLocation.CenterScreen
                     });
 
-                    prpWindow.ShowDialog();
+                    window.ShowDialog();
                     
                     break;
 
@@ -957,5 +957,13 @@ namespace PSMViewer
             UndoExtension.PushState(this);
         }
 
+        /// <summary>
+        /// <see cref="IDisposable.Dispose"/>
+        /// </summary>
+        public void Dispose()
+        {
+            // If there is a store linked to the dispatcher, dispose of it
+            PSMonitor.PSM.Store(Dispatcher).Dispose();
+        }
     }
 }

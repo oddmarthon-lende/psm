@@ -1332,44 +1332,57 @@ namespace PSMViewer.Visualizations
             return String.IsNullOrEmpty(Title) ? String.Format("<{0}> [{1}]", GetType().Name, Id) : Title;
         }
 
+        /// <summary>
+        /// Converts the value of an <see cref="EntryItem"/> to <c>double</c>
+        /// </summary>
+        /// <param name="entry">The item to convert the value of</param>
+        /// <param name="Factor">A conversion factor that scales the value.</param>
+        /// <returns></returns>
         protected static double ConvertEntryValueToDouble(EntryItem entry, double Factor = 1D)
         {
 
-            double value = 0D;
+            double? v = null;
 
-            switch (entry.Value.GetType().Name.ToLower())
+            switch (Type.GetTypeCode(entry.Value.GetType()))
             {
-                case "string":
 
-                    //try
-                    //{
-                    //    if(entry.Value is string)
-                    //    {
-                    //        value = Convert.ToDouble((string)entry.Value);
-                    //    }
-                            
-                    //}
-                    //catch (FormatException)
-                    //{
-                    //    if (entry.Value is string)
-                    //        value = Convert.ToDouble(((string)entry.Value).Length);
-                    //}
-                    //catch (Exception) { }
+                case TypeCode.Byte    :
+                case TypeCode.Decimal :
+                case TypeCode.Double  :
+                case TypeCode.Int16   :
+                case TypeCode.Int32   :
+                case TypeCode.Int64   :
+                case TypeCode.SByte   :
+                case TypeCode.Single  :
+                case TypeCode.UInt16  :
+                case TypeCode.UInt32  :
+                case TypeCode.UInt64  :
+                case TypeCode.Char    :
 
                     break;
 
-                default:
+                case TypeCode.String:
 
-                    try {
-                        value = Convert.ToDouble(entry.Value);
+                    if(System.Text.RegularExpressions.Regex.IsMatch((string)entry.Value, @"^(\d+)", System.Text.RegularExpressions.RegexOptions.Compiled))
+                    {
+
+                        double value;
+
+                        if (double.TryParse((string)entry.Value, out value))
+                        {
+                            v = value;
+                            break;
+                        }
+
                     }
-                    catch(Exception) { }
+
+                    v = 0D;
 
                     break;
-
             }
+                        
+            return (v.HasValue ? v.Value : Convert.ToDouble(entry.Value))* Factor;
 
-            return value * Factor;
         }
     }
 }

@@ -186,7 +186,7 @@ namespace PSMViewer
             }
             
         }
-        
+               
 
         /// <summary>
         /// Used to identify commands
@@ -240,8 +240,13 @@ namespace PSMViewer
             /// <summary>
             /// Stop receiving realtime updates.
             /// </summary>
-            STOP
+            STOP,
+            /// <summary>
+            /// Show the settings window
+            /// </summary>
+            SETTINGS
         }
+               
 
         /// <summary>
         /// The MainWindow Constructor
@@ -263,6 +268,7 @@ namespace PSMViewer
             Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
             Commands.Add("NewWindow", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEW_WINDOW));
             Commands.Add("Stop", new RelayCommand(ExecuteCommand, canExecute, CommandType.STOP));
+            Commands.Add("Settings", new RelayCommand(ExecuteCommand, canExecute, CommandType.SETTINGS));
 
             InitializeComponent();
 
@@ -334,10 +340,28 @@ namespace PSMViewer
             RelayCommand cmd = (RelayCommand)sender;
             Main ViewModel = (Main)this.DataContext;
             KeyItem key = (KeyItem)treeView.SelectedValue;
-            VisualizationWindow window = null;
+            Window window = null;
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
+
+                case CommandType.SETTINGS:
+
+                    window = (new PropertiesWindow(PSMonitor.PSM.Store().Options, new Xceed.Wpf.Toolkit.PropertyGrid.PropertyDefinition[] {}  )
+                    {
+                        Title = "Settings",
+                        ShowInTaskbar = false,
+                        Owner = this,
+                        Width = SystemParameters.FullPrimaryScreenWidth * .5,
+                        Height = SystemParameters.FullPrimaryScreenHeight * .5,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen
+                    });
+
+                    ((PropertiesWindow)window).PropertyGrid.AutoGenerateProperties = true;
+
+                    window.ShowDialog();
+
+                    break;
 
                 case CommandType.STOP:
 
@@ -481,7 +505,7 @@ namespace PSMViewer
                     Environment.Exit(0);
 
                     break;
-
+                    
             }
 
         }
@@ -642,6 +666,8 @@ namespace PSMViewer
             window.Dispatcher.InvokeAsync(window.Close);
 
             _windows.Remove(window);
+
+            window.Dispose();
 
             if (delete)
             {
