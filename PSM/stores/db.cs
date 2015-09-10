@@ -7,6 +7,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections;
 using System.Linq;
+using System.ComponentModel;
 
 namespace PSMonitor.Stores
 {
@@ -18,6 +19,38 @@ namespace PSMonitor.Stores
     {
 
         #region Fields and Properties
+
+        protected class Configuration
+        {
+            [Description("The connection string that is used to connect to the database")]
+            public string ConnectionString
+            {
+                get
+                {
+                    return Setup.Get<DB, string>("connectionString");
+                }
+
+                set
+                {
+                    //Setup.Set<DB, string, string>("connectionString", value);
+                }
+            }
+
+            [Description("Entries older than the specified amount in days are deleted")]
+            public int MaxAge
+            {
+                get
+                {
+                    return Setup.Get<DB, int>("maxAge");
+                }
+
+                set
+                {
+
+                }
+            }
+
+        }
 
         /// <summary>
         /// A class that implements the <see cref="IEnumerable{Entry}"/> and <see cref="IEnumerator{Entry}"/> interfaces and provides access to the results from the server through these interfaces.
@@ -133,6 +166,9 @@ namespace PSMonitor.Stores
 
         }
               
+        /// <summary>
+        /// Extends <see cref="Store.Path"/>
+        /// </summary>
         protected new class Path : Store.Path
         {
 
@@ -239,10 +275,12 @@ namespace PSMonitor.Stores
         public DB()
         {
 
+            Options = new Configuration();
+
             queue = new ConcurrentQueue<Envelope>();
 
             //Test the connection
-            using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
+            using (SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString))
             {
                 VerifyConnection(connection);
             }
@@ -288,7 +326,7 @@ namespace PSMonitor.Stores
         protected long Delete_(string path, DateTime? start, DateTime? end)
         {
 
-            using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
+            using (SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString))
             {
 
                 VerifyConnection(connection);
@@ -360,7 +398,7 @@ namespace PSMonitor.Stores
         public override Entry Get(string path)
         {
 
-            SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString"));
+            SqlConnection connection = new SqlConnection( ((Configuration)Options).ConnectionString);
 
             VerifyConnection(connection);
 
@@ -389,7 +427,8 @@ namespace PSMonitor.Stores
         /// </summary>
         protected virtual IEnumerable<Entry> Get_(string path, object start, object end)
         {
-            SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString"));
+
+            SqlConnection connection = new SqlConnection( ((Configuration)Options).ConnectionString );
 
             VerifyConnection(connection);
 
@@ -460,7 +499,7 @@ namespace PSMonitor.Stores
         public override Key[] GetKeys(string path)
         {
 
-            using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
+            using (SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString))
             {
 
                 VerifyConnection(connection);
@@ -578,7 +617,7 @@ namespace PSMonitor.Stores
                 try
                 {
 
-                    foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in context.Receivers)
+                    foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in Receivers)
                     {
 
                         ConcurrentBag<Store.Path> paths = pair.Value;
@@ -586,7 +625,7 @@ namespace PSMonitor.Stores
                         foreach (Store.Path path in paths)
                         {
 
-                            using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
+                            using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
                             {
 
                                 VerifyConnection(connection);
@@ -670,7 +709,7 @@ namespace PSMonitor.Stores
                 }
                 catch (Exception error)
                 {
-                    Logger.error(error);
+                    Logger.Error(error);
                 }
                 
             }
@@ -684,11 +723,11 @@ namespace PSMonitor.Stores
         protected static void Cleanup(object ctx)
         {
 
-            int maxAge = Setup.Get<DB, int>("maxAge");
-
+            
             DB context = (DB)ctx;
+            int maxAge = ((Configuration)context.Options).MaxAge;
 
-            using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
+            using (SqlConnection connection = new SqlConnection( ((Configuration)context.Options).ConnectionString))
             {
 
                 while (!context._disposed && maxAge > 0)
@@ -722,7 +761,7 @@ namespace PSMonitor.Stores
 
                                 if (count > 0)
                                 {
-                                    Logger.info(String.Format("Deleted {0] rows that was older than {1} days. ({2})", count, maxAge, d));
+                                    Logger.Info(String.Format("Deleted {0] rows that was older than {1} days. ({2})", count, maxAge, d));
                                 }
 
                             }
@@ -735,7 +774,7 @@ namespace PSMonitor.Stores
                     }
                     catch (Exception error)
                     {
-                        Logger.error(error);
+                        Logger.Error(error);
                     }
 
                 }
@@ -754,7 +793,7 @@ namespace PSMonitor.Stores
 
             DB context = (DB)ctx;
 
-            using (SqlConnection connection = new SqlConnection(Setup.Get<DB, string>("connectionString")))
+            using (SqlConnection connection = new SqlConnection( ((Configuration)context.Options).ConnectionString))
             {
 
                 while (!context._disposed)
@@ -839,7 +878,7 @@ namespace PSMonitor.Stores
                                         }
                                         catch (Exception error)
                                         {
-                                            Logger.error(error);
+                                            Logger.Error(error);
                                             continue;
                                         }
 
@@ -854,7 +893,7 @@ namespace PSMonitor.Stores
                         }
                         catch (Exception e)
                         {
-                            Logger.error(e);
+                            Logger.Error(e);
                             context.sleepTime = Math.Max(context.sleepTime * 2, 1000 * 60 * 60 * 24);
 
                         }

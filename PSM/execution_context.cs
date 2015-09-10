@@ -181,7 +181,7 @@ namespace PSMonitor
 
                         foreach (PSObject obj in context.powerShell.EndInvoke(context.async))
                         {
-                            Logger.info(obj.ToString());
+                            Logger.Info(obj.ToString());
                         }
 
                     }
@@ -191,7 +191,7 @@ namespace PSMonitor
                     }
                     catch (Exception e)
                     {
-                        Logger.error(e.Message);
+                        Logger.Error(e.Message);
                     }
 
                     context.Flush(true);
@@ -218,7 +218,7 @@ namespace PSMonitor
 
                     if (context.script.hasTimedOut)
                     {
-                        Logger.error(String.Format("Aborted, Reason => Timeout exceeded for script '{0}'", context.script.file.Name));
+                        Logger.Error(String.Format("Aborted, Reason => Timeout exceeded for script '{0}'", context.script.file.Name));
                         context.Abort();
                     }
 
@@ -238,7 +238,7 @@ namespace PSMonitor
 
                 foreach (ErrorRecord errorRecord in powerShell.Streams.Error)
                 {
-                    Logger.error(errorRecord.ToString());                    
+                    Logger.Error(errorRecord.ToString());                    
                 }
 
                 powerShell.Streams.Error.Clear();

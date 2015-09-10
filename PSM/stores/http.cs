@@ -1,4 +1,10 @@
-﻿using System;
+﻿/// <copyright file="http.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>The HTTP store</summary>
+/// 
+using System;
 using System.Threading;
 using System.Net.Http;
 using System.IO;
@@ -8,9 +14,10 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-
 using Microsoft.AspNet.SignalR.Client;
 using System.Web;
+using System.Linq;
+using System.ComponentModel;
 
 namespace PSMonitor.Stores
 {
@@ -19,7 +26,42 @@ namespace PSMonitor.Stores
     /// </summary>
     public class HTTP : Store
     {
-        
+
+
+        public class Configuration
+        {
+
+            [Description("The url used to connect to the server")]
+            public string Url
+            {
+                get
+                {
+                    return Setup.Get<HTTP, string>("url");
+                }
+
+                set
+                {
+
+                }
+            }
+
+            [Description("The number of milliseconds to wait before raising an error when connecting to the server")]
+            public int ConnectionTimeout
+            {
+
+                get
+                {
+                    return PSMonitor.Setup.Master.defaultTimeout;
+                }
+
+                set
+                {
+
+                }
+
+            }
+        }
+
         /// <summary>
         /// The serializer used to convert data to JSON
         /// </summary>
@@ -43,7 +85,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// The url to connect to
         /// </summary>
-        private Uri _uri = new Uri(Setup.Get<HTTP, string>("url") ?? @"http://localhost:54926/");
+        private Uri _uri;
 
         /// <summary>
         /// The Signalr hub connection
@@ -64,21 +106,22 @@ namespace PSMonitor.Stores
         /// Constructor
         /// </summary>
         public HTTP()
-        {           
-            
+        {
+
+            Options = new Configuration();
+
+            _uri = new Uri(((Configuration)Options).Url ?? @"http://localhost:54926/");
+
             List<Thread> threads = new List<Thread>();
 
             threads.Add(new Thread(Dispatch));
             threads.ForEach(thread => {
-                thread.Name = String.Format("HTTP Store [{0}] Thread #{0}", _id, threads.IndexOf(thread));
+                thread.Name = String.Format("HTTP Store [{0}] Thread #{1}", _id, threads.IndexOf(thread));
                 thread.Start(this);
             });
 
             _threads = threads;
-
-            _hub = new HubConnection(_uri.ToString());
-            _hub.CreateHubProxy("DataReceivedHub").On<Envelope>("OnData", Received);            
-            _hub.Start();
+                       
         }
         
         /// <summary>
@@ -87,23 +130,35 @@ namespace PSMonitor.Stores
         /// <param name="data">The data envelope containing metadata and new data entries.</param>
         private void Received(Envelope data)
         {
-            
-            foreach(KeyValuePair<object, ConcurrentBag<Store.Path>> pair in Receivers)
+
+            Debug.Assert(data != null && data.Entries.Length > 0);
+            Debug.WriteLine("PSMonitor.Stores.HTTP.Received(Envelope data) : Received data '{0}', Count: {1}", data.Entries[0], data.Entries.Length);
+
+            foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in Receivers)
             {
 
                 ConcurrentBag<Store.Path> bag = pair.Value;
+                Envelope result;
 
                 foreach(Path path in bag)
                 {
 
-                    if(data.Path == path)
+                    if(data.Path == path.Namespace)
                     {
-                        path.Handler(data);
+                        // Requery the data and filter out any entries that does not match the criteria.
+                        Entry[] entries = (from entry in data.Entries where (entry.Timestamp > (DateTime)path.StartIndex && entry.Key == path.Key) select entry).ToArray();
+
+                        if (entries.Length > 0)
+                        {
+                            // Make a copy
+                            result = new Envelope(data) { Entries = entries };
+
+                            // Set the start index with the result from the handler.
+                            path.StartIndex = path.Handler(result);
+                        }
+
                     }
-
                 }
-
-
             }
         }
 
@@ -140,7 +195,7 @@ namespace PSMonitor.Stores
                 string uri = HttpUtility.UrlEncode(start != null && end != null ?
                     String.Format("/data/{0}/{1}/{2}/", path, ToUnixTimestamp(start.Value) * 1000, ToUnixTimestamp(end.Value) * 1000) :
                     String.Format("/data/{0}/", path));
-
+                
                 client.DeleteAsync(uri).ContinueWith(async task =>
                 {
 
@@ -259,7 +314,7 @@ namespace PSMonitor.Stores
                     String.Format("/data/{0}/{1}/{2}/index", path, (long)start, (long)end) :
                     String.Format("/data/{0}/", path));
 
-               
+                
                 client.GetStreamAsync(uri).ContinueWith(task =>
                 {
                     
@@ -296,11 +351,42 @@ namespace PSMonitor.Stores
 
             HttpClient client  = new HttpClient();
 
-            client.Timeout     = new TimeSpan(0, 0, 0, PSMonitor.Setup.Master.defaultTimeout);
+            client.Timeout     = new TimeSpan(0, 0, 0, ((Configuration)Options).ConnectionTimeout);
             client.BaseAddress = _uri;
 
             client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));            
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            
+            if (_hub == null)
+            {
+
+                _hub = new HubConnection(_uri.ToString());
+                _hub.CreateHubProxy("RealTimeDataHub").On<Envelope>("OnData", Received);
+
+            }
+
+            if (_hub.State == ConnectionState.Disconnected)
+            {
+                Debug.WriteLine("HTTP.CreateClient(): Connecting to SignalR hub");
+                _hub.Start();                
+            }
+
+            DateTime start = DateTime.Now;
+
+            while (_hub.State != ConnectionState.Connected)
+            {
+
+                Debug.WriteLine("HTTP.CreateClient(): Waiting for connection...");
+
+                Thread.Sleep(100);
+
+                if (_hub.State == ConnectionState.Connected)
+                    Debug.WriteLine("HTTP.CreateClient(): Connected to SignalR hub. Connection ID is: {0}", (object)_hub.ConnectionId);
+                else if ((DateTime.Now - start).TotalMilliseconds > ((Configuration)Options).ConnectionTimeout)
+                    throw new TimeoutException("Timeout exceeded. Could not connect to server");
+            }            
+
+            client.DefaultRequestHeaders.Add("ConnectionId", _hub.ConnectionId);
 
             return client;
 
@@ -322,22 +408,16 @@ namespace PSMonitor.Stores
         private static void Dispatch(object ctx)
         {
 
-            HTTP context        = (HTTP)ctx;
-            HttpClient client   = context.CreateClient();           
+            HTTP context = (HTTP)ctx;
 
-            {
+            try {
+
+                HttpClient client   = context.CreateClient();
 
                 while(!context._disposed)
                 {
 
-                    try
-                    {
-                        Thread.Sleep(context._sleepTime);
-                    }
-                    catch (ThreadInterruptedException e)
-                    {
-                        Debug.WriteLine(e.ToString());
-                    }
+                    Thread.Sleep(context._sleepTime);                                      
 
                     if (!context._dispatch_queue.IsEmpty) {
 
@@ -372,11 +452,11 @@ namespace PSMonitor.Stores
                                     if (task.Exception != null)
                                     {
 
-                                        Logger.error(task.Exception);
+                                        Logger.Error(task.Exception);
 
                                         foreach (Exception e in task.Exception.InnerExceptions)
                                         {
-                                            Logger.error(e);
+                                            Logger.Error(e);
                                         }
 
                                     }
@@ -389,7 +469,7 @@ namespace PSMonitor.Stores
                                     
                                     
                                     if (!response.IsSuccessStatusCode)
-                                        Logger.failure(String.Format("Server responded with {0} {1}", response.StatusCode, response.ReasonPhrase));
+                                        Logger.Failure(String.Format("Server responded with {0} {1}", response.StatusCode, response.ReasonPhrase));
 
                                     context._sleepTime = 1000;
 
@@ -418,6 +498,14 @@ namespace PSMonitor.Stores
 
                 client.Dispose();
                
+            }
+            catch (ThreadInterruptedException e)
+            {
+                Debug.WriteLine(e.ToString());
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
             }
 
         }

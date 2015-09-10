@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Management.Automation;
-using System.Threading;
 
 namespace PSMonitor
 {
@@ -154,7 +153,7 @@ namespace PSMonitor
         protected override void ProcessRecord()
         {
             try {
-                PSM.Store.Delete(path);
+                PSM.Store().Delete(path);
             }
             catch(Exception error)
             {

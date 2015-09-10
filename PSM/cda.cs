@@ -40,7 +40,7 @@ namespace PSMonitor
             catch(COMException exception)
             {
 
-                Logger.warn(exception.Message);
+                Logger.Warn(exception.Message);
 
                 isConnected = false;
                 disabled    = true;

@@ -12,12 +12,12 @@ namespace PSMonitor
 
         private static object lock0 = new object();
         
-        private static string Source { get { return Assembly.GetEntryAssembly().GetName().Name; } }
+        private static string Source { get { return (Assembly.GetEntryAssembly()??Assembly.GetExecutingAssembly()).GetName().Name; } }
         private static string LogName { get { return "Application"; } }
 
         public static event Log OnLog;
         
-        private static void write(string msg, EventLogEntryType t)
+        private static void Write(string msg, EventLogEntryType t)
         {
             
             string entryType = "";
@@ -66,39 +66,39 @@ namespace PSMonitor
             }
         }
 
-        public static void error(string msg)
+        public static void Error(string msg)
         {
-            write(msg, EventLogEntryType.Error);
+            Write(msg, EventLogEntryType.Error);
             Debug.WriteLine(msg);
         }
 
-        public static void error(Exception exc)
+        public static void Error(Exception exc)
         {
-            write(exc.Message, EventLogEntryType.Error);
+            Write(exc.Message, EventLogEntryType.Error);
             Debug.WriteLine(exc.ToString());
         }
 
-        public static void warn(string msg)
+        public static void Warn(string msg)
         {
-            write(msg, EventLogEntryType.Warning);
+            Write(msg, EventLogEntryType.Warning);
             Debug.WriteLine(msg);
         }
 
-        public static void info(string msg)
+        public static void Info(string msg)
         {
-            write(msg, EventLogEntryType.Information);
+            Write(msg, EventLogEntryType.Information);
             Debug.WriteLine(msg);
         }
 
-        public static void success(string msg)
+        public static void Success(string msg)
         {
-            write(msg, EventLogEntryType.SuccessAudit);
+            Write(msg, EventLogEntryType.SuccessAudit);
             Debug.WriteLine(msg);
         }
 
-        public static void failure(string msg)
+        public static void Failure(string msg)
         {
-            write(msg, EventLogEntryType.FailureAudit);
+            Write(msg, EventLogEntryType.FailureAudit);
             Debug.WriteLine(msg);
         }
         

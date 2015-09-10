@@ -1,14 +1,76 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PSMonitor.Stores
 {
-    public abstract class Store : IStore
+
+    public class Setup : PSMonitor.Setup
     {
+
+        public static TResult Get<T, TResult>(string name)
+        {
+
+            SettingsCollection settings = PSMonitor.Setup.Get<Setup>("stores").Settings;
+
+            foreach (SettingElement element in settings)
+            {
+                if ((System.Type.GetType(element.For, false, true) ?? typeof(object)).Equals(typeof(T)) && element.Name == name && !String.IsNullOrEmpty(element.Value))
+                    return (TResult)Convert.ChangeType(element.Value, typeof(TResult));
+            }
+
+            throw new ConfigurationErrorsException(String.Format("Can not find configuration key with the name: {0}", name));
+        }
+
+        [ConfigurationCollection(typeof(SettingElement), CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
+        public class SettingsCollection : ConfigurationElementCollection
+        {
+            protected override ConfigurationElement CreateNewElement()
+            {
+                return new SettingElement();
+            }
+
+            protected override object GetElementKey(ConfigurationElement element)
+            {
+                return ((SettingElement)element).ElementInformation.LineNumber - base.ElementInformation.LineNumber - 1;
+            }
+
+            [ConfigurationProperty("setting", IsRequired = false)]
+            public SettingElement Setting { get { return (SettingElement)base["setting"]; } }
+
+        }
+
+        public class SettingElement : ConfigurationElement
+        {
+
+            [ConfigurationProperty("for", IsRequired = true)]
+            public string For { get { return (string)base["for"]; } }
+
+            [ConfigurationProperty("name", IsRequired = true)]
+            public string Name { get { return (string)base["name"]; } }
+
+            [ConfigurationProperty("value", IsRequired = true)]
+            public string Value { get { return (string)base["value"]; } }
+
+        }
+
+        [ConfigurationProperty("type", DefaultValue = "", IsRequired = false)]
+        public string Type { get { return (string)base["type"]; } }
+
+        [ConfigurationProperty("settings", IsRequired = false)]
+        public SettingsCollection Settings { get { return (SettingsCollection)base["settings"]; } }
+
+    }
+
+    public abstract class Store : IStore
+    {       
+
+        /// <summary>
+        /// <see cref="IStore.Options"/>
+        /// </summary>
+        public virtual object Options { get; protected set; }
 
         /// <summary>
         /// Extends the <see cref="PSMonitor.Path"/> with some additional properties
@@ -48,7 +110,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// Holds the registered receivers of realtime data updates.
         /// </summary>
-        protected ConcurrentDictionary<object, ConcurrentBag<Path>> Receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
+        protected static ConcurrentDictionary<object, ConcurrentBag<Path>> Receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
 
         /// <summary>
         /// <see cref="IStore.Delete(string)"/>
@@ -165,7 +227,21 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IDisposable.Dispose"/>
         /// </summary>
-        public abstract void Dispose();
+        public virtual void Dispose()
+        {
+
+            foreach (KeyValuePair<object, IStore> pair in PSM.Pool.ToArray())
+            {
+
+                IStore store;
+
+                if (pair.Value == this)
+                    PSM.Pool.TryRemove(pair.Key, out store);
+
+            }
+
+        }
 
     }
+
 }
