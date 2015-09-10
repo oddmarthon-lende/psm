@@ -9,25 +9,17 @@ using System.IO;
 using System.Timers;
 using System;
 using Microsoft.AspNet.SignalR;
+using PSMonitor.Stores;
+using System.Net.Http;
+using System.Web.Http.Controllers;
+using System.Linq;
 
 namespace PSMonitor
-{
+{   
+
     public class WebApiApplication : System.Web.HttpApplication
     {
-        
-        internal class Helper : PSM
-        {
-            private IHubContext hub = GlobalHost.ConnectionManager.GetHubContext<DataReceivedHub>();
-
-            public void Inject(Envelope data)
-            {
-                hub.Clients.All.OnData(data);
-                base.OnData(data);
-            }
-        }
-
-        internal static Helper master = new Helper();
-
+                
         protected void Application_Start()
         {
             
@@ -36,6 +28,7 @@ namespace PSMonitor
             RouteConfig.RegisterRoutes(RouteTable.Routes);
                         
         }
+
 
     }
 }
