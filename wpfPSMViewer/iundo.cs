@@ -113,7 +113,7 @@ namespace PSMViewer
 
             MemoryStream stream = new MemoryStream();
 
-            MainWindow.Export(context, stream);
+            context.Export(stream);
 
             if(!States.ContainsKey(context))
                 States.Add(context, new Stack<MemoryStream>());

@@ -110,7 +110,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// Holds the registered receivers of realtime data updates.
         /// </summary>
-        protected static ConcurrentDictionary<object, ConcurrentBag<Path>> Receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
+        protected ConcurrentDictionary<object, ConcurrentBag<Path>> Receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
 
         /// <summary>
         /// <see cref="IStore.Delete(string)"/>
@@ -237,7 +237,7 @@ namespace PSMonitor.Stores
 
                 if (pair.Value == this)
                 {
-                    PSM.Pool.TryRemove(pair.Key, out store);
+                    while(!PSM.Pool.TryRemove(pair.Key, out store));
                 }                    
 
             }

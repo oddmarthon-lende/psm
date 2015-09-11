@@ -605,6 +605,7 @@ namespace PSMViewer
 
                         widget.RegisterUserCommand();
                         widget.RegisterUserCommand("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_WIDGET, widget));
+                        widget.RegisterUserCommand("Move To New Window", new RelayCommand(ExecuteCommand, canExecute, CommandType.TO_NEW, widget));
 
                         widget.MouseDoubleClick += Widget_MouseDblClick;
 
@@ -698,7 +699,11 @@ namespace PSMViewer
             /// <summary>
             /// Undo
             /// </summary>
-            UNDO
+            UNDO,
+            /// <summary>
+            /// Move widget to new window
+            /// </summary>
+            TO_NEW
         }
                
         
@@ -709,14 +714,39 @@ namespace PSMViewer
         /// <param name="parameter">An optional parameter passed in through XAML.</param>
         private void ExecuteCommand(object sender, object parameter)
         {
-            
+            VisualizationControl w;
             Window window;
             RelayCommand cmd = (RelayCommand)sender;
-                       
+            Stream stream;
+
             switch ((CommandType)cmd.Arguments[0].Value)
             {
 
-                
+                case CommandType.TO_NEW:
+
+                    w = (VisualizationControl)cmd.Arguments[1].Value;
+
+                    stream = new MemoryStream();
+
+                    w.Export(stream);
+                    Children.Remove(w);
+                    w.Dispose();                        
+
+                    App.Current.Dispatcher.Invoke(delegate
+                    {
+
+                        ((MainWindow)App.Current.MainWindow).Create(v =>
+                        {
+                            stream.Seek(0, SeekOrigin.Begin);
+                            v.Children.Add((VisualizationControl)System.Windows.Markup.XamlReader.Load(stream));
+                            stream.Dispose();
+                            v.OnReload(v);
+                        });
+
+                    });                                      
+
+                    break;
+
                 case CommandType.UNDO:
 
                     UndoExtension.Undo();
@@ -724,7 +754,11 @@ namespace PSMViewer
 
                 case CommandType.REMOVE_WIDGET:
 
-                    Children.Remove((VisualizationControl)cmd.Arguments[1].Value);
+                    w = (VisualizationControl)cmd.Arguments[1].Value;
+
+                    Children.Remove(w);
+                    w.Dispose();
+
                     break;
 
                 case CommandType.SAVE:
@@ -734,9 +768,9 @@ namespace PSMViewer
                     if (!store.DirectoryExists("windows"))
                         store.CreateDirectory("windows");
 
-                    using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(@"windows\{0}", String.Format("{0}.xaml", this.Id)), FileMode.Create))
+                    using (stream = store.OpenFile(String.Format(@"windows\{0}", String.Format("{0}.xaml", this.Id)), FileMode.Create))
                     {
-                        MainWindow.Export(this, stream);
+                        this.Export(stream);
                     }
 
                     break;
@@ -784,7 +818,7 @@ namespace PSMViewer
 
                     if (dialog.ShowDialog(this).Value == true)
                     {
-                        MainWindow.Export(this, dialog.OpenFile());
+                        this.Export(dialog.OpenFile());
                     }
 
                     break;
@@ -962,8 +996,21 @@ namespace PSMViewer
         /// </summary>
         public void Dispose()
         {
+
+            foreach (VisualizationControl w in Children)
+            {
+                w.Dispose();
+            }
+
+            Children.Clear();
+
             // If there is a store linked to the dispatcher, dispose of it
+            // IMPORTANT : Dispose of the store last, if not a new instance is created in the pool.
             PSMonitor.PSM.Store(Dispatcher).Dispose();
+
+            // Shut down the dispatcher to kill the UI threads.
+            Dispatcher.InvokeShutdown();
+                        
         }
     }
 }

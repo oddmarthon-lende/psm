@@ -23,6 +23,7 @@ using System.IO;
 using System.Collections;
 using System.Windows.Media.Imaging;
 using System.Threading;
+using System.Windows.Threading;
 
 namespace PSMViewer.Visualizations
 {
@@ -912,15 +913,19 @@ namespace PSMViewer.Visualizations
                 HorizontalArrowsVisibility = Visibility.Collapsed;
                 VerticalArrowsVisibility = Visibility.Collapsed;
             };
+                      
 
             this.SizeChanged += delegate {
-                Refresh();
+                if (RefreshOperation == null)
+                    RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
             };
 
             this.Drop += VisualizationControl_Drop;            
 
         }
-        
+
+        protected DispatcherOperation RefreshOperation = null;
+
         /// <summary>
         /// Drop keys onto the widget
         /// </summary>
@@ -995,6 +1000,8 @@ namespace PSMViewer.Visualizations
         public virtual void Refresh()
         {
 
+            RefreshOperation = null;
+
             DependencyObject parent = this.Parent;
 
             if(parent != null)
@@ -1014,6 +1021,9 @@ namespace PSMViewer.Visualizations
             
         }
 
+        /// <summary>
+        /// Clean up
+        /// </summary>
         public virtual void Dispose()
         {
             foreach(MultiControl m in controls.ToArray())
@@ -1094,7 +1104,7 @@ namespace PSMViewer.Visualizations
             {
                 Keys.Add(key.Path);
 
-                key.Children.CollectionChanged += Children_CollectionChanged;
+                key.Children.CollectionChanged += Key_Children_CollectionChanged;
 
                 this.OnReload(key);
 
@@ -1114,7 +1124,8 @@ namespace PSMViewer.Visualizations
 
             }
 
-            Refresh();
+            if(RefreshOperation == null)
+                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
             return control;
 
@@ -1127,7 +1138,7 @@ namespace PSMViewer.Visualizations
         public virtual void Remove(KeyItem key)
         {
 
-            key.Children.CollectionChanged -= Children_CollectionChanged;
+            key.Children.CollectionChanged -= Key_Children_CollectionChanged;
 
             foreach(MultiControl m in (from s in Controls.ToArray() where s.Key.Path == key.Path || (s.Key.Parent != null && s.Key.Parent.Path == key.Path) select s))
             {
@@ -1136,7 +1147,9 @@ namespace PSMViewer.Visualizations
             }
 
             Keys.Remove(key.Path);
-            Refresh();
+
+            if (RefreshOperation == null)
+                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
         }
 
@@ -1146,7 +1159,7 @@ namespace PSMViewer.Visualizations
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected void Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        protected void Key_Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
 
             foreach (MultiControl m in (from s in controls select s))
@@ -1165,7 +1178,8 @@ namespace PSMViewer.Visualizations
 
             }
 
-            Refresh();
+            if (RefreshOperation == null)
+                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
         }
 
@@ -1212,8 +1226,9 @@ namespace PSMViewer.Visualizations
 
             }
 
-            Refresh();
-            
+            if (RefreshOperation == null)
+                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+
         }
 
         private void Control_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -1319,7 +1334,8 @@ namespace PSMViewer.Visualizations
 
             UndoExtension.PopState(this, ShouldSerializeProperty);
 
-            Refresh();
+            if (RefreshOperation == null)
+                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
         }
 

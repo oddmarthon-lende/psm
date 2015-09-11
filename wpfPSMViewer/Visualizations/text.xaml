@@ -22,7 +22,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Border BorderThickness="0,0,1,0" BorderBrush="{Binding LineColor}" Visibility="{Binding ShowPath}">
-                    <TextBlock Text="{Binding CurrentItem.Key.Parent.Path}" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize}">
+                    <TextBlock Text="{Binding CurrentItem.Key.Parent.Name}" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize}">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="-90" />
@@ -118,7 +118,7 @@
                     </Grid.ColumnDefinitions>
 
                     <Border BorderThickness="0,0,1,0" BorderBrush="{Binding LineColor, ElementName=widget}" Visibility="{Binding ShowPath, ElementName=widget}">
-                        <TextBlock Text="{Binding Key.Parent.Path}" ToolTip="{Binding Key.Parent.Path}" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize, ElementName=widget}">
+                        <TextBlock Text="{Binding Key.Parent.Name}" ToolTip="{Binding Key.Parent.Name}" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize, ElementName=widget}">
                             <TextBlock.LayoutTransform>
                                 <TransformGroup>
                                     <RotateTransform Angle="-90" />
@@ -227,7 +227,7 @@
 
                     </Border>
 
-                    <TextBlock Text="{Binding Key.Parent.Path}" ToolTip="{Binding Key.Parent.Path}" VerticalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize, ElementName=widget}" Grid.Column="1" Visibility="{Binding ShowPath, ElementName=widget}" >
+                    <TextBlock Text="{Binding Key.Parent.Name}" ToolTip="{Binding Key.Parent.Name}" VerticalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize, ElementName=widget}" Grid.Column="1" Visibility="{Binding ShowPath, ElementName=widget}" >
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="-90" />

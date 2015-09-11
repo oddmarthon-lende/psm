@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -168,15 +169,7 @@ namespace PSMViewer.ViewModels
             if (!IsActive) return;
             Entries.Insert(0, item);
         }
-
-        /// <summary>
-        /// Destructor/Finalize method
-        /// </summary>
-        ~Controls()
-        {
-            Dispose();
-        }
-
+        
         /// <summary>
         /// <see cref="IDisposable.Dispose"/>
         /// </summary>
@@ -193,9 +186,7 @@ namespace PSMViewer.ViewModels
 
             this.IsActive = false;
 
-            PSM.Store(Dispatcher).Unregister(this);
-                        
-            GC.SuppressFinalize(this);
+            PSM.Store(Dispatcher).Unregister(this);            
 
         }
 
@@ -389,7 +380,7 @@ namespace PSMViewer.ViewModels
 
         private Task<IEnumerable<EntryItem>> ReloadTask = null;
 
-        private Dictionary<string, Queue<Entry>> Data = new Dictionary<string, Queue<Entry>>();
+        private ConcurrentDictionary<string, ConcurrentQueue<Entry>> Data = new ConcurrentDictionary<string, ConcurrentQueue<Entry>>();
 
         private DispatcherOperation ProcessQueueOperation = null;
 
@@ -645,16 +636,20 @@ namespace PSMViewer.ViewModels
         /// </summary>
         public override async void Reload()
         {
-
+            
             IEnumerable<EntryItem> data = null;
 
             PSM.Store(Dispatcher).Unregister(this);
 
             if (ReloadTask != null)
             {
+
                 Cancel.Cancel();
                 Cancel = new CancellationTokenSource();
-            }                
+                
+            }
+
+            Debug.WriteLine("Loading... {0}", Selected);
 
             try {
 
@@ -695,6 +690,10 @@ namespace PSMViewer.ViewModels
             {
                 return;
             }       
+            finally
+            {
+                ReloadTask = null;
+            }
 
             Entries.Clear();
             
@@ -704,19 +703,31 @@ namespace PSMViewer.ViewModels
             }                                
 
             SetField(ref _status, ReloadStatus.Idle, "Status");
-            ReloadTask = null;
 
-            Debug.WriteLine("Loading... {0}", Selected);
+            if ( Entries.Count > 0 && (!_startIndex.HasValue || _start == null) )
+                _startIndex = Entries.Max(entry => { return entry.Timestamp; });
 
-            Dispatcher.InvokeAsync(delegate
+            if (_startIndex.HasValue)
             {
+                
+                Dispatcher.InvokeAsync(delegate
+                {
 
-                Debug.WriteLine("Registering... {0}", Selected);
-                PSM.Store(Dispatcher).Register(this, Selected.ToString(), DateTime.Now, Received);
+                    if (Selected == null)
+                        return;
 
-            }, DispatcherPriority.ContextIdle);
+                    Debug.WriteLine("Registering... {0}", Selected);
+                    PSM.Store(Dispatcher).Register(this, Selected.ToString(), _startIndex, Received);
 
-        }        
+                }, DispatcherPriority.ContextIdle);
+
+
+            }
+            
+
+        }      
+        
+        private DateTime? _startIndex = null;
 
         /// <summary>
         /// Handles the receival of new data that is added to the store after the last reload
@@ -726,18 +737,15 @@ namespace PSMViewer.ViewModels
         private object Received(Envelope data)
         {
 
-            if (Thread.CurrentThread != Dispatcher.Thread)
-                return Dispatcher.Invoke(new Func<Envelope, object>(Received), DispatcherPriority.Normal, data);
-
             if (IsActive)
             {
-
+                
                 if (!Data.ContainsKey(data.Path))
-                    Data.Add(data.Path, new Queue<Entry>());
+                    while(!Data.TryAdd(data.Path, new ConcurrentQueue<Entry>()));
 
-                Queue<Entry> queue;
+                ConcurrentQueue<Entry> queue;
 
-                Data.TryGetValue(data.Path, out queue);
+                while(!Data.TryGetValue(data.Path, out queue));
 
                 foreach (Entry entry in data.Entries)
                 {
@@ -749,7 +757,9 @@ namespace PSMViewer.ViewModels
 
             }
 
-            return data.Entries.Max(entry => { return entry.Timestamp; });
+            _startIndex = data.Entries.Max(entry => { return entry.Timestamp; });
+
+            return _startIndex;
         }        
 
         /// <summary>
@@ -758,21 +768,23 @@ namespace PSMViewer.ViewModels
         private void ProcessQueue()
         {          
 
-            Queue<Entry> queue;
+            ConcurrentQueue<Entry> queue;
 
             ProcessQueueOperation = null;
 
             if (!Data.TryGetValue(Selected.Parent.Path, out queue))
                 return;            
 
-            foreach (Entry entry in queue)
+            while (queue.Count > 0)
             {
+                Entry entry;
+
+                while (!queue.TryDequeue(out entry));
+
                 if (entry.Key == Selected.Name)
                     Append((EntryItem)entry);
             }
-
-            queue.Clear();
-
+                        
             switch (_typeName)
             {
 

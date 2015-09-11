@@ -13,14 +13,39 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Markup;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.Xml;
 
 namespace PSMViewer
 {
 
     public static class Extensions
     {
+        /// <summary>
+        /// Serializes objects to a stream
+        /// </summary>
+        /// <param name="stream">The stream that the XAML is written to</param>
+        public static void Export(this object obj, Stream stream)
+        {
+
+            XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings
+            {
+                Indent = true,
+                ConformanceLevel = ConformanceLevel.Auto,
+                OmitXmlDeclaration = true
+
+            });
+
+            XamlDesignerSerializationManager mgr = new XamlDesignerSerializationManager(writer)
+            {
+                XamlWriterMode = XamlWriterMode.Expression
+            };
+
+            XamlWriter.Save(obj, mgr);
+
+        }
 
         /// <summary>
         /// Reloads objects that implements the IReload interface and displays a messagebox if any error occurs.

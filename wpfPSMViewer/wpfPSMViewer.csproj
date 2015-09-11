@@ -56,6 +56,12 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Kitware.mummy.Runtime">
+      <HintPath>..\packages\Activiz.NET.x86.5.8.0\lib\net20\Kitware.mummy.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Kitware.VTK">
+      <HintPath>..\packages\Activiz.NET.x86.5.8.0\lib\net20\Kitware.VTK.dll</HintPath>
+    </Reference>
     <Reference Include="OxyPlot, Version=2015.1.976.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
       <HintPath>..\packages\OxyPlot.Core.2015.1.976-alpha\lib\net45\OxyPlot.dll</HintPath>
       <Private>True</Private>
@@ -249,7 +255,9 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="Design\projectGuides.guides" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

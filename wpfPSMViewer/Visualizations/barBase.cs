@@ -81,7 +81,10 @@ namespace PSMViewer.Visualizations
 
             if (Controls.Count(m => { return m.Key.Parent.Path == key.Parent.Path; }) > 0)
             {
-                Model.Series.Add((Series)(object)_series[key.Parent.Path]);
+                Series s = (Series)(object)_series[key.Parent.Path];
+
+                if(!Model.Series.Contains(s))
+                    Model.Series.Add(s);
             }
             else
             {

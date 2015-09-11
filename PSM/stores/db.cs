@@ -88,7 +88,7 @@ namespace PSMonitor.Stores
             /// <param name="command">The command that will be executed.</param>
             public Entries(Path p, SqlConnection connection, SqlCommand command)
             {
-                
+
                 path = p;
                 reader = command.ExecuteReader();
 
@@ -154,7 +154,7 @@ namespace PSMonitor.Stores
                 bool done = reader.IsClosed || !reader.Read();
 
                 return !done;
-            }            
+            }
 
             /// <summary>
             /// <see cref="IEnumerator.Reset" />
@@ -165,7 +165,7 @@ namespace PSMonitor.Stores
             }
 
         }
-              
+
         /// <summary>
         /// Extends <see cref="Store.Path"/>
         /// </summary>
@@ -248,7 +248,7 @@ namespace PSMonitor.Stores
         /// Holds the threads created by this instance
         /// </summary>
         protected IReadOnlyCollection<Thread> _threads;
-        
+
 
         /// <summary>
         /// Holds a time when cleanup was executed.
@@ -383,7 +383,7 @@ namespace PSMonitor.Stores
 
             _disposed = true;
 
-            foreach(Thread thread in _threads)
+            foreach (Thread thread in _threads)
             {
                 thread.Interrupt();
                 Debug.WriteLine("DB Store : Waiting for threads to exit");
@@ -400,7 +400,7 @@ namespace PSMonitor.Stores
         public override Entry Get(string path)
         {
 
-            SqlConnection connection = new SqlConnection( ((Configuration)Options).ConnectionString);
+            SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString);
 
             VerifyConnection(connection);
 
@@ -430,7 +430,7 @@ namespace PSMonitor.Stores
         protected virtual IEnumerable<Entry> Get_(string path, object start, object end)
         {
 
-            SqlConnection connection = new SqlConnection( ((Configuration)Options).ConnectionString );
+            SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString);
 
             VerifyConnection(connection);
 
@@ -483,7 +483,7 @@ namespace PSMonitor.Stores
             return Get_(path, start, end);
         }
 
-        
+
         /// <summary>
         /// <see cref="IStore.Put(Envelope)"/>
         /// </summary>
@@ -607,28 +607,40 @@ namespace PSMonitor.Stores
         /// <summary>
         /// Entry point for the thread that will poll the database for new data and transfer it to the listeners.
         /// </summary>
-        /// <param name="ctx">The <see cref="DB"/> instance that the thread belongs to.</param>
-        protected static void Receive(object ctx)
+        /// <param name="instance">The <see cref="DB"/> instance that the thread belongs to.</param>
+        protected static void Receive(object instance)
         {
 
-            DB context = (DB)ctx;
+            DB context = (DB)instance;
 
-            while (!context._disposed)
+            try
             {
 
-                try
+                while (!context._disposed)
                 {
 
-                    foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in Receivers)
+                    int totalCount = 0;
+
+
+                    using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
                     {
 
-                        ConcurrentBag<Store.Path> paths = pair.Value;
+                        Dictionary<Store.Path, Entry[]> processed = new Dictionary<Store.Path, Entry[]>();
 
-                        foreach (Store.Path path in paths)
+
+                        foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in context.Receivers)
                         {
 
-                            using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
+                            ConcurrentBag<Store.Path> paths = pair.Value;
+
+                            foreach (Store.Path path in paths)
                             {
+
+                                Type indexType = path.StartIndex.GetType();
+
+                                TypeCode indexTypeCode = Type.GetTypeCode(indexType);
+
+
 
                                 VerifyConnection(connection);
 
@@ -636,12 +648,11 @@ namespace PSMonitor.Stores
                                 {
 
                                     string column = null;
-                                    Type t = path.StartIndex.GetType();
 
-                                    switch (t.Name)
+                                    switch (indexTypeCode)
                                     {
 
-                                        case "DateTime":
+                                        case TypeCode.DateTime:
                                             column = "Timestamp";
                                             break;
 
@@ -654,7 +665,7 @@ namespace PSMonitor.Stores
                                     command.CommandType = CommandType.Text;
                                     command.CommandText = String.Format("select [Value], [Timestamp] from [Data] where [{0}] > @StartIndex and [Namespace] = @Namespace and [Key] = @Key", column);
 
-                                    command.Parameters.Add(new SqlParameter("@StartIndex", GetType(path.StartIndex.GetType()))
+                                    command.Parameters.Add(new SqlParameter("@StartIndex", GetType(indexType))
                                     {
                                         Direction = ParameterDirection.Input,
                                         SqlValue = path.StartIndex
@@ -672,7 +683,27 @@ namespace PSMonitor.Stores
                                         SqlValue = path.Key
                                     });
 
-                                    Entry[] entries = new Entries(new Path(path), connection, command).ToArray();
+                                    Entry[] entries = null;
+
+                                    if (processed.TryGetValue(path, out entries))
+                                    {
+
+                                        switch (indexTypeCode)
+                                        {
+
+                                            case TypeCode.DateTime:
+                                                entries = (from entry in entries where entry.Timestamp > (DateTime)path.StartIndex select entry).ToArray();
+                                                break;
+
+                                            default:
+                                                entries = null;
+                                                break;
+
+                                        }
+
+                                    }
+
+                                    entries = entries ?? (new Entries(new Path(path), connection, command)).ToArray();
 
                                     if (entries.Length > 0)
                                     {
@@ -684,8 +715,17 @@ namespace PSMonitor.Stores
                                             Timestamp = DateTime.Now
                                         });
 
+
                                         if (path.StartIndex == null)
                                             throw new NullReferenceException("The delegate returned null. Delegate must return a valid next StartIndex");
+
+                                        if (!processed.ContainsKey(path))
+                                        {
+                                            totalCount += entries.Length;
+                                            processed.Add(path, entries);
+                                        }
+
+
 
                                     }
 
@@ -694,26 +734,27 @@ namespace PSMonitor.Stores
                         }
                     }
 
-                    Thread.Sleep(1000);
+                    Debug.WriteLine("{1}.DB.Receive(object instance) : Count {0}, Going to sleep now...", totalCount, Thread.CurrentThread.Name);
 
+                    Thread.Sleep(1000);
                 }
-                catch (InvalidOperationException e)
-                {
-                    throw e;
-                }
-                catch (NullReferenceException e)
-                {
-                    throw e;
-                }
-                catch (ThreadInterruptedException e)
-                {
-                    Debug.WriteLine(e.ToString());
-                }
-                catch (Exception error)
-                {
-                    Logger.Error(error);
-                }
-                
+
+            }
+            catch (InvalidOperationException e)
+            {
+                throw e;
+            }
+            catch (NullReferenceException e)
+            {
+                throw e;
+            }
+            catch (ThreadInterruptedException e)
+            {
+                Debug.WriteLine(e.ToString());
+            }
+            catch (Exception error)
+            {
+                Logger.Error(error);
             }
         }
 
@@ -725,20 +766,21 @@ namespace PSMonitor.Stores
         protected static void Cleanup(object ctx)
         {
 
-            
+
             DB context = (DB)ctx;
+
             int maxAge = ((Configuration)context.Options).MaxAge;
 
-            using (SqlConnection connection = new SqlConnection( ((Configuration)context.Options).ConnectionString))
+            try
             {
 
                 while (!context._disposed && maxAge > 0)
                 {
 
-                    try
-                    {
+                    Thread.Sleep(1000 * 60 * 60 * 24);
 
-                        Thread.Sleep(1000 * 60 * 60 * 24);
+                    using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
+                    {
 
                         if (VerifyConnection(connection))
                         {
@@ -769,18 +811,19 @@ namespace PSMonitor.Stores
                             }
 
                         }
-                    }
-                    catch (ThreadInterruptedException e)
-                    {
-                        Debug.WriteLine(e.ToString());
-                    }
-                    catch (Exception error)
-                    {
-                        Logger.Error(error);
+
                     }
 
                 }
 
+            }
+            catch (ThreadInterruptedException e)
+            {
+                Debug.WriteLine(e.ToString());
+            }
+            catch (Exception error)
+            {
+                Logger.Error(error);
             }
 
         }
@@ -795,28 +838,21 @@ namespace PSMonitor.Stores
 
             DB context = (DB)ctx;
 
-            using (SqlConnection connection = new SqlConnection( ((Configuration)context.Options).ConnectionString))
+            try
             {
 
-                while (!context._disposed)
+                using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
                 {
 
-                    try
+                    while (!context._disposed)
                     {
+
                         Thread.Sleep(context.sleepTime);
-                    }
-                    catch (ThreadInterruptedException e)
-                    {
-                        Debug.WriteLine(e.ToString());
-                    }
 
-                    if (!context.queue.IsEmpty)
-                    {
-
-                        Envelope envelope;
-
-                        try
+                        if (!context.queue.IsEmpty)
                         {
+
+                            Envelope envelope;
 
                             VerifyConnection(connection);
 
@@ -893,15 +929,20 @@ namespace PSMonitor.Stores
                             context.sleepTime = 1000;
 
                         }
-                        catch (Exception e)
-                        {
-                            Logger.Error(e);
-                            context.sleepTime = Math.Max(context.sleepTime * 2, 1000 * 60 * 60 * 24);
-
-                        }
                     }
                 }
+
             }
+            catch (ThreadInterruptedException e)
+            {
+                Debug.WriteLine(e.ToString());
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+                context.sleepTime = Math.Max(context.sleepTime * 2, 1000 * 60 * 60 * 24);
+            }
+
         }
 
         /// <summary>

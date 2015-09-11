@@ -327,7 +327,7 @@ namespace PSMViewer
         /// <summary>
         /// Stores the commands defined for this window
         /// </summary>
-        public CommandCollection Commands { get; private set; } = new CommandCollection();        
+        public CommandCollection Commands { get; private set; } = new CommandCollection();
 
         /// <summary>
         /// Executes the commands based on CommandType argument passed to RelayCommand objects
@@ -372,27 +372,7 @@ namespace PSMViewer
                 
                 case CommandType.NEW_WINDOW:
 
-                    // Creates a new blank window in a new thread
-                    Thread thread = new Thread(new ParameterizedThreadStart((s) =>
-                    {
-
-                        VisualizationWindow w = new VisualizationWindow() {
-                            ControlsVisibility = Visibility.Visible
-                        };
-
-                        Dispatcher.InvokeAsync(delegate
-                        {
-                            _windows.Add(w);
-                            w.Dispatcher.InvokeAsync(w.Show);
-                        });
-
-                        System.Windows.Threading.Dispatcher.Run();
-
-                    }));
-
-                    thread.SetApartmentState(ApartmentState.STA);
-                    thread.Start();
-
+                    Create();
                     break;
 
                 case CommandType.WINDOWS:
@@ -430,7 +410,7 @@ namespace PSMViewer
                         {
                             w.Dispatcher.Invoke(delegate
                             {
-                                Export(w, stream);
+                                w.Export(stream);
                             });
                         }
                     }
@@ -444,7 +424,7 @@ namespace PSMViewer
                             
                             using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(@"state\{0}.xaml", anchorable.ContentId), FileMode.Create))
                             {
-                                Export(new LayoutAnchorableSavedState(anchorable), stream);
+                                new LayoutAnchorableSavedState(anchorable).Export(stream);
                             }
 
                         }
@@ -452,7 +432,7 @@ namespace PSMViewer
 
                     using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"state\mainwindow.xaml", FileMode.Create))
                     {
-                        Export(new WindowSavedState(this), stream);
+                        new WindowSavedState(this).Export(stream);
                     }
 
                     Settings.Default.Save();
@@ -511,6 +491,43 @@ namespace PSMViewer
         }
         
         #endregion
+
+        /// <summary>
+        /// Creates a window in a new thread
+        /// </summary>
+        /// <param name="Configure">Delegate to run on the new thread after the window has been created.</param>
+        public void Create(Action<VisualizationWindow> Configure = null)
+        {
+
+            VisualizationWindow w = null;
+
+            // Creates a new blank window in a new thread
+            Thread thread = new Thread(new ParameterizedThreadStart((s) =>
+            {
+
+                w = new VisualizationWindow()
+                {
+                    ControlsVisibility = Visibility.Visible
+                };
+
+                Dispatcher.Invoke(delegate
+                {
+                    _windows.Add(w);
+                });
+
+                w.Show();
+
+                if (Configure != null)
+                    Configure(w);
+
+                System.Windows.Threading.Dispatcher.Run();
+
+            }));
+
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            
+        }
 
         #region Load/Save
         
@@ -629,31 +646,7 @@ namespace PSMViewer
             }
             
         }
-                
-        /// <summary>
-        /// Serializes objects to a stream
-        /// </summary>
-        /// <param name="obj">The object to serialize</param>
-        /// <param name="stream">The stream that the XAML is written to</param>
-        public static void Export(object obj, Stream stream)
-        {
-
-            XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings
-            {
-                Indent = true,
-                ConformanceLevel = ConformanceLevel.Auto,
-                OmitXmlDeclaration = true
-
-            });
-
-            XamlDesignerSerializationManager mgr = new XamlDesignerSerializationManager(writer)
-            {
-                XamlWriterMode = XamlWriterMode.Expression
-            };
-            
-            XamlWriter.Save(obj, mgr);
-
-        }
+        
 
         /// <summary>
         /// Remove a window
@@ -663,11 +656,14 @@ namespace PSMViewer
         public void Remove(VisualizationWindow window, bool delete = true)
         {
 
-            window.Dispatcher.InvokeAsync(window.Close);
+            window.Dispatcher.InvokeAsync(delegate
+            {
+                window.Close();
+                window.Dispose();
 
-            _windows.Remove(window);
+            });
 
-            window.Dispose();
+            _windows.Remove(window);            
 
             if (delete)
             {

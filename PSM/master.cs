@@ -6,8 +6,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using PSMonitor.Stores;
 using System.Configuration;
-using System.Threading;
-using System.Linq;
 using System.Reflection;
 
 namespace PSMonitor
