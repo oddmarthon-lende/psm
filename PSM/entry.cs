@@ -11,7 +11,8 @@ namespace PSMonitor
     {
 
         public string Key;
-        public object Value;
+        public object Index;
+        public object Value;        
         public Type Type;
         public DateTime Timestamp;
 
@@ -20,17 +21,18 @@ namespace PSMonitor
 
         public Entry(SerializationInfo info, StreamingContext context)
         {
-
+            Index = info.GetDouble("index");
             Key = info.GetString("key");
             Type = Type.GetType(info.GetString("type"));
             Value = info.GetValue("value", Type);
-            Timestamp = info.GetDateTime("timestamp").ToLocalTime();
+            Timestamp = info.GetDateTime("timestamp").ToLocalTime();            
             Retry = 0;
 
         }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
+            info.AddValue("index", Index);
             info.AddValue("key", Key);
             info.AddValue("value", Value, Type);
             info.AddValue("type", Type.FullName);

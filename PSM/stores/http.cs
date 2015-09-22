@@ -2,7 +2,7 @@
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
-/// <summary>The HTTP store</summary>
+/// <summary>HTTP store implementation</summary>
 /// 
 using System;
 using System.Threading;
@@ -18,6 +18,7 @@ using Microsoft.AspNet.SignalR.Client;
 using System.Web;
 using System.Linq;
 using System.ComponentModel;
+using System.Reflection;
 
 namespace PSMonitor.Stores
 {
@@ -28,9 +29,10 @@ namespace PSMonitor.Stores
     {
 
 
-        public class Configuration
+        protected new class Configuration : Store.Configuration
         {
 
+            [Category("HTTP")]
             [Description("The url used to connect to the server")]
             public string Url
             {
@@ -41,25 +43,27 @@ namespace PSMonitor.Stores
 
                 set
                 {
-
+                    Setup.Set<HTTP>("url", value);
                 }
             }
 
+            [Category("HTTP")]
             [Description("The number of milliseconds to wait before raising an error when connecting to the server")]
             public int ConnectionTimeout
             {
 
                 get
                 {
-                    return PSMonitor.Setup.Master.defaultTimeout;
+                    return Setup.Get<HTTP, int>("connectionTimeout");
                 }
 
                 set
                 {
-
+                    Setup.Set<HTTP>("connectionTimeout", value);
                 }
 
             }
+
         }
 
         /// <summary>
@@ -110,7 +114,7 @@ namespace PSMonitor.Stores
 
             Options = new Configuration();
 
-            _uri = new Uri(((Configuration)Options).Url ?? @"http://localhost:54926/");
+            _uri = new Uri(Options.Get<string>("Url") ?? @"http://localhost:54926/");
 
             List<Thread> threads = new List<Thread>();
 
@@ -353,7 +357,7 @@ namespace PSMonitor.Stores
 
             HttpClient client  = new HttpClient();
 
-            client.Timeout     = new TimeSpan(0, 0, 0, ((Configuration)Options).ConnectionTimeout);
+            client.Timeout = new TimeSpan(0, 0, 0, Options.Get<int>("ConnectionTimeout"));
             client.BaseAddress = _uri;
 
             client.DefaultRequestHeaders.Accept.Clear();
@@ -384,7 +388,7 @@ namespace PSMonitor.Stores
 
                 if (_hub.State == ConnectionState.Connected)
                     Debug.WriteLine("HTTP.CreateClient(): Connected to SignalR hub. Connection ID is: {0}", (object)_hub.ConnectionId);
-                else if ((DateTime.Now - start).TotalMilliseconds > ((Configuration)Options).ConnectionTimeout)
+                else if ((DateTime.Now - start).TotalMilliseconds > Options.Get<int>("ConnectionTimeout"))
                     throw new TimeoutException("Timeout exceeded. Could not connect to server");
             }            
 

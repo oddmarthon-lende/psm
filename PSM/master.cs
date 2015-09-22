@@ -49,7 +49,7 @@ namespace PSMonitor
 
             return (T)(object)config.GetSection(section);
 
-        }
+        }        
 
     }
 
@@ -96,20 +96,21 @@ namespace PSMonitor
 
         internal static ConcurrentDictionary<object, IStore> Pool = new ConcurrentDictionary<object, IStore>();
                 
-        public static IStore Store(object context = null) {
+        public static IStore Store(object context = null)
+        {
 
-            lock(Pool)
+            Type store = Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
+
+            lock (Pool)
             {
 
                 if (context == null)
                     context = typeof(IStore);
 
                 IStore instance = null;
-
-                if (!Pool.ContainsKey(context))
-                {
-
-                    Type store = Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
+                
+                if ( !Pool.ContainsKey(context) )
+                {                    
 
                     if (store != null)
                     {

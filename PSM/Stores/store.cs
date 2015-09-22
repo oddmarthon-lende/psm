@@ -1,8 +1,17 @@
-﻿using System;
+﻿/// <copyright file="store.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Store abstract class</summary>
+
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Configuration;
 using System.Linq;
+using System.Reflection;
 
 namespace PSMonitor.Stores
 {
@@ -10,18 +19,18 @@ namespace PSMonitor.Stores
     public class Setup : PSMonitor.Setup
     {
 
-        public static TResult Get<T, TResult>(string name)
+        public static TResult Get<T, TResult>(string name, bool allowEmpty = false)
         {
 
-            SettingsCollection settings = PSMonitor.Setup.Get<Setup>("stores").Settings;
+            SettingsCollection settings = Get<Setup>("stores").Settings;
 
             foreach (SettingElement element in settings)
             {
-                if ((System.Type.GetType(element.For, false, true) ?? typeof(object)).Equals(typeof(T)) && element.Name == name && !String.IsNullOrEmpty(element.Value))
+                if ((System.Type.GetType(element.For, false, true) ?? typeof(object)).Equals(typeof(T)) && element.Name == name && (allowEmpty || !String.IsNullOrEmpty(element.Value)) )
                     return (TResult)Convert.ChangeType(element.Value, typeof(TResult));
             }
 
-            throw new ConfigurationErrorsException(String.Format("Can not find configuration key with the name: {0}", name));
+            throw new ConfigurationErrorsException(String.Format("Could not find configuration key with the name: {0}", name));
         }
 
         [ConfigurationCollection(typeof(SettingElement), CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
@@ -34,7 +43,8 @@ namespace PSMonitor.Stores
 
             protected override object GetElementKey(ConfigurationElement element)
             {
-                return ((SettingElement)element).ElementInformation.LineNumber - base.ElementInformation.LineNumber - 1;
+                SettingElement s = (SettingElement)element;
+                return String.Format("{0}.{1}", s.For, s.Name);
             }
 
             [ConfigurationProperty("setting", IsRequired = false)]
@@ -52,25 +62,126 @@ namespace PSMonitor.Stores
             public string Name { get { return (string)base["name"]; } }
 
             [ConfigurationProperty("value", IsRequired = true)]
-            public string Value { get { return (string)base["value"]; } }
+            public string Value {
+                get { return (string)base["value"]; }
+                set { base["value"] = value; }
+            }
 
         }
 
         [ConfigurationProperty("type", DefaultValue = "", IsRequired = false)]
-        public string Type { get { return (string)base["type"]; } }
+        public string Type {
+            get { return (string)base["type"]; }
+            set { base["type"] = value; }
+        }
 
         [ConfigurationProperty("settings", IsRequired = false)]
         public SettingsCollection Settings { get { return (SettingsCollection)base["settings"]; } }
 
+        /// <summary>
+        /// Set a property for a class in the configuration file
+        /// </summary>
+        /// <typeparam name="T">The class type</typeparam>
+        /// <param name="name">The name of the property</param>
+        /// <param name="value">The property value</param>
+        public static void Set<T>(string name, object value)
+        {
+            
+            SettingsCollection settings = Get<Setup>("stores").Settings;
+
+            foreach (SettingElement element in settings)
+            {
+                if ((System.Type.GetType(element.For, false, true) ?? typeof(object)).Equals(typeof(T)) && element.Name == name)
+                {
+                    element.Value = Convert.ToString(value);
+                    break;
+                }
+                    
+            }
+
+            settings.CurrentConfiguration.Save();
+        }
+
     }
 
     public abstract class Store : IStore
-    {       
+    {
+        
+        protected class Configuration : IOptions
+        {
+
+            [Category("Data")]
+            [Description("The data store used when loading data")]
+            public Type Store {
+
+                get
+                {
+                    return Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
+                }
+
+                set
+                {
+                    Setup s = Setup.Get<Stores.Setup>("stores");
+                    s.Type = value.FullName;
+                    s.CurrentConfiguration.Save();
+                                        
+                }
+            }
+
+            public virtual Properties Get()
+            {
+
+                Properties properties = new Properties();
+                
+                foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(this) )
+                {
+
+                    properties.Add(descriptor, new Dictionary<object, object>());
+
+                    switch(descriptor.Name)
+                    {
+
+                        case "Store":
+                            
+                            foreach(Type type in Assembly.GetExecutingAssembly().GetTypes())
+                            {
+
+                                if (type.IsAbstract)
+                                    continue;
+
+                                type.FindInterfaces((m, f) =>
+                                {
+                                    
+                                    if (m.Equals(f))
+                                    {
+                                        properties.Last().Value.Add(type.Name, type);
+                                        return true;
+                                    }
+
+                                    return false;
+
+                                }, typeof(IStore));
+                                
+                            }
+
+                            break;
+                    }
+                }
+
+                return properties;
+            }
+
+            public T Get<T>(string name)
+            {
+                return (T)Convert.ChangeType(this.GetType().GetProperty(name).GetValue(this), typeof(T));
+            }
+
+        }
 
         /// <summary>
         /// <see cref="IStore.Options"/>
         /// </summary>
-        public virtual object Options { get; protected set; }
+        public virtual IOptions Options { get; protected set; }
 
         /// <summary>
         /// Extends the <see cref="PSMonitor.Path"/> with some additional properties

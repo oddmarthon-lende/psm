@@ -1,4 +1,11 @@
-﻿using System;
+﻿/// <copyright file="db.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Database store implementation</summary>
+/// 
+
+using System;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Data.SqlClient;
@@ -20,8 +27,9 @@ namespace PSMonitor.Stores
 
         #region Fields and Properties
 
-        protected class Configuration
+        protected new class Configuration : Store.Configuration
         {
+            [Category("Database")]
             [Description("The connection string that is used to connect to the database")]
             public string ConnectionString
             {
@@ -32,10 +40,11 @@ namespace PSMonitor.Stores
 
                 set
                 {
-                    //Setup.Set<DB, string, string>("connectionString", value);
+                    Setup.Set<DB>("connectionString", value);
                 }
             }
 
+            [Category("Database")]
             [Description("Entries older than the specified amount in days are deleted")]
             public int MaxAge
             {
@@ -46,10 +55,10 @@ namespace PSMonitor.Stores
 
                 set
                 {
-
+                    Setup.Set<DB>("maxAge", value);
                 }
             }
-
+            
         }
 
         /// <summary>
@@ -61,12 +70,12 @@ namespace PSMonitor.Stores
             /// <summary>
             /// Reference to the <see cref="SqlDataReader" /> that is used to read the data from the database.
             /// </summary>
-            private SqlDataReader reader;
+            private SqlDataReader _reader;
 
             /// <summary>
             /// The path that was used to obtain the results from the database.
             /// </summary>
-            private Path path;
+            private Path _path;
 
             /// <summary>
             /// The connection used to connect to the database.
@@ -78,6 +87,17 @@ namespace PSMonitor.Stores
             /// </summary>
             private SqlCommand command;
 
+            /// <summary>
+            /// The name of the index column
+            /// </summary>
+            private string _column;
+
+
+            /// <summary>
+            /// Determines if the sql connection should be closed when this object is disposed.
+            /// </summary>
+            private bool _autoCloseConnection = false;
+            
 
             /// <summary>
             /// The constructor
@@ -86,11 +106,13 @@ namespace PSMonitor.Stores
             /// <param name="p">The path that was used to obtain the results from the database</param>
             /// <param name="connection">The connection used to connect to the database.</param>
             /// <param name="command">The command that will be executed.</param>
-            public Entries(Path p, SqlConnection connection, SqlCommand command)
+            public Entries(Path p, string indexColumnName, SqlConnection connection, SqlCommand command, bool autoCloseConnection = false)
             {
 
-                path = p;
-                reader = command.ExecuteReader();
+                _path = p;
+                _column = indexColumnName;
+                _reader = command.ExecuteReader();
+                _autoCloseConnection = autoCloseConnection;
 
                 this.command = command;
                 this.connection = connection;
@@ -120,7 +142,7 @@ namespace PSMonitor.Stores
 
                 get
                 {
-                    return path.ToEntry(reader);
+                    return _path.ToEntry(_reader, _column);
                 }
 
             }
@@ -132,7 +154,7 @@ namespace PSMonitor.Stores
             {
                 get
                 {
-                    return path.ToEntry(reader);
+                    return _path.ToEntry(_reader, _column);
                 }
             }
 
@@ -141,9 +163,13 @@ namespace PSMonitor.Stores
             /// </summary>
             public void Dispose()
             {
-                reader.Close();
-                connection.Close();
-                command.Dispose();
+                _reader.Close();
+
+                if (_autoCloseConnection)
+                {                    
+                    connection.Close();
+                    command.Dispose();
+                }
             }
 
             /// <summary>
@@ -151,7 +177,7 @@ namespace PSMonitor.Stores
             /// </summary>
             public bool MoveNext()
             {
-                bool done = reader.IsClosed || !reader.Read();
+                bool done = _reader.IsClosed || !_reader.Read();
 
                 return !done;
             }
@@ -182,7 +208,7 @@ namespace PSMonitor.Stores
             /// </summary>
             /// <param name="record">The record to convert</param>
             /// <returns>The converted data as an <see cref="Entry"/></returns>
-            public Entry ToEntry(IDataRecord record)
+            public Entry ToEntry(IDataRecord record, string indexColumnName)
             {
 
                 int i = record.GetOrdinal("Value");
@@ -190,7 +216,7 @@ namespace PSMonitor.Stores
 
                 return new Entry
                 {
-
+                    Index = record.GetValue(record.GetOrdinal(indexColumnName)),
                     Key = this.Key,
                     Value = v,
                     Timestamp = record.GetDateTime(record.GetOrdinal("Timestamp")),
@@ -269,10 +295,7 @@ namespace PSMonitor.Stores
 
         #endregion
 
-        /// <summary>
-        /// The constructor
-        /// </summary>
-        public DB()
+        protected DB(bool StartThreads)
         {
 
             Options = new Configuration();
@@ -280,15 +303,19 @@ namespace PSMonitor.Stores
             queue = new ConcurrentQueue<Envelope>();
 
             //Test the connection
-            using (SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString))
+            using (SqlConnection connection = CreateConnection())
             {
                 VerifyConnection(connection);
-            }
+            }           
 
             List<Thread> threads = new List<Thread>();
 
-            threads.Add(new Thread(Dispatch));
-            threads.Add(new Thread(Cleanup));
+            if (StartThreads == true)
+            {
+                threads.Add(new Thread(Dispatch));
+                threads.Add(new Thread(Cleanup));
+            }
+
             threads.Add(new Thread(Receive));
 
             int index = 0;
@@ -301,6 +328,11 @@ namespace PSMonitor.Stores
             _threads = threads;
 
         }
+
+        /// <summary>
+        /// The constructor
+        /// </summary>
+        public DB() : this(true) { }
 
         /// <summary>
         /// <see cref="IStore.Delete(string)"/>
@@ -323,10 +355,10 @@ namespace PSMonitor.Stores
         /// <see cref="IStore.Delete(string)"/>
         /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
         /// </summary>
-        protected long Delete_(string path, DateTime? start, DateTime? end)
+        protected virtual long Delete_(string path, DateTime? start, DateTime? end)
         {
 
-            using (SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString))
+            using (SqlConnection connection = CreateConnection())
             {
 
                 VerifyConnection(connection);
@@ -400,25 +432,30 @@ namespace PSMonitor.Stores
         public override Entry Get(string path)
         {
 
-            SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString);
-
-            VerifyConnection(connection);
-
-            Path p = Path.Extract(path);
-
-            SqlCommand command = connection.CreateCommand();
-
-            command.CommandType = CommandType.StoredProcedure;
-            command.CommandText = "usp_get_one";
-
-            p.ToCommandParameters(command);
-
-            foreach (Entry entry in new Entries(p, connection, command))
+            using (SqlConnection connection = CreateConnection())
             {
-                return entry;
-            }
 
-            throw new KeyNotFoundException("Could not find the specified key or path");
+                VerifyConnection(connection);
+
+                Path p = Path.Extract(path);
+
+                using (SqlCommand command = connection.CreateCommand())
+                {
+
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "usp_get_one";
+
+                    p.ToCommandParameters(command);
+
+                    foreach (Entry entry in new Entries(p, "Id", connection, command))
+                    {
+                        return entry;
+                    }
+
+                    throw new KeyNotFoundException("Could not find the specified key or path");
+
+                }
+            }
 
         }
 
@@ -430,7 +467,7 @@ namespace PSMonitor.Stores
         protected virtual IEnumerable<Entry> Get_(string path, object start, object end)
         {
 
-            SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString);
+            SqlConnection connection = CreateConnection();
 
             VerifyConnection(connection);
 
@@ -461,7 +498,7 @@ namespace PSMonitor.Stores
 
             });
 
-            return new Entries(p, connection, command);
+            return new Entries(p, start is DateTime ? "time" : "id", connection, command, true);
 
 
 
@@ -501,7 +538,7 @@ namespace PSMonitor.Stores
         public override Key[] GetKeys(string path)
         {
 
-            using (SqlConnection connection = new SqlConnection(((Configuration)Options).ConnectionString))
+            using (SqlConnection connection = CreateConnection())
             {
 
                 VerifyConnection(connection);
@@ -605,6 +642,113 @@ namespace PSMonitor.Stores
         }
 
         /// <summary>
+        /// Dispatches data to receivers
+        /// </summary>
+        /// <param name="path">The receiver path</param>
+        /// <param name="processed">Already processed entries, can be reused and requeried instead of requering the database</param>
+        /// <param name="connection">The SQL connection</param>
+        /// <param name="totalCount">Increment on every processed entry</param>
+        protected virtual void Dispatch (Store.Path path, Dictionary<Store.Path, Entry[]> processed, SqlConnection connection, ref int totalCount)
+        {
+
+            Type indexType = path.StartIndex.GetType();
+            TypeCode indexTypeCode = Type.GetTypeCode(indexType);
+
+            using (SqlCommand command = connection.CreateCommand())
+            {
+
+                string indexColumnName = null;
+
+                switch (indexTypeCode)
+                {
+
+                    case TypeCode.DateTime:
+                        indexColumnName = "Timestamp";
+                        break;
+
+                    case TypeCode.Int64:
+                        indexColumnName = "Id";
+                        break;
+
+                    default:
+                        throw new Exception("Invalid index type");
+
+                }
+
+                command.CommandType = CommandType.Text;
+                command.CommandText = String.Format("select [Value], [Timestamp], [Id] from [Data] where [{0}] > @StartIndex and [Namespace] = @Namespace and [Key] = @Key", indexColumnName);
+
+                command.Parameters.Add(new SqlParameter("@StartIndex", GetType(indexType))
+                {
+                    Direction = ParameterDirection.Input,
+                    SqlValue = path.StartIndex
+                });
+
+                command.Parameters.Add(new SqlParameter("@Namespace", SqlDbType.VarChar)
+                {
+                    Direction = ParameterDirection.Input,
+                    SqlValue = path.Namespace
+                });
+
+                command.Parameters.Add(new SqlParameter("@Key", SqlDbType.VarChar)
+                {
+                    Direction = ParameterDirection.Input,
+                    SqlValue = path.Key
+                });
+
+                Entry[] entries = null;
+
+                if (processed.TryGetValue(path, out entries))
+                {
+
+                    switch (indexTypeCode)
+                    {
+
+                        case TypeCode.DateTime:
+                            entries = (from entry in entries where entry.Timestamp > (DateTime)path.StartIndex select entry).ToArray();
+                            break;
+
+                        case TypeCode.Int64:
+                            entries = (from entry in entries where (long)entry.Index > (long)path.StartIndex select entry).ToArray();
+                            break;
+
+                        default:
+                            entries = null;
+                            break;
+
+                    }
+
+                }
+
+                entries = entries ?? (new Entries(new Path(path), indexColumnName, connection, command)).ToArray();
+
+                if (entries.Length > 0)
+                {
+
+                    path.StartIndex = path.Handler(new Envelope()
+                    {
+                        Path = path.Namespace,
+                        Entries = entries,
+                        Timestamp = DateTime.Now
+                    });
+
+
+                    if (path.StartIndex == null)
+                        throw new NullReferenceException("The delegate returned null. Delegate must return a valid next StartIndex");
+
+                    if (!processed.ContainsKey(path))
+                    {
+                        totalCount += entries.Length;
+                        processed.Add(path, entries);
+                    }
+
+                }
+                
+            }          
+
+        }
+
+        /// <summary>
         /// Entry point for the thread that will poll the database for new data and transfer it to the listeners.
         /// </summary>
         /// <param name="instance">The <see cref="DB"/> instance that the thread belongs to.</param>
@@ -621,12 +765,12 @@ namespace PSMonitor.Stores
 
                     int totalCount = 0;
 
-
-                    using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
+                    using (SqlConnection connection = context.CreateConnection())
                     {
 
-                        Dictionary<Store.Path, Entry[]> processed = new Dictionary<Store.Path, Entry[]>();
+                        VerifyConnection(connection);
 
+                        Dictionary<Store.Path, Entry[]> processed = new Dictionary<Store.Path, Entry[]>();
 
                         foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in context.Receivers)
                         {
@@ -635,101 +779,7 @@ namespace PSMonitor.Stores
 
                             foreach (Store.Path path in paths)
                             {
-
-                                Type indexType = path.StartIndex.GetType();
-
-                                TypeCode indexTypeCode = Type.GetTypeCode(indexType);
-
-
-
-                                VerifyConnection(connection);
-
-                                using (SqlCommand command = connection.CreateCommand())
-                                {
-
-                                    string column = null;
-
-                                    switch (indexTypeCode)
-                                    {
-
-                                        case TypeCode.DateTime:
-                                            column = "Timestamp";
-                                            break;
-
-                                        default:
-                                            column = "Id";
-                                            break;
-
-                                    }
-
-                                    command.CommandType = CommandType.Text;
-                                    command.CommandText = String.Format("select [Value], [Timestamp] from [Data] where [{0}] > @StartIndex and [Namespace] = @Namespace and [Key] = @Key", column);
-
-                                    command.Parameters.Add(new SqlParameter("@StartIndex", GetType(indexType))
-                                    {
-                                        Direction = ParameterDirection.Input,
-                                        SqlValue = path.StartIndex
-                                    });
-
-                                    command.Parameters.Add(new SqlParameter("@Namespace", SqlDbType.VarChar)
-                                    {
-                                        Direction = ParameterDirection.Input,
-                                        SqlValue = path.Namespace
-                                    });
-
-                                    command.Parameters.Add(new SqlParameter("@Key", SqlDbType.VarChar)
-                                    {
-                                        Direction = ParameterDirection.Input,
-                                        SqlValue = path.Key
-                                    });
-
-                                    Entry[] entries = null;
-
-                                    if (processed.TryGetValue(path, out entries))
-                                    {
-
-                                        switch (indexTypeCode)
-                                        {
-
-                                            case TypeCode.DateTime:
-                                                entries = (from entry in entries where entry.Timestamp > (DateTime)path.StartIndex select entry).ToArray();
-                                                break;
-
-                                            default:
-                                                entries = null;
-                                                break;
-
-                                        }
-
-                                    }
-
-                                    entries = entries ?? (new Entries(new Path(path), connection, command)).ToArray();
-
-                                    if (entries.Length > 0)
-                                    {
-
-                                        path.StartIndex = path.Handler(new Envelope()
-                                        {
-                                            Path = path.Namespace,
-                                            Entries = entries,
-                                            Timestamp = DateTime.Now
-                                        });
-
-
-                                        if (path.StartIndex == null)
-                                            throw new NullReferenceException("The delegate returned null. Delegate must return a valid next StartIndex");
-
-                                        if (!processed.ContainsKey(path))
-                                        {
-                                            totalCount += entries.Length;
-                                            processed.Add(path, entries);
-                                        }
-
-
-
-                                    }
-
-                                }
+                                context.Dispatch(path, processed, connection, ref totalCount);
                             }
                         }
                     }
@@ -769,7 +819,7 @@ namespace PSMonitor.Stores
 
             DB context = (DB)ctx;
 
-            int maxAge = ((Configuration)context.Options).MaxAge;
+            int maxAge = context.Options.Get<int>("MaxAge");
 
             try
             {
@@ -779,7 +829,7 @@ namespace PSMonitor.Stores
 
                     Thread.Sleep(1000 * 60 * 60 * 24);
 
-                    using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
+                    using (SqlConnection connection = context.CreateConnection())
                     {
 
                         if (VerifyConnection(connection))
@@ -841,7 +891,7 @@ namespace PSMonitor.Stores
             try
             {
 
-                using (SqlConnection connection = new SqlConnection(((Configuration)context.Options).ConnectionString))
+                using (SqlConnection connection = context.CreateConnection())
                 {
 
                     while (!context._disposed)
@@ -967,6 +1017,15 @@ namespace PSMonitor.Stores
 
             return connection.State == ConnectionState.Open;
 
+        }
+
+        /// <summary>
+        /// Creates a new connection to the SQL server
+        /// </summary>
+        /// <returns></returns>
+        protected SqlConnection CreateConnection()
+        {
+            return new SqlConnection(Options.Get<string>("ConnectionString"));
         }
 
         /// <summary>

@@ -13,7 +13,16 @@ namespace PSMonitor
     {
 
         public string Namespace { get; protected set; }
-        public string Key { get; protected set; }        
+
+        public string Key { get; protected set; }
+        
+        public int Length
+        {
+            get
+            {
+                return Namespace.Split('.').Select(c => { return c.Trim(' '); }).Count() + 1;
+            }
+        }        
 
         public static Path Extract(string path)
         {

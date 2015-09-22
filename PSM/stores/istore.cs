@@ -1,21 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace PSMonitor.Stores
 {
+
+    /// <summary>
+    /// A class that holds the <see cref="PropertyDescriptor"/>'s for the properties in a type that implements <see cref="IOptions"/> interface and a dictionary that can be filled with valid values for a property.
+    /// </summary>
+    public class Properties : Dictionary<PropertyDescriptor, Dictionary<object, object>> { };
+
+    /// <summary>
+    /// The options interface used for <see cref="IStore.Options"/>
+    /// </summary>
+    public interface IOptions
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="info"></param>
+        /// <returns></returns>
+        Properties Get();
+
+        /// <summary>
+        /// Gets the property value
+        /// </summary>
+        /// <typeparam name="T">The property value type</typeparam>
+        /// <param name="PropertyName">The property name</param>
+        /// <returns>The value</returns>
+        T Get<T>(string PropertyName);
+
+    }
         
     /// <summary>
     /// Defines the interface that is used when accessing the data store.
     /// </summary>
     public interface IStore : IDisposable
     {
-
+        
         /// <summary>
         /// Gets an object that contains properties that can be used to configure the store and be exposed to the user.
         /// </summary>
-        object Options { get; }
-        
+        IOptions Options { get; }
+
         /// <summary>
         /// Get the current <see cref="Entry"/>
         /// </summary>
