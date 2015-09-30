@@ -2,7 +2,9 @@
 
 namespace PSMViewer.Visualizations
 {
-
+    [Visible(true)]
+    [DisplayName("Columns (OxyPlot)")]
+    [Icon("../icons/chart_column.png")]
     public sealed partial class Column : BarBase<ColumnSeries, ColumnItem>
     {
 

@@ -116,14 +116,11 @@ namespace PSMViewer.Visualizations
         public SolidColorBrush Threshold { get; set; }
     }
     
+    [DisplayName("Text")]
+    [Icon("../icons/text_linespacing.png")]
     public sealed partial class Text : VisualizationControl
     {        
         
-        public static string DisplayName { get { return typeof(Text).Name; } }
-        public static string Icon { get; private set; } = "../icons/text_linespacing.png";
-
-        
-
         private Orientation _orientation = Orientation.Horizontal;
         public Orientation Orientation {
             get {

@@ -56,28 +56,19 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Kitware.mummy.Runtime">
-      <HintPath>..\packages\Activiz.NET.x86.5.8.0\lib\net20\Kitware.mummy.Runtime.dll</HintPath>
+    <Reference Include="Kitware.mummy.Runtime, Version=1.0.2.599, Culture=neutral, PublicKeyToken=995c7fb9db2c1b44, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\VTK\bin\activiz.net\bin\Kitware.mummy.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="Kitware.VTK">
-      <HintPath>..\packages\Activiz.NET.x86.5.8.0\lib\net20\Kitware.VTK.dll</HintPath>
-    </Reference>
-    <Reference Include="OxyPlot, Version=2015.1.976.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
-      <HintPath>..\packages\OxyPlot.Core.2015.1.976-alpha\lib\net45\OxyPlot.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="OxyPlot.Wpf, Version=2015.1.976.0, Culture=neutral, PublicKeyToken=75e952ba404cdbb0, processorArchitecture=MSIL">
-      <HintPath>..\packages\OxyPlot.Wpf.2015.1.976-alpha\lib\net45\OxyPlot.Wpf.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="OxyPlot.Xps, Version=2015.1.976.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\OxyPlot.Wpf.2015.1.976-alpha\lib\net45\OxyPlot.Xps.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Kitware.VTK, Version=5.8.0.607, Culture=neutral, PublicKeyToken=995c7fb9db2c1b44, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\VTK\bin\activiz.net\bin\Kitware.VTK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -91,30 +82,7 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="Xceed.Wpf.AvalonDock, Version=2.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Extended.Wpf.Toolkit.2.5\lib\net40\Xceed.Wpf.AvalonDock.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Aero, Version=2.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Extended.Wpf.Toolkit.2.5\lib\net40\Xceed.Wpf.AvalonDock.Themes.Aero.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Metro, Version=2.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Extended.Wpf.Toolkit.2.5\lib\net40\Xceed.Wpf.AvalonDock.Themes.Metro.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Xceed.Wpf.AvalonDock.Themes.VS2010, Version=2.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Extended.Wpf.Toolkit.2.5\lib\net40\Xceed.Wpf.AvalonDock.Themes.VS2010.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Xceed.Wpf.DataGrid, Version=2.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Extended.Wpf.Toolkit.2.5\lib\net40\Xceed.Wpf.DataGrid.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Xceed.Wpf.Toolkit, Version=2.5.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Extended.Wpf.Toolkit.2.5\lib\net40\Xceed.Wpf.Toolkit.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
+    <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -125,14 +93,13 @@
     <Compile Include="Converters\oxythickness_double.cs" />
     <Compile Include="Converters\reloadstatustoboolean.cs" />
     <Compile Include="Converters\reloadstatustocursor.cs" />
+    <Compile Include="Dialogs\properties.cs" />
+    <Compile Include="Editors\store_options_editor.cs" />
     <Compile Include="extensions.cs" />
     <Compile Include="iundo.cs" />
     <Compile Include="layoutanchorablestate.cs" />
     <Compile Include="propertywrapper.cs" />
     <Compile Include="Utilities\bindingwrapper.cs" />
-    <Compile Include="Dialogs\properties.xaml.cs">
-      <DependentUpon>properties.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Utilities\tracker.cs" />
     <Compile Include="tree.xaml.cs">
       <DependentUpon>tree.xaml</DependentUpon>
@@ -141,6 +108,20 @@
     <Compile Include="Visualizations\barBase.cs" />
     <Compile Include="Visualizations\bar.xaml.cs">
       <DependentUpon>bar.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\vtkBase.cs" />
+    <Compile Include="Visualizations\vtkChartBase.cs" />
+    <Compile Include="Visualizations\vtkBar.xaml.cs">
+      <DependentUpon>vtkBar.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\vtkBag.xaml.cs">
+      <DependentUpon>vtkBag.xaml</DependentUpon>
+    </Compile>
+    <None Include="Visualizations\vtkImageData.xaml.cs">
+      <DependentUpon>vtkImageData.xaml</DependentUpon>
+    </None>
+    <Compile Include="Visualizations\vtkLine.xaml.cs">
+      <DependentUpon>vtkLine.xaml</DependentUpon>
     </Compile>
     <Compile Include="Visualizations\pie.xaml.cs">
       <DependentUpon>pie.xaml</DependentUpon>
@@ -151,9 +132,9 @@
     <Compile Include="Visualizations\column.xaml.cs">
       <DependentUpon>column.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\area.xaml.cs">
+    <None Include="Visualizations\area.xaml.cs">
       <DependentUpon>area.xaml</DependentUpon>
-    </Compile>
+    </None>
     <Compile Include="Visualizations\stairstep.xaml.cs">
       <DependentUpon>stairstep.xaml</DependentUpon>
     </Compile>
@@ -175,10 +156,6 @@
     <Compile Include="commands.cs" />
     <Compile Include="controls.cs" />
     <Compile Include="ViewModels\main.cs" />
-    <Page Include="Dialogs\properties.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="styles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -191,22 +168,36 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\pie.xaml">
+    <Page Include="Visualizations\vtkBar.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\datagrid.xaml">
+    <Page Include="Visualizations\vtkBag.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <None Include="Visualizations\vtkImageData.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </None>
+    <Page Include="Visualizations\vtkLine.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\pie.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Visualizations\datagrid.xaml">
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Visualizations\column.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\area.xaml">
+    <None Include="Visualizations\area.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </Page>
+    </None>
     <Page Include="Visualizations\stairstep.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -265,9 +256,38 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock.Themes.Aero\Xceed.Wpf.AvalonDock.Themes.Aero.csproj">
+      <Project>{ba72cce0-a9fb-4995-b496-7fec5c87b85b}</Project>
+      <Name>Xceed.Wpf.AvalonDock.Themes.Aero</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock.Themes.Metro\Xceed.Wpf.AvalonDock.Themes.Metro.csproj">
+      <Project>{89286eb4-b4a1-418c-839a-067b00f442d8}</Project>
+      <Name>Xceed.Wpf.AvalonDock.Themes.Metro</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock.Themes.VS2010\Xceed.Wpf.AvalonDock.Themes.VS2010.csproj">
+      <Project>{b3fc3e21-5f2d-4581-aea2-59f671cffc21}</Project>
+      <Name>Xceed.Wpf.AvalonDock.Themes.VS2010</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock\Xceed.Wpf.AvalonDock.csproj">
+      <Project>{db81988f-e0f2-45a0-a1fd-8c37f3d35244}</Project>
+      <Name>Xceed.Wpf.AvalonDock</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.DataGrid\Xceed.Wpf.DataGrid.csproj">
+      <Project>{63648392-6ce9-4a60-96d4-f9fd718d29b0}</Project>
+      <Name>Xceed.Wpf.DataGrid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.Toolkit\Xceed.Wpf.Toolkit.csproj">
+      <Project>{72e591d6-8f83-4d8c-8f67-9c325e623234}</Project>
+      <Name>Xceed.Wpf.Toolkit</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\oxyplot\Source\OxyPlot.Wpf\OxyPlot.Wpf.csproj">
+      <Project>{698ccd8e-adcc-4565-8517-5edd36f07155}</Project>
+      <Name>OxyPlot.Wpf</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\oxyplot\Source\OxyPlot\OxyPlot.csproj">
+      <Project>{7a0b35c0-dd17-4964-8e9a-44d6cecdc692}</Project>
+      <Name>OxyPlot</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PSM\PSM.csproj">
       <Project>{ef9840d4-db9f-416b-938b-3dcce9c70516}</Project>
       <Name>PSM</Name>

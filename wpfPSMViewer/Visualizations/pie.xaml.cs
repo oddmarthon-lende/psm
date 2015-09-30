@@ -12,7 +12,9 @@ using PSMonitor;
 
 namespace PSMViewer.Visualizations
 {
-
+    [Visible(true)]
+    [DisplayName("Pie (OxyPlot)")]
+    [Icon("../icons/chart_pie.png")]
     public sealed partial class Pie : OxyBase<PieSeries>
     {
 
@@ -21,13 +23,14 @@ namespace PSMViewer.Visualizations
 
         public class PieSliceItem : EntryItem
         {
-            private Pie Pie;
+            private Pie _pie;
+            private KeyItem _key;
 
-            public string Key
+            public KeyItem Key
             {
                 get
                 {
-                    return entry.Key;
+                    return _key;
                 }
             }
 
@@ -35,16 +38,18 @@ namespace PSMViewer.Visualizations
             {
                 get
                 {
-                    return ConvertEntryValueToDouble(this, Pie.ConversionFactor);
+                    return _key.Units.Convert<double>(entry);
                 }
             }
 
-            public PieSliceItem(Entry entry, Pie pie) : base(entry) {
-                this.Pie = pie;
+            public PieSliceItem(KeyItem key, Entry entry, Pie pie) : base(entry) {
+                this._pie = pie;
+                this._key = key;
             }
 
-            public PieSliceItem(EntryItem item, Pie pie) : base(item) {
-                this.Pie = pie;
+            public PieSliceItem(KeyItem key, EntryItem item, Pie pie) : base(item) {
+                this._pie = pie;
+                this._key = key;
             }
 
         }
@@ -62,7 +67,7 @@ namespace PSMViewer.Visualizations
 
             s.ItemsSource = Enumerable.SelectMany<MultiControl, PieSliceItem>(Controls, m => {
                 return m.Entries.Select(entryitem => {
-                    return new PieSliceItem(entryitem, this);
+                    return new PieSliceItem(m.Key, entryitem, this);
                 });
             });
 

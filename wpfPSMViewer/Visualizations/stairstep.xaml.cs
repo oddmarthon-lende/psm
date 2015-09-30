@@ -8,6 +8,9 @@ using Xceed.Wpf.Toolkit.PropertyGrid;
 namespace PSMViewer.Visualizations
 {
 
+    [Visible(true)]
+    [DisplayName("StairStep (OxyPlot)")]
+    [Icon("../icons/chart_line.png")]
     public sealed partial class StairStep : OxyBase<StairStepSeries>
     {
         public static string DisplayName { get { return "Stair Step"; } }

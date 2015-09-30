@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -488,6 +489,25 @@ namespace PSMViewer.ViewModels
 
             set
             {
+                long result = 0;
+
+                switch(TypeInfo.GetTypeCode(value.GetType()))
+                {
+                    case TypeCode.String:
+
+                        if (String.IsNullOrEmpty((string)value))
+                            return;
+
+                        try {
+                            value = Convert.ToInt64(value);
+                        }
+                        catch(Exception)
+                        {
+                            return;
+                        }
+
+                        break;
+                }
                 
                 switch (typeof(T).Name.ToLower())
                 {
@@ -510,7 +530,13 @@ namespace PSMViewer.ViewModels
                         switch (typeof(TCount).Name.ToLower())
                         {
                             case "int64":
-                                Count = (long)value - (long)Start;
+
+                                result = (long)value - (long)Start;
+
+                                if (result < 0) return;
+
+                                Count = result;
+
                                 break;
                         }
 
@@ -683,6 +709,11 @@ namespace PSMViewer.ViewModels
                     SetField(ref _status, ReloadStatus.Loading, "Status");
                 });
 
+                if(ReloadTask == null)
+                {
+                    return;
+                }
+
                 data = await ReloadTask;
 
             }
@@ -705,7 +736,7 @@ namespace PSMViewer.ViewModels
             SetField(ref _status, ReloadStatus.Idle, "Status");
 
             if ( Entries.Count > 0 && (!_startIndex.HasValue || _start == null) )
-                _startIndex = Entries.Max(entry => { return entry.Timestamp; });
+                _startIndex = Entries.Max(entry => { return (long)((Entry)entry).Index; });
 
             if (_startIndex.HasValue)
             {
@@ -727,7 +758,7 @@ namespace PSMViewer.ViewModels
 
         }      
         
-        private DateTime? _startIndex = null;
+        private long? _startIndex = null;
 
         /// <summary>
         /// Handles the receival of new data that is added to the store after the last reload
@@ -757,7 +788,7 @@ namespace PSMViewer.ViewModels
 
             }
 
-            _startIndex = data.Entries.Max(entry => { return entry.Timestamp; });
+            _startIndex = data.Entries.Max(entry => { return (long)entry.Index; });
 
             return _startIndex;
         }        

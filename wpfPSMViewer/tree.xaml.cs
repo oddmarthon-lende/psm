@@ -92,6 +92,8 @@ namespace PSMViewer
 
                 MouseEventArgs m = (MouseEventArgs)e;
 
+                if (Key == null) return;
+
                 switch(m.LeftButton)
                 {
 
@@ -132,8 +134,10 @@ namespace PSMViewer
         /// Reloads the root item
         /// </summary>
         public void Reload()
-        {            
+        {
+            rootItem.IsExpanded = false;
             ((KeyItem)rootItem.DataContext).Reload();
+            rootItem.IsExpanded = true;
         }
 
         private KeyItem GetDataContext(RoutedEventArgs e)

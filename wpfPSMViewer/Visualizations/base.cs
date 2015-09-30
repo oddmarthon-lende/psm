@@ -19,7 +19,6 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Windows.Input;
-using System.IO;
 using System.Collections;
 using System.Windows.Media.Imaging;
 using System.Threading;
@@ -27,6 +26,77 @@ using System.Windows.Threading;
 
 namespace PSMViewer.Visualizations
 {
+
+    /// <summary>
+    /// Used to specify the name that will displayed in the UI.
+    /// </summary>
+    class DisplayNameAttribute : Attribute
+    {
+        private string _name;
+
+        public DisplayNameAttribute(string name)
+        {
+            _name = name;
+        }
+
+        public static explicit operator string(DisplayNameAttribute d)
+        {
+            return d == null ? "" : d._name;
+        }
+
+        public override bool IsDefaultAttribute()
+        {
+            return false;
+        }
+
+    }
+
+    /// <summary>
+    /// Used to specify the icon that will displayed for the class
+    /// </summary>
+    class IconAttribute : Attribute
+    {
+        private string _path;
+
+        public IconAttribute(string path)
+        {
+            _path = path;
+        }
+
+        public static explicit operator string(IconAttribute i)
+        {
+            return i == null ? "" : i._path;
+        }
+
+        public override bool IsDefaultAttribute()
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Mark classes with this attribute to hide in the UI
+    /// </summary>
+    class VisibleAttribute : Attribute
+    {
+        private bool _visible = false;
+
+        public VisibleAttribute(bool Visible)
+        {
+            _visible = Visible;
+        }
+        
+        public static explicit operator bool(VisibleAttribute v)
+        {
+            return v == null ? true : v._visible;
+        }
+
+        public override bool IsDefaultAttribute()
+        {
+            return false;
+        }
+
+    }
 
     /// <summary>
     /// A wrapper class around List<string>.
@@ -37,17 +107,14 @@ namespace PSMViewer.Visualizations
     /// <summary>
     /// The VisualizationControl base class, inherited by all visualization controls
     /// </summary>
+    [Icon("../icons/application_view_gallery.png")]
     public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged, IUndo
     {
 
         /// <summary>
         /// <see cref="IReload.Cancel"/>
         /// </summary>
-        public CancellationTokenSource Cancel
-        {
-            get;
-            protected set;
-        } = new CancellationTokenSource();
+        public CancellationTokenSource Cancel { get; protected set; } = new CancellationTokenSource();
 
         #region Static Properties and Methods
 
@@ -105,20 +172,20 @@ namespace PSMViewer.Visualizations
                         return false;
                     }
 
-                    PropertyInfo isVisible = info.GetProperty("isVisible", BindingFlags.Public | BindingFlags.Static);
+                    VisibleAttribute v = info.GetCustomAttribute<VisibleAttribute>();
 
-                    return isVisible == null || (bool)isVisible.GetValue(null);
+                    return (bool)v;
 
                 })
                 .Select(info =>
                 {
 
-                    PropertyInfo DisplayName = info.GetProperty("DisplayName", BindingFlags.Public | BindingFlags.Static);
-                    PropertyInfo Icon = info.GetProperty("Icon", BindingFlags.Public | BindingFlags.Static);
+                    DisplayNameAttribute DisplayName = info.GetCustomAttribute<DisplayNameAttribute>();
+                    IconAttribute Icon = info.GetCustomAttribute<IconAttribute>();                                     
 
                     return new InheritorInfo(
-                        DisplayName == null ? "" : (string)DisplayName.GetValue(null),
-                        Icon == null ? "" : (string)Icon.GetValue(null),
+                        DisplayName == null ? "" : (string)DisplayName,
+                        Icon == null ? "" : (string)Icon,
                         info
                     );
 
@@ -329,20 +396,7 @@ namespace PSMViewer.Visualizations
         /// </summary>
         public static readonly DependencyProperty TitleVisibilityProperty =
             DependencyProperty.Register("TitleVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Collapsed));
-
-
-
-        /// <summary>
-        /// The conversion factor to apply to values that allow this.
-        /// </summary>
-        public double ConversionFactor
-        {
-            get { return (double)GetValue(ConversionFactorProperty); }
-            set { SetValue(ConversionFactorProperty, value); }
-        }
-        public static readonly DependencyProperty ConversionFactorProperty =
-            DependencyProperty.Register("ConversionFactor", typeof(double), typeof(VisualizationControl), new PropertyMetadata(1D));
-        
+       
 
 
         /// <summary>
@@ -885,13 +939,7 @@ namespace PSMViewer.Visualizations
                     Category = "Colors",
                     TargetProperties = new List<object>(new string[] { "Background", "Foreground", "BorderBrush" })
                 });
-
-                Properties.Add(new PropertyDefinition()
-                {
-                    IsExpandable = true,
-                    Category = "Data",
-                    TargetProperties = new List<object>(new string[] { "ConversionFactor" })
-                });
+                            
 
 
 
@@ -1100,6 +1148,8 @@ namespace PSMViewer.Visualizations
         public virtual MultiControl Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
         {
 
+            if (key == null) return null;
+
             if (key.Type == null)
             {
                 Keys.Add(key.Path);
@@ -1143,7 +1193,7 @@ namespace PSMViewer.Visualizations
             foreach(MultiControl m in (from s in Controls.ToArray() where s.Key.Path == key.Path || (s.Key.Parent != null && s.Key.Parent.Path == key.Path) select s))
             {
                 Controls.Remove(m);
-                m.Dispose();                
+                m.Dispose();
             }
 
             Keys.Remove(key.Path);
@@ -1348,57 +1398,6 @@ namespace PSMViewer.Visualizations
             return String.IsNullOrEmpty(Title) ? String.Format("<{0}> [{1}]", GetType().Name, Id) : Title;
         }
 
-        /// <summary>
-        /// Converts the value of an <see cref="EntryItem"/> to <c>double</c>
-        /// </summary>
-        /// <param name="entry">The item to convert the value of</param>
-        /// <param name="Factor">A conversion factor that scales the value.</param>
-        /// <returns></returns>
-        protected static double ConvertEntryValueToDouble(EntryItem entry, double Factor = 1D)
-        {
-
-            double? v = null;
-
-            switch (Type.GetTypeCode(entry.Value.GetType()))
-            {
-
-                case TypeCode.Byte    :
-                case TypeCode.Decimal :
-                case TypeCode.Double  :
-                case TypeCode.Int16   :
-                case TypeCode.Int32   :
-                case TypeCode.Int64   :
-                case TypeCode.SByte   :
-                case TypeCode.Single  :
-                case TypeCode.UInt16  :
-                case TypeCode.UInt32  :
-                case TypeCode.UInt64  :
-                case TypeCode.Char    :
-
-                    break;
-
-                case TypeCode.String:
-
-                    if(System.Text.RegularExpressions.Regex.IsMatch((string)entry.Value, @"^(\d+)", System.Text.RegularExpressions.RegexOptions.Compiled))
-                    {
-
-                        double value;
-
-                        if (double.TryParse((string)entry.Value, out value))
-                        {
-                            v = value;
-                            break;
-                        }
-
-                    }
-
-                    v = 0D;
-
-                    break;
-            }
-                        
-            return (v.HasValue ? v.Value : Convert.ToDouble(entry.Value))* Factor;
-
-        }
+        
     }
 }

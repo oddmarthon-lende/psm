@@ -833,6 +833,7 @@ namespace PSMViewer
                     break;
 
                 case CommandType.REFRESH:
+
                     this.OnReload(this);
                     break;
 
@@ -851,7 +852,7 @@ namespace PSMViewer
                     });
 
                     window.ShowDialog();
-                    
+
                     break;
 
                 case CommandType.CONTROLS:
@@ -861,6 +862,7 @@ namespace PSMViewer
                     break;
 
                 default:
+
                     break;
             }
 

@@ -62,6 +62,24 @@ namespace PSMViewer
         }
 
         /// <summary>
+        /// Show a dialog box with the exception message
+        /// </summary>
+        public static void Show(this Exception e)
+        {
+            MessageBox.Show(e.GetBaseException().Message, e.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        /// <summary>
+        /// Create a new instance of this type
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns>The newly created instance</returns>
+        public static object New(this Type t, params object[] args)
+        {
+            return Activator.CreateInstance(t, args);
+        }
+
+        /// <summary>
         /// Reloads objects that implements the IReload interface and forward any exception to the <paramref name="ErrorHandler"/>
         /// </summary>
         /// <param name="obj">The object that implements the <see cref="IReload"/> interface </param>

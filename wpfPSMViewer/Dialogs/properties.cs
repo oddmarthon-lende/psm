@@ -1,12 +1,12 @@
-﻿
-/// <copyright file="properties.xaml.cs" company="Baker Hughes Incorporated">
+﻿/// <copyright file="properties.xaml.cs" company="Baker Hughes Incorporated">
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
 /// <summary>Code behind for the Properties Window</summary>
-
+/// 
 using System.Linq;
 using System.Windows;
+using System.Windows.Threading;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 
 namespace PSMViewer
@@ -25,7 +25,7 @@ namespace PSMViewer
     /// </summary>
     public partial class PropertiesWindow : Window
     {
-        
+
         /// <summary>
         /// Holds the property definitions that will be visible to the user
         /// </summary>
@@ -41,9 +41,9 @@ namespace PSMViewer
 
                 PropertyGrid.PropertyDefinitions.Clear();
 
-                foreach(PropertyDefinition d in value)
+                foreach (PropertyDefinition d in value)
                 {
-                    PropertyGrid.PropertyDefinitions.Add(d);   
+                    PropertyGrid.PropertyDefinitions.Add(d);
                 }
 
             }
@@ -57,10 +57,10 @@ namespace PSMViewer
         {
             get
             {
-                return propertyGrid;
+                return (PropertyGrid)Content;
             }
         }
-        
+
         /// <summary>
         /// A constructor that takes an <see cref="IPropertyProvider"/> as an argument
         /// </summary>
@@ -74,13 +74,21 @@ namespace PSMViewer
         /// <param name="Definitions">The properties that will be visible to the user.</param>
         public PropertiesWindow(object SelectedObject, PropertyDefinition[] Definitions)
         {
-            InitializeComponent();
 
-            this.Loaded += delegate
-            {
-                PropertyGrid.SelectedObject = SelectedObject;
-                PropertyDefinitions    = Definitions;
-            };           
+            Content = new PropertyGrid() {
+
+                AutoGenerateProperties = false,
+                ShowDescriptionByTooltip = true,
+                ShowSearchBox = false,
+                ShowSortOptions = false,
+                ShowPreview = false,
+                ShowSummary = false,
+                ShowTitle = false,
+                ShowAdvancedOptions = false
+            };
+
+            PropertyDefinitions = Definitions;
+            PropertyGrid.SelectedObject = SelectedObject;
 
         }
     }

@@ -8,7 +8,7 @@ using Xceed.Wpf.DataGrid;
 
 namespace PSMViewer.Visualizations
 {
-
+    [DisplayName("Datagrid")]
     public sealed partial class DataGrid : VisualizationControl
     {
         public static string DisplayName { get { return typeof(DataGrid).Name; } }
@@ -42,8 +42,7 @@ namespace PSMViewer.Visualizations
 
         public DataGrid()
         {
-            InitializeComponent();
-            
+            InitializeComponent();            
         }
 
         public override void Refresh()

@@ -35,17 +35,12 @@
             <Button ToolTip="Refresh" Command="{Binding Commands[RefreshTable], ElementName=window}">
                 <Image Source="..\icons\table_refresh.png"/>
             </Button>
-
-            <Label VerticalAlignment="Center" Content="Count"/>
-            <TextBox  Text="{Binding Count, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Width="100" >
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="KeyUp">
-                        <i:InvokeCommandAction Command="{Binding Commands[RefreshTable], ElementName=window}" />
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </TextBox>
-            <TextBlock Text="{Binding Start, Mode=OneWay}"/>
-            <TextBlock Text="{Binding End, Mode=OneWay}"/>
+            
+            <Label VerticalAlignment="Center" Content="Start"/>
+            <TextBox  Text="{Binding Start, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Width="100" />
+            
+            <Label VerticalAlignment="Center" Content="End"/>
+            <TextBox  Text="{Binding End, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Width="100" />
 
         </ToolBar>
 

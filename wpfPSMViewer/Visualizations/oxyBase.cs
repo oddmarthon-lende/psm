@@ -20,22 +20,23 @@ using PSMViewer.Converters;
 using System.Windows;
 using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 using System.Windows.Controls;
+using PSMonitor;
 
 namespace PSMViewer.Visualizations
 {
     
-    public class SolidColorBrushList : IList<SolidColorBrush>, ICollection<SolidColorBrush>, ICollection, IList {
+    public class OxySolidColorBrushList : IList<SolidColorBrush>, ICollection<SolidColorBrush>, ICollection, IList {
 
 
         private IList<OxyColor> OxyColors;
         private IValueConverter Converter = new SolidColorBrushToOxyColorConverter();
         
-        public SolidColorBrushList()
+        public OxySolidColorBrushList()
         {
             OxyColors = new List<OxyColor>();
         }               
 
-        public SolidColorBrushList(IList<OxyColor> OxyColors) {
+        public OxySolidColorBrushList(IList<OxyColor> OxyColors) {
             this.OxyColors = OxyColors;          
         }
 
@@ -232,14 +233,14 @@ namespace PSMViewer.Visualizations
         public PlotModel Model { get; private set; } = new PlotModel() { Title = "" };
         public PlotController Controller { get; private set; } = new PlotController();
         
-        public SolidColorBrushList Colors
+        public OxySolidColorBrushList Colors
         {
-            get { return (SolidColorBrushList)GetValue(ColorsProperty); }
+            get { return (OxySolidColorBrushList)GetValue(ColorsProperty); }
             set { SetValue(ColorsProperty, value); }
         }
         public static readonly DependencyProperty ColorsProperty =
-            DependencyProperty.Register("Colors", typeof(SolidColorBrushList), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) => {
-                ((SolidColorBrushList)e.NewValue).Reset(((OxyBase<T>)sender).Model.DefaultColors);
+            DependencyProperty.Register("Colors", typeof(OxySolidColorBrushList), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) => {
+                ((OxySolidColorBrushList)e.NewValue).Reset(((OxyBase<T>)sender).Model.DefaultColors);
             }));
 
         public override void Refresh()
@@ -526,7 +527,7 @@ namespace PSMViewer.Visualizations
             MajorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MinorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
 
-            Colors = new SolidColorBrushList(Model.DefaultColors);
+            Colors = new OxySolidColorBrushList(Model.DefaultColors);
 
             Model.Axes.Add(new DateTimeAxis { Position = AxisPosition.Bottom, Angle = 45 });
             Model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Angle = -45 });
@@ -1020,7 +1021,7 @@ namespace PSMViewer.Visualizations
 
                                 EntryItem entry = (EntryItem)obj;
 
-                                return new DataPoint(DateTimeAxis.ToDouble(entry.Timestamp), ConvertEntryValueToDouble(entry, ConversionFactor));
+                                return new DataPoint(DateTimeAxis.ToDouble(entry.Timestamp), m.Key.Units.Convert<double>((Entry)entry));
                             };
 
                         this.Series.Add(new KeyValuePair<KeyItem, T>(m.Key, (T)(object)series));

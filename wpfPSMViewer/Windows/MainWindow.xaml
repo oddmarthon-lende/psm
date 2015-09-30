@@ -31,8 +31,7 @@
         <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding Commands[NewWindow], ElementName=window}"  />
         <KeyBinding Key="Pause" Command="{Binding Commands[Stop], ElementName=window}"  />        
         <KeyBinding Key="W" Modifiers="Ctrl" Command="{Binding Commands[Settings], ElementName=window}"  />
-        <KeyBinding Key="S" Command="{Binding Commands[Settings], ElementName=window}"  />
-        
+                
     </Window.InputBindings>
 
     <Window.DataContext>
@@ -105,8 +104,6 @@
                             <Separator />
                             <MenuItem Header="Next" InputGestureText="Alt+Right" Command="{Binding Commands[Next], ElementName=window}"  />
                             <MenuItem Header="Previous" InputGestureText="Alt+Left" Command="{Binding Commands[Previous], ElementName=window}"  />
-                            <Separator />
-                            <MenuItem Header="Settings" InputGestureText="Ctrl+W, S" Command="{Binding Commands[Settings], ElementName=window}"  />
                         </MenuItem>
 
                         <MenuItem Header="Windows" ItemsSource="{Binding Windows, ElementName=window}">
@@ -157,6 +154,12 @@
 
                         </xcad:LayoutAnchorable>
 
+                        <xcad:LayoutAnchorable ContentId="settings" Title="Settings" CanHide="False" CanClose="False" CanAutoHide="False" CanFloat="True" AutoHideWidth="240" >
+
+                            <toolkit:PropertyGrid ShowDescriptionByTooltip="True" SelectedObjectChanged="settings_propertyGrid_SelectedObjectChanged" x:Name="settings_propertyGrid" ShowSearchBox="False"  ShowSortOptions="False" ShowPreview="False" ShowSummary="False" ShowTitle="False" ShowAdvancedOptions="False" SelectedObject="{Binding Settings_, ElementName=window, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        </xcad:LayoutAnchorable>
+
                     </xcad:LayoutAnchorablePane>
 
                     <xcad:LayoutPanel Orientation="Vertical" DockWidth="80*" >
@@ -190,8 +193,8 @@
                                         </dg:DataGridControl.View>
 
                                         <dg:DataGridControl.Columns>
-
-                                            <dg:Column FieldName="Value" Title="Value" Width="80*" IsMainColumn="True" />
+                                            <dg:Column FieldName="Index" Title="Index" Width="10*" IsMainColumn="True" />
+                                            <dg:Column FieldName="Value" Title="Value" Width="70*" />
                                             <dg:Column FieldName="Timestamp" Width="20*" Title="Timestamp"  />
 
                                         </dg:DataGridControl.Columns>

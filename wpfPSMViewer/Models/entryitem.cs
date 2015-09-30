@@ -37,6 +37,14 @@ namespace PSMViewer.Models
         {
             this.entry = entry;
         }
+
+        /// <summary>
+        /// Gets the index
+        /// </summary>
+        public object Index
+        {
+            get { return entry.Index; }
+        }
         
         /// <summary>
         /// Gets the value

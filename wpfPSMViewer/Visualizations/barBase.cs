@@ -8,6 +8,7 @@
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
+using PSMonitor;
 using PSMViewer.Models;
 using System;
 using System.Collections.Generic;
@@ -120,7 +121,7 @@ namespace PSMViewer.Visualizations
                         dynamic item = Activator.CreateInstance(typeof(TItem));
 
                         item.CategoryIndex = Categories.IndexOf(m.Key.Name.ToLower());
-                        item.Value = ConvertEntryValueToDouble(entry, ConversionFactor);
+                        item.Value = m.Key.Units.Convert<double>((Entry)entry);
 
                         return (TItem)item;
                     });

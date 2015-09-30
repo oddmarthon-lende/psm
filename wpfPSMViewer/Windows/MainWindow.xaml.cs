@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,21 +21,22 @@ using PSMViewer.Visualizations;
 using System.Windows.Markup;
 using System.IO;
 using System.IO.IsolatedStorage;
-using System.Xml;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Linq;
 using System.Collections.Specialized;
 using Xceed.Wpf.AvalonDock.Layout;
 using System.Threading;
-using System.Windows.Media.Imaging;
 using System.Windows.Data;
 using PSMViewer.Utilities;
+using Xceed.Wpf.Toolkit.PropertyGrid;
+using PSMonitor.Stores;
+using PSMViewer.Editors;
 
 namespace PSMViewer
 {
-        
-    
+
+
     public sealed partial class MainWindow : Window, INotifyPropertyChanged, IReload
     {
         
@@ -67,61 +67,7 @@ namespace PSMViewer
         /// The isolated storage file store for this application.
         /// </summary>
         static IsolatedStorageFile UserStore = IsolatedStorageFile.GetUserStoreForDomain();
-
-        /// <summary>
-        /// Set the chart type for the specified key
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="chartType"></param>
-        /// <returns>The chart type</returns>
-        private static Type SetChartType(KeyItem key, Type chartType)
-        {
-
-            Settings s = Settings.Default;
-
-            foreach (string t in (from string t in s.chartType
-                                  where t.StartsWith(key.Path)
-                                  select t).ToArray())
-            {
-                s.chartType.Remove(t);
-            }
-
-            s.chartType.Add(String.Format("{0},{1}", key.Path, chartType.FullName));
-            s.Save();
-
-            return chartType;
-
-        }
-
-        /// <summary>
-        /// Get the chart type for the specified key
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns>The chart type for the key if found or <c>null</c> if not found</returns>
-        private static Type GetChartType(KeyItem key)
-        {
-
-            Settings.Default.chartType = Settings.Default.chartType ?? new StringCollection();
-
-            Type chartType = (from string t in Settings.Default.chartType
-                              where (t.StartsWith(key.Path))
-                              select Type.GetType(t.Split(',')[1])).ElementAtOrDefault(0);
-
-            return chartType;
-
-        }
-
-
-        /// <summary>
-        /// Gets the chart type for the key and create a new instance.
-        /// </summary>
-        /// <param name="key">The key</param>
-        /// <returns>A new instance of the chart type if set, else <c>null</c></returns>
-        private static VisualizationControl Restore(KeyItem key)
-        {
-            Type t = GetChartType(key);
-            return t == null ? null : (VisualizationControl)Activator.CreateInstance(t);
-        }
+               
 
         #endregion
 
@@ -142,6 +88,14 @@ namespace PSMViewer
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /// <summary>
+        /// Set a fields value 
+        /// </summary>
+        /// <typeparam name="T">The field type</typeparam>
+        /// <param name="field">The field</param>
+        /// <param name="value">The value</param>
+        /// <param name="propertyName">Optional property name. If called from setter, uses name of property automatically.</param>
+        /// <returns>A fart</returns>
         private bool SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
@@ -169,6 +123,23 @@ namespace PSMViewer
 
 
 
+        /// <summary>
+        /// The type of chart to display in the mainwindow
+        /// </summary>
+        public Type ChartType
+        {
+            get { return (Type)GetValue(ChartTypeProperty); }
+            set { SetValue(ChartTypeProperty, value); }
+        }
+
+        /// <summary>
+        /// Identifies the <see cref="ChartType"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty ChartTypeProperty =
+            DependencyProperty.Register("ChartType", typeof(Type), typeof(MainWindow), new PropertyMetadata(null));
+
+
+
         private ObservableCollection<VisualizationWindow> _windows = new ObservableCollection<VisualizationWindow>();
         /// <summary>
         /// Contains all the data visualization windows 
@@ -185,6 +156,17 @@ namespace PSMViewer
 
             }
             
+        }
+
+        /// <summary>
+        /// Gets the store options object
+        /// </summary>
+        public IOptions Settings_
+        {
+            get
+            {
+                return PSMonitor.PSM.Store(Dispatcher).Options;
+            }
         }
                
 
@@ -240,11 +222,7 @@ namespace PSMViewer
             /// <summary>
             /// Stop receiving realtime updates.
             /// </summary>
-            STOP,
-            /// <summary>
-            /// Show the settings window
-            /// </summary>
-            SETTINGS
+            STOP
         }
                
 
@@ -268,7 +246,6 @@ namespace PSMViewer
             Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
             Commands.Add("NewWindow", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEW_WINDOW));
             Commands.Add("Stop", new RelayCommand(ExecuteCommand, canExecute, CommandType.STOP));
-            Commands.Add("Settings", new RelayCommand(ExecuteCommand, canExecute, CommandType.SETTINGS));
 
             InitializeComponent();
 
@@ -318,10 +295,11 @@ namespace PSMViewer
 
                     }),
                 Mode = BindingMode.OneWayToSource
-            });
-            
+            });          
+
         }
-        
+                     
+
         #region Commands
 
         /// <summary>
@@ -344,29 +322,10 @@ namespace PSMViewer
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
-
-                case CommandType.SETTINGS:
-
-                    window = (new PropertiesWindow(PSMonitor.PSM.Store().Options, new Xceed.Wpf.Toolkit.PropertyGrid.PropertyDefinition[] {}  )
-                    {
-                        Title = "Settings",
-                        ShowInTaskbar = false,
-                        Owner = this,
-                        Width = SystemParameters.FullPrimaryScreenWidth * .5,
-                        Height = SystemParameters.FullPrimaryScreenHeight * .5,
-                        WindowStartupLocation = WindowStartupLocation.CenterScreen
-                    });
-
-                    ((PropertiesWindow)window).PropertyGrid.AutoGenerateProperties = true;
-
-                    window.ShowDialog();
-
-                    break;
-
+                
                 case CommandType.STOP:
 
                     ViewModel.Stop();
-
                     break;
 
                 
@@ -455,7 +414,7 @@ namespace PSMViewer
                     VisualizationControl.InheritorInfo info = (VisualizationControl.InheritorInfo)parameter;
                     info.IsSelected = true;
 
-                    SetChartType(key, info.Type);
+                    ChartType = info.Type;
 
                     Visualize(key);
 
@@ -509,6 +468,8 @@ namespace PSMViewer
                 {
                     ControlsVisibility = Visibility.Visible
                 };
+
+                Thread.CurrentThread.Name = String.Format("{0} [{1}]", w.GetType().Name, w.Id);
 
                 Dispatcher.Invoke(delegate
                 {
@@ -606,35 +567,43 @@ namespace PSMViewer
             
             MainWindow mainWindow = (MainWindow)App.Current.MainWindow;
             Dispatcher d = mainWindow.Dispatcher;
-            
+                        
             using (StreamReader reader = new StreamReader(stream))
             {
 
                 Thread thread = new Thread(new ParameterizedThreadStart((s) => {
 
-                        VisualizationWindow w = (VisualizationWindow)XamlReader.Parse((string)s);
-                        Guid Id = w.Id;
+                        try {
 
-                        Thread.CurrentThread.Name = String.Format("{0} [{1}]", w.GetType(), Id);
+                            VisualizationWindow w = (VisualizationWindow)XamlReader.Parse((string)s);
+                            Guid Id = w.Id;
 
-                        d.InvokeAsync(delegate
-                        {
+                            Thread.CurrentThread.Name = String.Format("{0} [{1}]", w.GetType().Name, Id);
 
-                            if ((new List<Window>(mainWindow._windows)).Find((v) => { return ((VisualizationWindow)v).Id == Id; }) != null)
-
+                            d.InvokeAsync(delegate
                             {
-                                w.Dispatcher.Invoke(delegate
+
+                                if ((new List<Window>(mainWindow._windows)).Find((v) => { return ((VisualizationWindow)v).Id == Id; }) != null)
                                 {
-                                    w.Id = Guid.NewGuid();
-                                });
+                                    w.Dispatcher.Invoke(delegate
+                                    {
+                                        w.Id = Guid.NewGuid();
+                                    });
 
-                                MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
-                            }
+                                    MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
+                                }
 
-                            mainWindow.OnReload(w);
-                            mainWindow._windows.Add(w);
+                                mainWindow.OnReload(w);
+                                mainWindow._windows.Add(w);
 
-                        });
+                            });
+
+                        }
+                        catch(Exception e)
+                        {
+                            e.Show();
+                            return;
+                        }
 
                         System.Windows.Threading.Dispatcher.Run();
 
@@ -642,6 +611,7 @@ namespace PSMViewer
 
                 thread.SetApartmentState(ApartmentState.STA);
                 thread.Start(reader.ReadToEnd());
+                    
 
             }
             
@@ -689,10 +659,11 @@ namespace PSMViewer
 
             Main context = (Main)this.DataContext;
 
-            if (key != null && key.Type != null)
+            if (ChartType != null && key != null && key.Type != null)
             {
 
-                VisualizationControl instance = Restore(key);
+                VisualizationControl instance = (VisualizationControl)ChartType.New();
+                instance.ContextMenu = null;
 
                 foreach (VisualizationControl v in visualizationGrid.Children)
                 {
@@ -730,8 +701,7 @@ namespace PSMViewer
 
             foreach (VisualizationControl.InheritorInfo info in ((MenuItem)sender).Items)
             {
-                Type t = GetChartType(key);
-                info.IsSelected = t != null && key != null && t.Equals(info.Type);
+                info.IsSelected = ChartType != null && key != null && ChartType.Equals(info.Type);
             }
 
         }
@@ -805,6 +775,61 @@ namespace PSMViewer
             return false;
         }
 
+        /// <summary>
+        /// Changes the editor for properties that has value range data.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void settings_propertyGrid_SelectedObjectChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+
+            PropertyGrid grid = (PropertyGrid)sender;            
+            Dictionary<PropertyDescriptor, PropertyItem> items = new Dictionary<PropertyDescriptor, PropertyItem>();
+            IOptions settings = Settings_;
+
+            foreach (PropertyItem item in grid.Properties)
+                items.Add(item.PropertyDescriptor, item);
+
+            foreach (var p in settings.Get())
+            {
+                
+                PropertyDescriptor descriptor = p.Key;
+                PropertyItem item = items[descriptor];
+
+                descriptor.RemoveValueChanged(settings, settings_propertyGrid_PropertyDescriptorValueChanged);
+
+                if(descriptor.Name == "Store")
+                {
+                    descriptor.AddValueChanged(settings, delegate {
+                        MessageBox.Show("Application must be restarted for this change to take effect", "Restart required", MessageBoxButton.OK, MessageBoxImage.Information);
+                        Commands["Exit"].Execute(null);
+                    });
+                }
+                else
+                    descriptor.AddValueChanged(settings, settings_propertyGrid_PropertyDescriptorValueChanged);
+                
+                if (p.Value.Count > 0)
+                {
+                    StoreOptionsEditor editor = new StoreOptionsEditor(descriptor);
+                    item.Editor = editor.ResolveEditor(item);
+                }
+
+
+            }
+
+            grid.Update();
+        }
+
+        /// <summary>
+        /// Refreshes the <see cref="settings_propertyGrid"/> editors.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void settings_propertyGrid_PropertyDescriptorValueChanged(object sender, EventArgs e)
+        {
+            settings_propertyGrid_SelectedObjectChanged(settings_propertyGrid, null);
+        }
+        
         #endregion
 
         /// <summary>
@@ -824,6 +849,7 @@ namespace PSMViewer
         {
             return ((Main)this.DataContext).Previous();
         }
-                
+        
+        
     }
 }
