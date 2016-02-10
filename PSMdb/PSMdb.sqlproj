@@ -97,5 +97,8 @@
     <Build Include="Stored Procedures\usp_get_many.sql" />
     <Build Include="Stored Procedures\usp_delete.sql" />
     <Build Include="Stored Procedures\usp_clean.sql" />
+    <Build Include="Tables\meta.sql" />
+    <Build Include="Stored Procedures\usp_insert_meta.sql" />
+    <Build Include="Stored Procedures\usp_get_meta.sql" />
   </ItemGroup>
 </Project>

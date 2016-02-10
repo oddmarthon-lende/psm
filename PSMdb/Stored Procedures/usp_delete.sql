@@ -3,7 +3,8 @@
 	@Key VARCHAR(MAX),
 	@Start DATETIME = null,
 	@End DATETIME = null,
-	@Span BIGINT = null
+	@Span BIGINT = null,
+	@IndexColumn VARCHAR(MAX) = null
 AS
 	
 	if(@Span is not null)
@@ -18,7 +19,7 @@ AS
 
 	if(@Start is null or @End is null)
 	begin
-		delete from [values] where [NamespaceId] in (select Id from [namespaces] where [Namespace] = @Namespace) and [KeyId] in (select Id from [keys] where [Name] = @Key)
+		delete from [values] where [NamespaceId] in (select Id from [namespaces] where [Namespace] = @Namespace) and [KeyId] in (select Id from [keys] where [Name] = @Key);
 	end
 	else
 	begin

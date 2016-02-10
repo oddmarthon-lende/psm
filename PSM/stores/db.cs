@@ -27,8 +27,40 @@ namespace PSMonitor.Stores
 
         #region Fields and Properties
 
+        public enum IndexType
+        {
+
+            Id,
+            Index,
+            Timestamp,
+            Value
+
+        }
+
+        public override Enum Default
+        {
+            get
+            {
+                return IndexType.Index;
+            }
+        }
+
+        public override Type Index
+        {
+            get
+            {
+                return typeof(IndexType);
+            }
+        }      
+        
+        /// <summary>
+        /// The configuration class.
+        /// This class holds user options for the <see cref="DB"/> class
+        /// </summary>
         protected new class Configuration : Store.Configuration
         {
+            
+            
             [Category("Database")]
             [Description("The connection string that is used to connect to the database")]
             public string ConnectionString
@@ -90,7 +122,7 @@ namespace PSMonitor.Stores
             /// <summary>
             /// The name of the index column
             /// </summary>
-            private string _column;
+            private IndexType _column;
 
 
             /// <summary>
@@ -106,11 +138,11 @@ namespace PSMonitor.Stores
             /// <param name="p">The path that was used to obtain the results from the database</param>
             /// <param name="connection">The connection used to connect to the database.</param>
             /// <param name="command">The command that will be executed.</param>
-            public Entries(Path p, string indexColumnName, SqlConnection connection, SqlCommand command, bool autoCloseConnection = false)
+            public Entries(Path p, IndexType indexColumn, SqlConnection connection, SqlCommand command, bool autoCloseConnection = false)
             {
 
                 _path = p;
-                _column = indexColumnName;
+                _column = indexColumn;
                 _reader = command.ExecuteReader();
                 _autoCloseConnection = autoCloseConnection;
 
@@ -142,7 +174,7 @@ namespace PSMonitor.Stores
 
                 get
                 {
-                    return _path.ToEntry(_reader, _column);
+                    return _path.ToEntry(_reader, _column.ToString());
                 }
 
             }
@@ -154,7 +186,7 @@ namespace PSMonitor.Stores
             {
                 get
                 {
-                    return _path.ToEntry(_reader, _column);
+                    return _path.ToEntry(_reader, _column.ToString());
                 }
             }
 
@@ -322,7 +354,7 @@ namespace PSMonitor.Stores
             foreach (Thread thread in threads)
             {
                 thread.Name = String.Format("DB Store [{0}] Thread #{1}", _id, index++);
-                thread.Start(this);
+                //thread.Start(this);
             }
 
             _threads = threads;
@@ -339,23 +371,13 @@ namespace PSMonitor.Stores
         /// </summary>
         public override long Delete(string path)
         {
-            return Delete_(path, null, null);
+            return Delete(path, null, null, null);
         }
 
         /// <summary>
-        /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
+        /// <see cref="IStore.Delete(string, object, object, Enum)"/>
         /// </summary>
-        public override long Delete(string path, DateTime start, DateTime end)
-        {
-            return Delete_(path, start, end);
-        }
-
-        /// <summary>
-        /// Handles both methods defined by the <see cref="IStore"/> interface.
-        /// <see cref="IStore.Delete(string)"/>
-        /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
-        /// </summary>
-        protected virtual long Delete_(string path, DateTime? start, DateTime? end)
+        public override long Delete(string path, object start, object end, Enum index)
         {
 
             using (SqlConnection connection = CreateConnection())
@@ -373,30 +395,35 @@ namespace PSMonitor.Stores
 
                     p.ToCommandParameters(command);
 
-                    command.Parameters.Add(new SqlParameter("starttime", SqlDbType.DateTime)
+                    command.Parameters.Add(new SqlParameter("@Start", SqlDbType.DateTime)
                     {
 
-                        ParameterName = "@Start",
                         Direction = ParameterDirection.Input,
                         SqlValue = start
 
                     });
 
-                    command.Parameters.Add(new SqlParameter("endtime", SqlDbType.DateTime)
+                    command.Parameters.Add(new SqlParameter("@End", SqlDbType.DateTime)
                     {
 
-                        ParameterName = "@End",
                         Direction = ParameterDirection.Input,
                         SqlValue = end
 
                     });
 
-                    command.Parameters.Add(new SqlParameter("timespan", SqlDbType.BigInt)
+                    command.Parameters.Add(new SqlParameter("@Span", SqlDbType.BigInt)
                     {
 
-                        ParameterName = "@Span",
                         Direction = ParameterDirection.Input,
                         SqlValue = null
+
+                    });
+
+                    command.Parameters.Add(new SqlParameter("@IndexColumn", SqlDbType.VarChar)
+                    {
+
+                        Direction = ParameterDirection.Input,
+                        SqlValue = index.ToString()
 
                     });
 
@@ -417,6 +444,9 @@ namespace PSMonitor.Stores
 
             foreach (Thread thread in _threads)
             {
+                if (!thread.IsAlive)
+                    continue;
+
                 thread.Interrupt();
                 Debug.WriteLine("DB Store : Waiting for threads to exit");
                 thread.Join();
@@ -447,7 +477,7 @@ namespace PSMonitor.Stores
 
                     p.ToCommandParameters(command);
 
-                    foreach (Entry entry in new Entries(p, "Id", connection, command))
+                    foreach (Entry entry in new Entries(p, IndexType.Id, connection, command))
                     {
                         return entry;
                     }
@@ -460,13 +490,11 @@ namespace PSMonitor.Stores
         }
 
         /// <summary>
-        /// Handles both methods defined by the <see cref="IStore"/> interface.
-        /// <see cref="IStore.Get(string)"/>
-        /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
+        /// <see cref="IStore.Get(string, object, object, Enum)"/>
         /// </summary>
-        protected virtual IEnumerable<Entry> Get_(string path, object start, object end)
+        public override IEnumerable<Entry> Get(string path, object start, object end, Enum index)
         {
-
+            
             SqlConnection connection = CreateConnection();
 
             VerifyConnection(connection);
@@ -480,46 +508,32 @@ namespace PSMonitor.Stores
 
             p.ToCommandParameters(command);
 
-            command.Parameters.Add(new SqlParameter("starttime", SqlDbType.Variant)
+            command.Parameters.Add(new SqlParameter("@Start", SqlDbType.Variant)
             {
-
-                ParameterName = "@Start",
                 Direction = ParameterDirection.Input,
                 SqlValue = start
 
             });
 
-            command.Parameters.Add(new SqlParameter("endtime", SqlDbType.Variant)
+            command.Parameters.Add(new SqlParameter("@End", SqlDbType.Variant)
             {
-
-                ParameterName = "@End",
                 Direction = ParameterDirection.Input,
                 SqlValue = end
 
             });
 
-            return new Entries(p, start is DateTime ? "time" : "id", connection, command, true);
+            command.Parameters.Add(new SqlParameter("@IndexColumn", SqlDbType.VarChar)
+            {
+                Direction = ParameterDirection.Input,
+                SqlValue = index.ToString()
 
+            });
+
+            return new Entries(p, (IndexType)index, connection, command, true);
 
 
         }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
-        /// </summary>
-        public override IEnumerable<Entry> Get(string path, DateTime start, DateTime end)
-        {
-            return Get_(path, start, end);
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string, long, long)"/>
-        /// </summary>
-        public override IEnumerable<Entry> Get(string path, long start, long end)
-        {
-            return Get_(path, start, end);
-        }
-
+                
 
         /// <summary>
         /// <see cref="IStore.Put(Envelope)"/>
@@ -533,9 +547,93 @@ namespace PSMonitor.Stores
         }
 
         /// <summary>
-        /// <see cref="IStore.GetKeys(string)"/>
+        /// <see cref="IStore.Meta(string)"/>
         /// </summary>
-        public override Key[] GetKeys(string path)
+        public override Dictionary<string, object> Meta(string path)
+        {
+
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+
+            using (SqlConnection connection = CreateConnection())
+            {
+
+                VerifyConnection(connection);
+
+                using (SqlCommand command = connection.CreateCommand())
+                {
+
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "usp_get_meta";
+
+                    command.Parameters.Add(new SqlParameter("@Namespace", SqlDbType.VarChar)
+                    {
+                        Direction = ParameterDirection.Input,
+                        SqlValue = path
+                    });
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+
+                        while (reader.Read())
+                        {
+
+                            dict.Add(reader.GetString(reader.GetOrdinal("Name")), reader.GetValue(reader.GetOrdinal("Value")));
+
+                        }
+                    }
+                }
+
+            }
+
+            return dict;
+        }
+
+        /// <summary>
+        /// <see cref="IStore.Meta(string, string, object)"/>
+        /// </summary>
+        public override void Meta(string path, string key, object value)
+        {
+
+            using (SqlConnection connection = CreateConnection())
+            {
+
+                VerifyConnection(connection);
+
+
+                using (SqlCommand command = connection.CreateCommand())
+                {
+
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.CommandText = "usp_insert_meta";
+
+                    command.Parameters.Add(new SqlParameter("@Namespace", SqlDbType.VarChar)
+                    {
+                        Direction = ParameterDirection.Input,
+                        SqlValue = path
+                    });
+
+                    command.Parameters.Add(new SqlParameter("@Key", SqlDbType.VarChar)
+                    {
+                        Direction = ParameterDirection.Input,
+                        SqlValue = key
+                    });
+
+                    command.Parameters.Add(new SqlParameter("@Value", SqlDbType.Variant)
+                    {
+                        Direction = ParameterDirection.Input,
+                        SqlValue = value
+                    });
+
+                    command.ExecuteNonQuery();
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// <see cref="IStore.Keys(string)"/>
+        /// </summary>
+        public override Key[] Keys(string path)
         {
 
             using (SqlConnection connection = CreateConnection())
@@ -650,33 +748,32 @@ namespace PSMonitor.Stores
         /// <param name="totalCount">Increment on every processed entry</param>
         protected virtual void Dispatch (Store.Path path, Dictionary<Store.Path, Entry[]> processed, SqlConnection connection, ref int totalCount)
         {
-
+            
             Type indexType = path.StartIndex.GetType();
             TypeCode indexTypeCode = Type.GetTypeCode(indexType);
 
             using (SqlCommand command = connection.CreateCommand())
             {
 
-                string indexColumnName = null;
+                IndexType indexIdentifier;
 
                 switch (indexTypeCode)
                 {
 
                     case TypeCode.DateTime:
-                        indexColumnName = "Timestamp";
-                        break;
 
-                    case TypeCode.Int64:
-                        indexColumnName = "Id";
-                        break;
+                        indexIdentifier = IndexType.Timestamp;
+                        break;                                            
 
                     default:
-                        throw new Exception("Invalid index type");
+
+                        indexIdentifier = IndexType.Id;
+                        break;
 
                 }
 
                 command.CommandType = CommandType.Text;
-                command.CommandText = String.Format("select [Value], [Timestamp], [Id] from [Data] where [{0}] > @StartIndex and [Namespace] = @Namespace and [Key] = @Key", indexColumnName);
+                command.CommandText = String.Format("select [Value], [Timestamp], [Id] from [Data] where [{0}] > @StartIndex and [Namespace] = @Namespace and [Key] = @Key", indexIdentifier);
 
                 command.Parameters.Add(new SqlParameter("@StartIndex", GetType(indexType))
                 {
@@ -720,7 +817,7 @@ namespace PSMonitor.Stores
 
                 }
 
-                entries = entries ?? (new Entries(new Path(path), indexColumnName, connection, command)).ToArray();
+                entries = entries ?? (new Entries(new Path(path), indexIdentifier, connection, command)).ToArray();
 
                 if (entries.Length > 0)
                 {
@@ -998,7 +1095,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// Verify that the connection is open for business.
         /// </summary>
-        /// <param name="connection">The connection the verify.</param>
+        /// <param name="connection">The connection to verify.</param>
         /// <returns><c>true</c> if the connection is open.</returns>
         protected static bool VerifyConnection(SqlConnection connection)
         {

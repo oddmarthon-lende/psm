@@ -34,7 +34,9 @@ namespace PSMonitor
             {
                 path = RouteParameter.Optional
             });
-            
+
+            config.Routes.MapHttpRoute("InfoApi", "{controller}");
+
             config.MessageHandlers.Add(new MessageHandler());
 
         }

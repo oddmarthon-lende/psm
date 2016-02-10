@@ -84,13 +84,13 @@
     <Reference Include="System.Xml.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="cda.cs" />
+    <None Include="cda.cs" />
     <Compile Include="entry.cs" />
     <Compile Include="envelope.cs" />
     <Compile Include="execution_context.cs" />
     <Compile Include="commands.cs" />
     <Compile Include="path.cs" />
-    <Compile Include="Stores\advantage.cs" />
+    <None Include="Stores\advantage.cs" />
     <Compile Include="Stores\db.cs" />
     <Compile Include="Stores\istore.cs" />
     <Compile Include="logger.cs" />
@@ -102,10 +102,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="psm.config">
+    <EmbeddedResource Include="psm.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
-    </None>
+    </EmbeddedResource>
     <None Include="psm.pfx" />
   </ItemGroup>
   <ItemGroup>

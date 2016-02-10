@@ -46,8 +46,8 @@ namespace PSMonitor
             state.Commands.Add(new SessionStateCmdletEntry("set-timeout", typeof(SetTimeoutCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("push-data", typeof(PushDataCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("pop-data", typeof(PopDataCommand), null));
-            state.Commands.Add(new SessionStateCmdletEntry("get-cda", typeof(GetCDACommand), null));
-            state.Commands.Add(new SessionStateCmdletEntry("set-cda", typeof(SetCDACommand), null));
+            //state.Commands.Add(new SessionStateCmdletEntry("get-cda", typeof(GetCDACommand), null));
+            //state.Commands.Add(new SessionStateCmdletEntry("set-cda", typeof(SetCDACommand), null));
 
             state.Variables.Add(new SessionStateVariableEntry(ScriptExecutionContextID, ID, "The Guid of the ScriptExecutionContext that executed this script", ScopedItemOptions.Constant));
 

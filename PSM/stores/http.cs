@@ -18,7 +18,7 @@ using Microsoft.AspNet.SignalR.Client;
 using System.Web;
 using System.Linq;
 using System.ComponentModel;
-using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace PSMonitor.Stores
 {
@@ -28,10 +28,26 @@ namespace PSMonitor.Stores
     public class HTTP : Store
     {
 
+        public override Enum Default
+        {
+            get
+            {
+                return (Enum)Enum.Parse(Index, GetServerInfo().DefaultValue);
+            }
+        }
+
+        public override Type Index
+        {
+            get
+            {
+                return GetServerInfo().Index;
+            }
+        }
 
         protected new class Configuration : Store.Configuration
         {
 
+            
             [Category("HTTP")]
             [Description("The url used to connect to the server")]
             public string Url
@@ -64,6 +80,7 @@ namespace PSMonitor.Stores
 
             }
 
+            
         }
 
         /// <summary>
@@ -171,15 +188,15 @@ namespace PSMonitor.Stores
         /// </summary>
         public override long Delete(string path)
         {
-            return Delete_(path, null, null);
+            return Delete_(path, null, null, null);
         }
 
         /// <summary>
-        /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
+        /// <see cref="IStore.Delete(string, DateTime, DateTime, Enum)"/>
         /// </summary>
-        public override long Delete(string path, DateTime start, DateTime end)
+        public override long Delete(string path, object start, object end, Enum index)
         {
-            return Delete_(path, start, end);
+            return Delete_(path, start, end, index);
         }
 
         /// <summary>
@@ -187,7 +204,7 @@ namespace PSMonitor.Stores
         /// <see cref="Delete(string)"/>
         /// <see cref="Delete(string, DateTime, DateTime)"/>
         /// </summary>
-        private long Delete_(string path, DateTime? start, DateTime? end)
+        private long Delete_(string path, object start, object end, Enum index)
         {
 
             long result = 0;
@@ -196,8 +213,8 @@ namespace PSMonitor.Stores
             {
 
                 
-                string uri = HttpUtility.UrlEncode(start != null && end != null ?
-                    String.Format("/data/{0}/{1}/{2}/", path, ToUnixTimestamp(start.Value) * 1000, ToUnixTimestamp(end.Value) * 1000) :
+                string uri = HttpUtility.UrlEncode(start != null && end != null && index != null ?
+                    String.Format("/data/{0}/{1}/{2}/{3}", path, (start is DateTime ? ToUnixTimestamp((DateTime)start) * 1000 : start), (end is DateTime ? ToUnixTimestamp((DateTime)end) * 1000 : end), index.GetType().FullName) :
                     String.Format("/data/{0}/", path));
                 
                 client.DeleteAsync(uri).ContinueWith(async task =>
@@ -255,7 +272,7 @@ namespace PSMonitor.Stores
         public override Entry Get(string path)
         {
 
-            foreach(Entry entry in Get_(path, null, null)) {
+            foreach(Entry entry in Get_(path, null, null, null)) {
                 return entry;
             }
 
@@ -263,7 +280,7 @@ namespace PSMonitor.Stores
 
         }
 
-        private static DateTime t = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        private static DateTime t = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);                
 
         /// <summary>
         /// Converts unix timestamp to <see cref="DateTime"/>
@@ -286,19 +303,11 @@ namespace PSMonitor.Stores
         }
 
         /// <summary>
-        /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
+        /// <see cref="IStore.Get(string, object, object, Enum)"/>
         /// </summary>
-        public override IEnumerable<Entry> Get(string path, DateTime start, DateTime end)
+        public override IEnumerable<Entry> Get(string path, object start, object end, Enum index)
         {
-            return Get_(path, start, end);
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string, long, long)"/>
-        /// </summary>
-        public override IEnumerable<Entry> Get(string path, long start, long end)
-        {
-            return Get_(path, start, end);
+            return Get_(path, start, end, index);
         }
 
         /// <summary>
@@ -306,7 +315,7 @@ namespace PSMonitor.Stores
         /// <see cref="Get(string, DateTime, DateTime)"/>
         /// <see cref="Get(string, long, long)"/>
         /// </summary>
-        private IEnumerable<Entry> Get_(string path, object start, object end)
+        private IEnumerable<Entry> Get_(string path, object start, object end, Enum index)
         {
             
             DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Entry[]));
@@ -315,9 +324,8 @@ namespace PSMonitor.Stores
             using (HttpClient client = CreateClient())
             {
                 
-                string uri = HttpUtility.UrlEncode(start != null && end != null && typeof(DateTime).Equals(start.GetType()) && typeof(DateTime).Equals(end.GetType()) ?
-                    String.Format("/data/{0}/{1}/{2}/time", path, ToUnixTimestamp((DateTime)start) * 1000, ToUnixTimestamp((DateTime)end) * 1000) : start != null && end != null && typeof(long).Equals(start.GetType()) && typeof(long).Equals(end.GetType()) ?
-                    String.Format("/data/{0}/{1}/{2}/index", path, (long)start, (long)end) :
+                string uri = HttpUtility.UrlEncode(start != null && end != null && index != null ?
+                    String.Format("/data/{0}/{1}/{2}/{3}", path, (start is DateTime ? ToUnixTimestamp((DateTime)start) * 1000 : start), (start is DateTime ? ToUnixTimestamp((DateTime)start) * 1000 : start), index.ToString()) :
                     String.Format("/data/{0}/", path));
 
                 
@@ -347,7 +355,7 @@ namespace PSMonitor.Stores
             return entries;
 
         }
-
+        
         /// <summary>
         /// Creates a new http connection
         /// </summary>
@@ -517,9 +525,9 @@ namespace PSMonitor.Stores
         }
         
         /// <summary>
-        /// <see cref="IStore.GetKeys(string)"/>
+        /// <see cref="IStore.Keys(string)"/>
         /// </summary>
-        public override Key[] GetKeys(string path)
+        public override Key[] Keys(string path)
         {
 
             DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Key[]));
@@ -554,7 +562,105 @@ namespace PSMonitor.Stores
             return keys;
         }
 
-        
+        /// <summary>
+        /// Get information from the server
+        /// </summary>
+        /// <returns>The information object returned from the server.</returns>
+        protected Information GetServerInfo()
+        {
+
+            DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Information));
+            Information                info = null;
+
+            using (HttpClient client = CreateClient())
+            {
+                
+                client.GetStreamAsync("/information").ContinueWith(task =>
+                {
+
+                    if (task.Status != TaskStatus.RanToCompletion)
+                    {
+
+                        if (task.Exception != null)
+                        {
+                            throw task.Exception;
+                        }
+
+                    }
+                    else if (task.Result != null)
+                    {
+                        info = (Information)json.ReadObject(task.Result);
+                    }
+
+                }).Wait();
+
+            }
+
+            return info;
+
+        }
+
+        /// <summary>
+        /// Used to get information from the server.
+        /// </summary>
+        [Serializable]
+        public class Information : ISerializable
+        {
+
+            public string DefaultValue { get; private set; }
+
+            /// <summary>
+            /// The enum type used in the server store.
+            /// </summary>
+            public Type Index { get; private set; }
+
+            
+            /// <summary>
+            /// The server time
+            /// </summary>
+            public DateTime ServerTime { get; private set; }
+
+            
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            public Information(SerializationInfo info, StreamingContext context)
+            {
+
+                Index = Type.GetType(info.GetString("IndexClass"));
+                ServerTime = info.GetDateTime("ServerTime");
+                
+                DefaultValue = info.GetString("DefaultValue");
+
+            }
+
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            public Information(Type indexClass)
+            {
+
+                this.Index = indexClass;
+
+                ServerTime = DateTime.Now;
+                DefaultValue = PSM.Store().Default.ToString();
+
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="info"></param>
+            /// <param name="context"></param>
+            public void GetObjectData(SerializationInfo info, StreamingContext context)
+            {
+                info.AddValue("IndexClass", Index);
+                info.AddValue("ServerTime", ServerTime);
+                info.AddValue("DefaultValue", DefaultValue);
+            }
+        }
+
+
     }
 
 }

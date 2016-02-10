@@ -106,10 +106,14 @@ namespace PSMonitor.Stores
 
     public abstract class Store : IStore
     {
-        
+
+        public abstract Enum Default { get; }
+
+        public abstract Type Index { get; }
+
         protected class Configuration : IOptions
         {
-
+            
             [Category("Data")]
             [Description("The data store used when loading data")]
             public Type Store {
@@ -140,7 +144,7 @@ namespace PSMonitor.Stores
 
                     switch(descriptor.Name)
                     {
-
+                        
                         case "Store":
                             
                             foreach(Type type in Assembly.GetExecutingAssembly().GetTypes())
@@ -229,9 +233,9 @@ namespace PSMonitor.Stores
         public abstract long Delete(string path);
 
         /// <summary>
-        /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
+        /// <see cref="IStore.Delete(string, object, object, Enum)"/>
         /// </summary>
-        public abstract long Delete(string path, DateTime start, DateTime end);
+        public abstract long Delete(string path, object start, object end, Enum index);
 
         /// <summary>
         /// <see cref="IStore.Get(string)"/>
@@ -239,19 +243,14 @@ namespace PSMonitor.Stores
         public abstract Entry Get(string path);
 
         /// <summary>
-        /// <see cref="IStore.Get(string, long, long)"/>
+        /// <see cref="IStore.Get(string, object, object, Enum)"/>
         /// </summary>
-        public abstract IEnumerable<Entry> Get(string path, long start, long end);
-
+        public abstract IEnumerable<Entry> Get(string path, object start, object end, Enum index);
+        
         /// <summary>
-        /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
+        /// <see cref="IStore.Keys(string)"/>
         /// </summary>
-        public abstract IEnumerable<Entry> Get(string path, DateTime start, DateTime end);
-
-        /// <summary>
-        /// <see cref="IStore.GetKeys(string)"/>
-        /// </summary>
-        public abstract Key[] GetKeys(string ns);
+        public abstract Key[] Keys(string ns);
 
         /// <summary>
         /// <see cref="IStore.Put(Envelope)"/>
@@ -355,6 +354,35 @@ namespace PSMonitor.Stores
 
         }
 
+        /// <summary>
+        /// Set the units for a key
+        /// </summary>
+        /// <param name="path">The path to the key</param>
+        /// <param name="units">The units object that contains the relevant information about the unit.</param>
+        public virtual void Units(string path, Units units)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Get the current units for a key
+        /// </summary>
+        /// <param name="path">The path to the key</param>
+        /// <returns>The saved unit or default</returns>
+        public virtual Units Units(string path)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public virtual void Meta(string path, string key, object value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Dictionary<string, object> Meta(string path)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

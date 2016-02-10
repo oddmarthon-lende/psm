@@ -202,9 +202,9 @@ namespace PSMonitor.Controllers
         /// <param name="end">The end time index</param>
         /// <param name="context">The currently executing HTTP action context</param>
         /// <returns><see cref="IStore.Delete(string, DateTime, DateTime)"/></returns>
-        public static long Delete(string path, DateTime start, DateTime end, HttpActionContext context)
+        public static long Delete(string path, object start, object end, Enum index, HttpActionContext context)
         {
-            return PSM.Store().Delete(path, start, end);
+            return PSM.Store().Delete(path, start, end, index);
         }
 
         /// <summary>
@@ -228,14 +228,14 @@ namespace PSMonitor.Controllers
         }
 
         /// <summary>
-        /// <see cref="IStore.Get(string, long, long)"/>
+        /// <see cref="IStore.Get(string, object, object, Enum)"/>
         /// </summary>
         /// <param name="path">The data path</param>
         /// <param name="start">The start index</param>
         /// <param name="end">The end index</param>
         /// <param name="context">The currently executing HTTP action context</param>
         /// <returns><see cref="IStore.Get(string, long, long)"/></returns>
-        public static IEnumerable<Entry> Get(string path, long start, long end, HttpActionContext context)
+        public static IEnumerable<Entry> Get(string path, object start, object end, Enum index, HttpActionContext context)
         {
                         
             Receiver receiver = new Receiver(context, path, PSM.Store().Get(path).Timestamp);
@@ -245,39 +245,18 @@ namespace PSMonitor.Controllers
                 Register(receiver, path, receiver.Index, receiver.Handler);
             }
             
-            return PSM.Store().Get(path, start, end);
+            return PSM.Store().Get(path, start, end, index);
 
         }
-
+        
         /// <summary>
-        /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
-        /// </summary>
-        /// <param name="path">The data path</param>
-        /// <param name="start">The start time index</param>
-        /// <param name="end">The end time index</param>
-        /// <param name="context"></param>
-        /// <returns>The currently executing HTTP action context</returns>
-        public static IEnumerable<Entry> Get(string path, DateTime start, DateTime end, HttpActionContext context)
-        {
-
-            Receiver receiver = new Receiver(context, path, PSM.Store().Get(path).Timestamp);
-
-            if (!_receivers.Contains(receiver))
-            {                
-                Register(receiver, path, receiver.Index, receiver.Handler);
-            }                     
-
-            return PSM.Store().Get(path, start, end);
-        }
-
-        /// <summary>
-        /// <see cref="IStore.GetKeys(string)"/>
+        /// <see cref="IStore.Keys(string)"/>
         /// </summary>
         /// <param name="path">The namespace path</param>
-        /// <returns><see cref="IStore.GetKeys(string)"/></returns>
+        /// <returns><see cref="IStore.Keys(string)"/></returns>
         public static Key[] GetKeys(string path)
         {
-            return PSM.Store().GetKeys(path);
+            return PSM.Store().Keys(path);
         }
 
         /// <summary>

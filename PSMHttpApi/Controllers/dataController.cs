@@ -10,7 +10,6 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Collections.Generic;
 using System;
-using PSMonitor.Stores;
 
 namespace PSMonitor.Controllers
 {
@@ -41,8 +40,7 @@ namespace PSMonitor.Controllers
 
             try {
 
-                entry = Store.Get(path, ActionContext);
-                
+                entry = Store.Get(path, ActionContext);               
 
             }
             catch(KeyNotFoundException)
@@ -61,55 +59,32 @@ namespace PSMonitor.Controllers
         /// <summary>
         /// <see cref="IStore.Get(string, long, long)"/>
         /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
-        /// The <paramref name="type"/> parameter determines which of the methods above the call corresponds to
+        /// The <paramref name="index"/> parameter determines which of the methods above the call corresponds to
         /// </summary>
         /// <param name="path">The data path</param>
         /// <param name="start">The start index or unix timestamp</param>
         /// <param name="end">The end index or unix timestamp</param>
-        /// <param name="type">The index type as a string. Can be [index, time]</param>
+        /// <param name="index">The index type as a string.</param>
         /// <returns>The data as a http response</returns>
         [HttpGet]
-        public IHttpActionResult Get(string path, long start, long end, string type)
+        public IHttpActionResult Get(string path, long start, long end, string index)
         {
   
             HttpResponseMessage response  = new HttpResponseMessage(HttpStatusCode.OK);
+            Enum idx = (Enum)Enum.Parse(PSM.Store().Index, index);
 
             try {
 
-                switch (type)
-                {
+                response.Content = new StreamContent(
+                           new EntryJSONStream(
+                               Store.Get(
+                                   path,
+                                   start,
+                                   end,
+                                   idx,
+                                   ActionContext
+                           )));
 
-                    case "index":
-
-                        response.Content = new StreamContent(
-                            new EntryJSONStream(
-                                Store.Get(
-                                    path,
-                                    start,
-                                    end,
-                                    ActionContext
-                            )));
-
-                        break;
-
-                    case "time":
-
-                        response.Content = new StreamContent(
-                            new EntryJSONStream(
-                                Store.Get(
-                                    path,
-                                    HTTP.FromUnixTimestamp(start / 1000),
-                                    HTTP.FromUnixTimestamp(end / 1000),
-                                    ActionContext
-                            )));
-
-                        break;
-
-                    default:
-
-                        throw new ArgumentOutOfRangeException("The type argument is invalid");
-                }
-               
                 response.Content.Headers.Add("Content-Type", "application/json");
 
             }
@@ -161,17 +136,19 @@ namespace PSMonitor.Controllers
         /// <param name="end">The end index as a unix timestamp or null</param>
         /// <returns>Success/Error http result</returns>
         [HttpDelete]
-        public IHttpActionResult Delete(string path, long? start, long? end)
+        public IHttpActionResult Delete(string path, long? start, long? end, string index)
         {
 
             long count = 0;
+            
+            Enum idx = (Enum)Enum.Parse(PSM.Store().Index, index);
 
             try {
 
                 if(start == null || end == null)
                     count = Store.Delete(path, ActionContext);
                 else
-                    count = Store.Delete(path, HTTP.FromUnixTimestamp(start.Value), HTTP.FromUnixTimestamp(end.Value), ActionContext);
+                    count = Store.Delete(path, start.Value, end.Value, idx, ActionContext);
             }
             catch(Exception error)
             {

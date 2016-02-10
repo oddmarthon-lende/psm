@@ -23,9 +23,34 @@ namespace PSMonitor.Stores
     public sealed class Advantage : DB
     {
 
+        public new enum IndexType
+        {
+
+            Time,
+            Depth
+
+        }
+
+        public override Enum Default
+        {
+            get
+            {
+                return IndexType.Depth;
+            }
+        }
+
+        public override Type Index
+        {
+            get
+            {
+                return typeof(IndexType);
+            }
+        }
+
         private new class Configuration : Store.Configuration
         {
 
+            
             [Category("Database")]
             [Description("The connection string that is used to connect to the database")]
             public string ConnectionString
@@ -109,6 +134,7 @@ namespace PSMonitor.Stores
             [Category("Information")]
             public DateTime? MinTime { get; private set; }
 
+            
 
             private Advantage _advantage = null;
 
@@ -364,6 +390,7 @@ namespace PSMonitor.Stores
             Path p = Path.Extract(path);
             SqlConnection connection = CreateConnection();
             SqlCommand command = connection.CreateCommand();
+
             string indexColumnName = start is DateTime ? "Time" : "Depth";
 
             VerifyConnection(connection);

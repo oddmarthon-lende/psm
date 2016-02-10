@@ -2,5 +2,5 @@
 	@Namespace VARCHAR(MAX),
 	@Key VARCHAR(MAX)
 AS
-	SELECT top 1 [Value], [Timestamp], [Id] from data where [Namespace] = @Namespace and [Key] = @Key order by [Timestamp] desc;
+	SELECT top 1 [Value], [Timestamp], 0 as Id from data where [Namespace] = @Namespace and [Key] = @Key order by [Timestamp] desc;
 RETURN 0

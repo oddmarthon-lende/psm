@@ -13,15 +13,37 @@ namespace PSMonitor
 
     public class Setup : ConfigurationSection
     {
-        
-        private static ExeConfigurationFileMap map = new ExeConfigurationFileMap() { ExeConfigFilename = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "psm.config") };
-        protected static Configuration config = ConfigurationManager.OpenMappedExeConfiguration(map, ConfigurationUserLevel.None);
+        private static Assembly _assembly = Assembly.GetExecutingAssembly();
+
+        private static ExeConfigurationFileMap _map = Map();
+
+        protected static Configuration config = ConfigurationManager.OpenMappedExeConfiguration(_map, ConfigurationUserLevel.None);
 
         public Setup ()
-        {
+        {          
 
             if (!config.HasFile)
-                throw new FileNotFoundException(String.Format("Missing config file: {0}", map.ExeConfigFilename));
+                throw new FileNotFoundException(String.Format("Missing config file: {0}", _map.ExeConfigFilename));
+        }
+
+        private static ExeConfigurationFileMap Map()
+        {
+
+            string path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(_assembly.Location), "psm.config");
+
+            if (!File.Exists(path))
+            {
+                using (Stream original = _assembly.GetManifestResourceStream("PSMonitor.psm.config"))
+                {
+                    using (FileStream file = new FileStream(path, FileMode.CreateNew))
+                    {
+                        original.CopyTo(file);
+                    }
+                }
+            }
+
+            return new ExeConfigurationFileMap() { ExeConfigFilename = path };
+
         }
 
         [ConfigurationProperty("scriptDirectory", DefaultValue = "C:\\", IsRequired = false)]
@@ -45,7 +67,7 @@ namespace PSMonitor
         {
             
             if (!config.HasFile)
-                throw new FileNotFoundException(String.Format("Missing config file: {0}", map.ExeConfigFilename));
+                throw new FileNotFoundException(String.Format("Missing config file: {0}", _map.ExeConfigFilename));
 
             return (T)(object)config.GetSection(section);
 

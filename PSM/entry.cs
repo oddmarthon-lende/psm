@@ -1,4 +1,10 @@
-﻿using System;
+﻿/// <copyright file="entry.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// <summary>Data entry model object</summary>
+/// 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
@@ -6,22 +12,51 @@ using System.Runtime.Serialization.Json;
 
 namespace PSMonitor
 {
+
+    
+    /// <summary>
+    /// Class that wraps one data entry
+    /// </summary>
     [Serializable]
     public struct Entry : ISerializable
     {
 
+        /// <summary>
+        /// The data path
+        /// </summary>
         public string Key;
+
+        /// <summary>
+        /// The index value for this entry
+        /// </summary>
         public object Index;
-        public object Value;        
+
+        /// <summary>
+        /// The data value for this entry
+        /// </summary>
+        public object Value;
+
+        /// <summary>
+        /// The value type
+        /// </summary>
         public Type Type;
+
+        /// <summary>
+        /// The timestamp for this entry.
+        /// </summary>
         public DateTime Timestamp;
 
         [NonSerialized]
         public int Retry;
 
+        /// <summary>
+        /// Deserialization Constructor
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
         public Entry(SerializationInfo info, StreamingContext context)
         {
-            Index = info.GetDouble("index");
+            Index = info.GetValue("index", typeof(object));
             Key = info.GetString("key");
             Type = Type.GetType(info.GetString("type"));
             Value = info.GetValue("value", Type);
@@ -30,6 +65,12 @@ namespace PSMonitor
 
         }
 
+        /// <summary>
+        /// Constructor used for serialization.
+        /// <see cref="ISerializable.GetObjectData(SerializationInfo, StreamingContext)"/>
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             info.AddValue("index", Index);
@@ -39,27 +80,34 @@ namespace PSMonitor
             info.AddValue("timestamp", Timestamp.ToUniversalTime().ToString("o"));
         }
 
+        /// <summary>
+        /// Gets a string representation of this object.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return String.Format("{0} = {1}", Key, Value);
         }
     }
 
-
+    /// <summary>
+    /// A stream that takes an <see cref="IEnumerable{Entry}"/> as input, and outputs a JSON text stream.
+    /// Copyright (C) 2015 Odd Marthon Lende
+    /// </summary>
     public class EntryJSONStream : Stream, IDisposable
     {
-        private IEnumerable<Entry> entries;
-        private StreamWriter writer;
+        private IEnumerable<Entry> _entries;
+        private StreamWriter _writer;
 
-        private static DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Entry));
-        private IEnumerator<Entry> enumerator;
+        private static DataContractJsonSerializer _json = new DataContractJsonSerializer(typeof(Entry));
+        private IEnumerator<Entry> _enumerator;
 
         public EntryJSONStream(IEnumerable<Entry> _entries)
         {
             
-            entries = _entries;
-            writer = new StreamWriter(this, System.Text.Encoding.UTF8) { AutoFlush = true };
-            enumerator = entries.GetEnumerator();
+            this._entries = _entries;
+            _writer = new StreamWriter(this, System.Text.Encoding.UTF8) { AutoFlush = true };
+            _enumerator = this._entries.GetEnumerator();
 
         }
 
@@ -114,7 +162,7 @@ namespace PSMonitor
         public override void Close()
         {
             base.Close();
-            enumerator.Dispose();
+            _enumerator.Dispose();
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -133,19 +181,19 @@ namespace PSMonitor
                     if (state == State.CLOSED)
                     {
 
-                        writer.Write(START_ARRAY);
+                        _writer.Write(START_ARRAY);
                         state = State.OPEN;
 
                     }
-                    else if (enumerator.MoveNext())
+                    else if (_enumerator.MoveNext())
                     {
 
-                        EntryJSONStream.json.WriteObject(this, enumerator.Current);
+                        EntryJSONStream._json.WriteObject(this, _enumerator.Current);
 
                         byte[] b = this.buffer;
                         Array.Resize<byte>(ref b, b.Length + 1);
 
-                        writer.Write(COMMA);
+                        _writer.Write(COMMA);
 
                         b[b.Length - 1] = this.buffer[0];
                         this.buffer = b;
@@ -160,7 +208,7 @@ namespace PSMonitor
                             Position--; i--;
                         }                        
 
-                        writer.Write(END_ARRAY);
+                        _writer.Write(END_ARRAY);
                        
                         state = State.DONE;
 
