@@ -1,4 +1,5 @@
 ﻿using Kitware.VTK;
+using PSMViewer.ViewModels;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;

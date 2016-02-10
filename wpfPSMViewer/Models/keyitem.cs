@@ -7,28 +7,57 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using PSMonitor.Stores;
 using System.Collections.ObjectModel;
 using PSMonitor;
-using PSMViewer.ViewModels;
 using System.Windows.Threading;
 using System.Threading;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace PSMViewer.Models
 {
-    
+
     /// <summary>
     /// The <see cref="Key"/> wrapper class.
     /// </summary>
-    public class KeyItem : Key, IReload
+    public class KeyItem : Key, IReload, INotifyPropertyChanged
     {
 
+        private Enum _indexIdentifier;
+
+        public Enum IndexIdentifier {
+
+            get
+            {
+                return _indexIdentifier ?? (_indexIdentifier = PSMonitor.PSM.Store(Dispatcher).Default);
+            }
+
+            set
+            {
+                _indexIdentifier = value;
+            }
+
+        }
+
+        private ReloadStatus _status = ReloadStatus.Idle;
         /// <summary>
         /// <see cref="IReload.Status"/>
         /// </summary>
-        public ReloadStatus Status { get; set; } = ReloadStatus.Unknown;
+        public ReloadStatus Status
+        {
+
+            get
+            {
+                return _status;
+            }
+
+            set
+            {
+                SetField(ref _status, value);
+            }
+
+        }
         
         /// <summary>
         /// <see cref="IReload.Dispatcher"/>
@@ -87,6 +116,30 @@ namespace PSMViewer.Models
         
         private string _path = null;
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName"></param>
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Conveniance method
+        /// </summary>
+        protected bool SetField<TField>(ref TField field, TField value, [CallerMemberName] string propertyName = "")
+        {
+            if (EqualityComparer<TField>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+
+            return true;
+        }
+
         /// <summary>
         /// Gets the full path to this key.
         /// </summary>
@@ -126,10 +179,10 @@ namespace PSMViewer.Models
         }
 
         /// <summary>
-        /// The default constructor
+        /// Constructor
         /// </summary>
         public KeyItem() : base(null, null) { }
-
+               
         /// <summary>
         /// Constructor
         /// </summary>
@@ -158,7 +211,7 @@ namespace PSMViewer.Models
 
             string p = String.Join(".", s);
 
-            foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).GetKeys(p))
+            foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).Keys(p))
             {
                 if(k.Name == key)
                     return new KeyItem(k) { _path = Path };
@@ -175,7 +228,7 @@ namespace PSMViewer.Models
 
             _children.Clear();
 
-            foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).GetKeys(Path))
+            foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).Keys(Path))
             {
                 _children.Add(new KeyItem(k) { _parent = this });
             }

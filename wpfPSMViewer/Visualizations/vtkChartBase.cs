@@ -1,5 +1,6 @@
 ﻿using Kitware.VTK;
 using PSMViewer.Models;
+using PSMViewer.ViewModels;
 using System;
 using System.Collections;
 using System.Collections.Generic;

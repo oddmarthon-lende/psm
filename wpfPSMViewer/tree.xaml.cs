@@ -8,6 +8,9 @@
 using PSMViewer.Models;
 using PSMViewer.ViewModels;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,7 +21,7 @@ namespace PSMViewer
     /// <summary>
     /// Treeview of the PSM Store keys
     /// </summary>
-    public partial class Tree : TreeView, IReload
+    public partial class Tree : TreeView, IReload, INotifyPropertyChanged
     {
         /// <summary>
         /// The currently selected key
@@ -36,6 +39,28 @@ namespace PSMViewer
 
 
         private Window _window = null;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName"></param>
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetField<TField>(ref TField field, TField value, [CallerMemberName] string propertyName = "")
+        {
+            if (EqualityComparer<TField>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+
+            return true;
+        }
+
         /// <summary>
         /// Gets a window containing the treeview
         /// </summary>
@@ -62,20 +87,25 @@ namespace PSMViewer
             }
         }
 
+        private ReloadStatus _status = ReloadStatus.Idle;
         /// <summary>
         /// IReload.Status
         /// </summary>
-        public ReloadStatus Status { get; set; } = ReloadStatus.Unknown;
+        public ReloadStatus Status
+        {
+            get {
+                return _status;
+            }
+            set {
+                SetField(ref _status, value);
+            }
+        }
 
         
         /// <summary>
         /// IReload.Cancel
         /// </summary>
-        public CancellationTokenSource Cancel
-        {
-            get;
-            private set;
-        } = new CancellationTokenSource();
+        public CancellationTokenSource Cancel { get; private set; } = new CancellationTokenSource();
 
         /// <summary>
         /// The default contructor
@@ -169,7 +199,11 @@ namespace PSMViewer
 
         private void Reload(object sender, RoutedEventArgs e)
         {
-            this.OnReload(GetDataContext(e));
+
+            KeyItem key = GetDataContext(e);
+
+            key.Forward(this);
+            this.OnReload(key);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

@@ -14,7 +14,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -535,7 +534,7 @@ namespace PSMViewer.ViewModels
 
                                 if (result < 0) return;
 
-                                Count = result;
+                                Count = result + 1;
 
                                 break;
                         }
@@ -597,23 +596,7 @@ namespace PSMViewer.ViewModels
 
             if (key != null)
             {
-
-                switch (typeof(T).Name.ToLower())
-                {
-
-                    case "datetime":
-
-                        enumerable = (PSM.Store(Dispatcher).Get(key.Path, (DateTime)Start, (DateTime)End));
-                        break;
-
-                    case "byte":
-                    case "int16":
-                    case "int32":
-                    case "int64":
-
-                        enumerable = (PSM.Store(Dispatcher).Get(key.Path, (long)Start, (long)End));
-                        break;
-                }
+                enumerable = (PSM.Store(Dispatcher).Get(key.Path, Start, End, key.IndexIdentifier));
             }
 
             return enumerable == null ? null : enumerable.Select(entry => {
@@ -682,6 +665,8 @@ namespace PSMViewer.ViewModels
                 ReloadTask = Task.Factory.StartNew<IEnumerable<EntryItem>>(delegate
                 {
 
+                    int count = 0;
+                    
                     while (true)
                     {
                         
@@ -695,11 +680,26 @@ namespace PSMViewer.ViewModels
                             {
                                 SetField(ref _status, ReloadStatus.Error, "Status");
                             });
-                            
+
                             Logger.Error(error);
 
-                        }
+                            if(++count >= 10)
+                            {
 
+                                if(System.Windows.MessageBox.Show("Check the event log for more details.\nDo you want to retry loading?", "An error occurred while loading data", System.Windows.MessageBoxButton.OKCancel) == System.Windows.MessageBoxResult.OK)
+                                {
+                                    count = 0;
+                                    continue;
+                                }
+                                                                
+                                return null;                                    
+
+                            }
+
+                            Thread.Sleep(1000);
+                            
+                        }
+                        
                     }
 
                 }, Cancel.Token);
@@ -709,12 +709,11 @@ namespace PSMViewer.ViewModels
                     SetField(ref _status, ReloadStatus.Loading, "Status");
                 });
 
-                if(ReloadTask == null)
-                {
-                    return;
-                }
+                if(ReloadTask == null) return;
 
                 data = await ReloadTask;
+
+                if (data == null) return;
 
             }
             catch(TaskCanceledException)
@@ -728,17 +727,17 @@ namespace PSMViewer.ViewModels
 
             Entries.Clear();
             
-            foreach (EntryItem entry in data ?? Entries)
+            foreach (EntryItem entry in data)
             {
                 Entries.Add(entry);
             }                                
 
             SetField(ref _status, ReloadStatus.Idle, "Status");
 
-            if ( Entries.Count > 0 && (!_startIndex.HasValue || _start == null) )
-                _startIndex = Entries.Max(entry => { return (long)((Entry)entry).Index; });
+            if ( Entries.Count > 0 && (_startIndex == null || _start == null) )
+                _startIndex = Entries.Max(entry => { return ((Entry)entry).Index; });
 
-            if (_startIndex.HasValue)
+            if (_startIndex != null)
             {
                 
                 Dispatcher.InvokeAsync(delegate
@@ -758,7 +757,7 @@ namespace PSMViewer.ViewModels
 
         }      
         
-        private long? _startIndex = null;
+        private object _startIndex = null;
 
         /// <summary>
         /// Handles the receival of new data that is added to the store after the last reload
@@ -788,7 +787,7 @@ namespace PSMViewer.ViewModels
 
             }
 
-            _startIndex = data.Entries.Max(entry => { return (long)entry.Index; });
+            _startIndex = data.Entries.Max(entry => { return entry.Index; });
 
             return _startIndex;
         }        

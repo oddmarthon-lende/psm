@@ -4,7 +4,6 @@
 /// <author>Odd Marthon Lende</author>
 /// <summary>Code behind for the Main Window</summary>
 
-using PSMViewer.Properties;
 using PSMViewer.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -13,8 +12,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Collections.ObjectModel;
 using PSMViewer.Models;
 using PSMViewer.Visualizations;
@@ -24,7 +21,6 @@ using System.IO.IsolatedStorage;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Linq;
-using System.Collections.Specialized;
 using Xceed.Wpf.AvalonDock.Layout;
 using System.Threading;
 using System.Windows.Data;
@@ -35,7 +31,6 @@ using PSMViewer.Editors;
 
 namespace PSMViewer
 {
-
 
     public sealed partial class MainWindow : Window, INotifyPropertyChanged, IReload
     {
@@ -121,24 +116,7 @@ namespace PSMViewer
         public static readonly DependencyProperty StatusProperty =
             DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(MainWindow), new PropertyMetadata(ReloadStatus.Idle));
 
-
-
-        /// <summary>
-        /// The type of chart to display in the mainwindow
-        /// </summary>
-        public Type ChartType
-        {
-            get { return (Type)GetValue(ChartTypeProperty); }
-            set { SetValue(ChartTypeProperty, value); }
-        }
-
-        /// <summary>
-        /// Identifies the <see cref="ChartType"/> dependency property.
-        /// </summary>
-        public static readonly DependencyProperty ChartTypeProperty =
-            DependencyProperty.Register("ChartType", typeof(Type), typeof(MainWindow), new PropertyMetadata(null));
-
-
+        
 
         private ObservableCollection<VisualizationWindow> _windows = new ObservableCollection<VisualizationWindow>();
         /// <summary>
@@ -156,19 +134,26 @@ namespace PSMViewer
 
             }
             
+        }        
+
+        /// <summary>
+        /// Gets the options object
+        /// </summary>
+        public Settings Options
+        {
+            get { return (Settings)GetValue(OptionsProperty); }
+            set { SetValue(OptionsProperty, value); }
         }
 
         /// <summary>
-        /// Gets the store options object
+        /// Identifies the <see cref="Options"/> dependency property
         /// </summary>
-        public IOptions Settings_
-        {
-            get
-            {
-                return PSMonitor.PSM.Store(Dispatcher).Options;
-            }
-        }
-               
+        public static readonly DependencyProperty OptionsProperty =
+            DependencyProperty.Register("Options", typeof(Settings), typeof(MainWindow), new PropertyMetadata(null));
+
+
+        private EventLogWindow EventLogWindow;
+
 
         /// <summary>
         /// Used to identify commands
@@ -222,7 +207,11 @@ namespace PSMViewer
             /// <summary>
             /// Stop receiving realtime updates.
             /// </summary>
-            STOP
+            STOP,
+            /// <summary>
+            /// Show the event log
+            /// </summary>
+            EVENT_LOG
         }
                
 
@@ -231,6 +220,8 @@ namespace PSMViewer
         /// </summary>
         public MainWindow()
         {
+
+            Options = new Settings(this);
 
             Func<object, object, bool> canExecute = delegate { return true; };
 
@@ -246,34 +237,24 @@ namespace PSMViewer
             Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
             Commands.Add("NewWindow", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEW_WINDOW));
             Commands.Add("Stop", new RelayCommand(ExecuteCommand, canExecute, CommandType.STOP));
+            Commands.Add("EventLog", new RelayCommand(ExecuteCommand, canExecute, CommandType.EVENT_LOG));
 
             InitializeComponent();
 
             Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             NameScope.SetNameScope(treeContextMenu, NameScope.GetNameScope(this));
 
-            this.Loaded += delegate { this.OnReload(this); };
-            this.Closing += (sender, e) =>
-            {
-                Commands["Exit"].Execute(null);
-            };
+            Loaded += (sender, e) => this.OnReload(this);
+            Closing += (sender, e) => Commands["Exit"].Execute(null);
+            _windows.CollectionChanged += (sender, e) => OnPropertyChanged("Windows");
 
-            ((Main)DataContext).Timebased.Load += this.OnReload;
-            ((Main)DataContext).Indexbased.Load += this.OnReload;
+            DataContext = new MultiControl(null, this.OnReload);
 
-            ((Main)DataContext).Indexbased.Activate(this);
+            ((MultiControl)DataContext).Get().Activate(this);
 
-            ((Main)DataContext).PropertyChanged += (sender, e) =>
-            {
-                if(e.PropertyName == "Status")
-                    Status = ((IReload)sender).Status;
-            };
-
-            _windows.CollectionChanged += delegate
-            {
-                OnPropertyChanged("Windows");
-            };
-
+            ((MultiControl)DataContext).Forward(this);
+            treeView.Forward(this);
+            
             // Bind to the treeView Key property and update the data context
             treeView.SetBinding(Tree.KeyProperty, new Binding("Value")
             {
@@ -282,23 +263,45 @@ namespace PSMViewer
                     key =>
                     {
 
-                        Main context = (Main)this.DataContext;
+                        MultiControl ctrl = (MultiControl)this.DataContext;
 
-                        if (key == null || key.Type == null) return key;
+                        if (key != null)
+                        {
 
-                        context.Selected = key;
+                            ctrl.Entries.Clear();
 
-                        Visualize(key);
-                        this.OnReload(context);
+                            metaDataGrid.ItemsSource = PSMonitor.PSM.Store(Dispatcher).Meta(key.Path);
+                            Title = key.ToString();
+
+                            if (key.Type == null)
+                                return key;
+
+                            ctrl.Key = key;
+                            
+                            Visualize(key);
+                            this.OnReload(ctrl);
+
+                        }                        
 
                         return key;
 
                     }),
-                Mode = BindingMode.OneWayToSource
-            });          
 
+                Mode = BindingMode.OneWayToSource
+
+            });
+            
+            EventLogWindow = new EventLogWindow() { };
+            EventLogWindow.Closing += EvtWindow_Closing;
+
+            
         }
-                     
+
+        private void EvtWindow_Closing(object sender, CancelEventArgs e)
+        {
+            e.Cancel = true;
+            ((EventLogWindow)sender).Hide();
+        }
 
         #region Commands
 
@@ -316,16 +319,19 @@ namespace PSMViewer
         {
 
             RelayCommand cmd = (RelayCommand)sender;
-            Main ViewModel = (Main)this.DataContext;
             KeyItem key = (KeyItem)treeView.SelectedValue;
             Window window = null;
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
-                
+                case CommandType.EVENT_LOG:
+
+                    EventLogWindow.Show();
+                    break;
+
                 case CommandType.STOP:
 
-                    ViewModel.Stop();
+                    
                     break;
 
                 
@@ -365,6 +371,7 @@ namespace PSMViewer
                     
                     foreach (VisualizationWindow w in _windows)
                     {
+                                                
                         using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(WindowsFolderFormat, String.Format("{0}.xaml", w.Id)), FileMode.Create))
                         {
                             w.Dispatcher.Invoke(delegate
@@ -383,6 +390,7 @@ namespace PSMViewer
                             
                             using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(@"state\{0}.xaml", anchorable.ContentId), FileMode.Create))
                             {
+                                
                                 new LayoutAnchorableSavedState(anchorable).Export(stream);
                             }
 
@@ -391,10 +399,13 @@ namespace PSMViewer
 
                     using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"state\mainwindow.xaml", FileMode.Create))
                     {
-                        new WindowSavedState(this).Export(stream);
+                        new MainWindowSavedState(this).Export(stream);
                     }
 
-                    Settings.Default.Save();
+                    using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"state\logwindow.xaml", FileMode.Create))
+                    {
+                        new WindowSavedState(EventLogWindow).Export(stream);
+                    }
 
                     break;
 
@@ -414,7 +425,7 @@ namespace PSMViewer
                     VisualizationControl.InheritorInfo info = (VisualizationControl.InheritorInfo)parameter;
                     info.IsSelected = true;
 
-                    ChartType = info.Type;
+                    Options.ChartType = info.Type;
 
                     Visualize(key);
 
@@ -494,6 +505,7 @@ namespace PSMViewer
         
         /// <summary>
         /// Reloads everything. 
+        /// <see cref="IReload.Reload"/>
         /// </summary>
         public void Reload()
         {
@@ -547,13 +559,28 @@ namespace PSMViewer
 
                 using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"state\mainwindow.xaml", FileMode.Open, FileAccess.Read))
                 {
-                    ((WindowSavedState)XamlReader.Load(stream)).Restore(this);
+                    ((MainWindowSavedState)XamlReader.Load(stream)).Restore(this);
                 }
 
             }
             catch (FileNotFoundException) {
                 // Restore to defaults if file not found
-                new WindowSavedState().Restore(this);
+                new MainWindowSavedState().Restore(this);
+            }
+
+            // Load logwindow saved state
+            try
+            {
+
+                using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"state\logwindow.xaml", FileMode.Open, FileAccess.Read))
+                {
+                    ((WindowSavedState)XamlReader.Load(stream)).Restore(EventLogWindow);
+                }
+
+            }
+            catch (FileNotFoundException)
+            {
+                
             }
 
         }
@@ -657,7 +684,8 @@ namespace PSMViewer
         private void Visualize(KeyItem key)
         {
 
-            Main context = (Main)this.DataContext;
+            MultiControl context = (MultiControl)this.DataContext;
+            Type ChartType = Options.ChartType;
 
             if (ChartType != null && key != null && key.Type != null)
             {
@@ -695,37 +723,16 @@ namespace PSMViewer
         private void ChartTypeMenuItem_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
 
-            KeyItem key = ((Main)this.DataContext).Selected;
+            KeyItem key = ((MultiControl)this.DataContext).Key;
+            Type ChartType = Options.ChartType;
 
             if (key == null) return;
 
             foreach (VisualizationControl.InheritorInfo info in ((MenuItem)sender).Items)
             {
-                info.IsSelected = ChartType != null && key != null && ChartType.Equals(info.Type);
+                info.IsSelected = ChartType != null && ChartType.Equals(info.Type);
             }
 
-        }
-
-        /// <summary>
-        /// Used to switch controls (Time, Indexed) when the mouse moves over the toolbars. 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ToolBarTray_PreviewMouseMove(object sender, MouseEventArgs e)
-        {
-
-            ToolBarTray tray = (ToolBarTray)sender;
-
-            foreach (ToolBar toolbar in tray.ToolBars)
-            {
-
-                if (VisualTreeHelper.GetDescendantBounds(toolbar).Contains(e.GetPosition(toolbar)))
-                {
-                    ((Controls)toolbar.DataContext).Activate(this);
-                }
-
-
-            }
         }
 
 
@@ -782,18 +789,21 @@ namespace PSMViewer
         /// <param name="e"></param>
         private void settings_propertyGrid_SelectedObjectChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-
+            
             PropertyGrid grid = (PropertyGrid)sender;            
             Dictionary<PropertyDescriptor, PropertyItem> items = new Dictionary<PropertyDescriptor, PropertyItem>();
-            IOptions settings = Settings_;
+            IOptions settings = Options.Store;
 
             foreach (PropertyItem item in grid.Properties)
-                items.Add(item.PropertyDescriptor, item);
+            {
+                items.Add(item.PropertyDescriptor, item);            
+            }
 
             foreach (var p in settings.Get())
             {
                 
                 PropertyDescriptor descriptor = p.Key;
+
                 PropertyItem item = items[descriptor];
 
                 descriptor.RemoveValueChanged(settings, settings_propertyGrid_PropertyDescriptorValueChanged);
@@ -810,7 +820,7 @@ namespace PSMViewer
                 
                 if (p.Value.Count > 0)
                 {
-                    StoreOptionsEditor editor = new StoreOptionsEditor(descriptor);
+                    StoreOptionEditor editor = new StoreOptionEditor(descriptor);
                     item.Editor = editor.ResolveEditor(item);
                 }
 
@@ -829,7 +839,34 @@ namespace PSMViewer
         {
             settings_propertyGrid_SelectedObjectChanged(settings_propertyGrid, null);
         }
-        
+
+        private void settings_propertyGrid_PropertyValueChanged(object sender, PropertyValueChangedEventArgs e)
+        {
+            PropertyItem item = (PropertyItem)e.OriginalSource;
+            PropertyGrid grid = (PropertyGrid)sender;
+
+            if (item.DisplayName == "IndexField")
+            {
+                foreach(PropertyItem p in grid.Properties)
+                {
+                    if(p.DisplayName == "StartIndex" || p.DisplayName == "EndIndex")
+                    {
+                        if(p.Value is DateTime)
+                        {
+                            p.Editor = new Xceed.Wpf.Toolkit.PropertyGrid.Editors.DateTimeUpDownEditor().ResolveEditor(p);
+                        }
+                        else
+                        {
+                            p.Editor = new Xceed.Wpf.Toolkit.PropertyGrid.Editors.LongUpDownEditor().ResolveEditor(p);
+                        }
+                    }
+                }
+
+                ((PropertyGrid)sender).Update();
+
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -838,7 +875,7 @@ namespace PSMViewer
         /// <returns><c>true</c> if there is more data, <c>false</c> if not</returns>
         public bool Next()
         {
-            return ((Main)this.DataContext).Next();
+            return ((MultiControl)this.DataContext).Next();
         }
 
         /// <summary>
@@ -847,9 +884,9 @@ namespace PSMViewer
         /// <returns><c>true</c> if there is more data, <c>false</c> if not</returns>
         public bool Previous()
         {
-            return ((Main)this.DataContext).Previous();
+            return ((MultiControl)this.DataContext).Previous();
         }
-        
+
         
     }
 }

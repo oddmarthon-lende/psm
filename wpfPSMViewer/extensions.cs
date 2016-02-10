@@ -6,6 +6,7 @@
 /// 
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -14,6 +15,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Xml;
@@ -21,8 +23,48 @@ using System.Xml;
 namespace PSMViewer
 {
 
+    /// <summary>
+    /// Adds extensions to some object types.
+    /// </summary>
     public static class Extensions
     {
+
+        /// <summary>
+        /// Contains the last error that occured
+        /// </summary>
+        public static Exception LastError { get; private set; }
+
+        private static Dictionary<IReload, KeyValuePair<IReload, PropertyChangedEventHandler>> _forwarded = new Dictionary<IReload, KeyValuePair<IReload, PropertyChangedEventHandler>>();
+
+        /// <summary>
+        /// Forwards the <see cref="IReload.Status"/>
+        /// </summary>
+        /// <param name="source">The source object that contains the status to forward.</param>
+        /// <param name="destination">The destination object that will get its <see cref="IReload.Status"/> synced with <paramref name="source"/></param>
+        /// <returns>The <paramref name="destination"/></returns>
+        public static IReload Forward(this IReload source, IReload destination)
+        {
+            KeyValuePair<IReload, PropertyChangedEventHandler> forwarded;
+            PropertyChangedEventHandler handler = (sender, e) => { if (e.PropertyName == "Status") destination.Status = source.Status; };
+            INotifyPropertyChanged src = (INotifyPropertyChanged)source;
+
+            if (_forwarded.TryGetValue(source, out forwarded))
+            {               
+
+                src.PropertyChanged -= forwarded.Value;
+                _forwarded.Remove(source);
+
+            }
+
+            forwarded = new KeyValuePair<IReload, PropertyChangedEventHandler>(destination, handler);
+
+            _forwarded.Add(source, forwarded);
+
+            src.PropertyChanged += forwarded.Value;
+
+            return destination;
+        }
+
         /// <summary>
         /// Serializes objects to a stream
         /// </summary>
@@ -64,9 +106,9 @@ namespace PSMViewer
         /// <summary>
         /// Show a dialog box with the exception message
         /// </summary>
-        public static void Show(this Exception e)
+        public static MessageBoxResult Show(this Exception e, MessageBoxButton buttons = MessageBoxButton.OK)
         {
-            MessageBox.Show(e.GetBaseException().Message, e.Message, MessageBoxButton.OK, MessageBoxImage.Error);
+            return MessageBox.Show(e.GetBaseException().Message, e.Message, buttons, MessageBoxImage.Error);
         }
 
         /// <summary>
@@ -104,7 +146,10 @@ namespace PSMViewer
                         {
 
                             obj.Status = ReloadStatus.Error;
-                            ErrorHandler(task.Exception);
+                            LastError = task.Exception;
+
+                            if(ErrorHandler != null)
+                                ErrorHandler(LastError);
 
                         });
 
@@ -232,6 +277,35 @@ namespace PSMViewer
             double ratio = control.ActualWidth / control.ActualHeight;
             Stream stream = control.GetThumbnailImageStream(width, (int)(width / ratio));
             return stream == null ? null : BitmapFrame.Create(stream);
+        }
+
+        /// <summary>
+        /// Find all objects of type <typeparamref name="T"/> in the visual tree
+        /// </summary>
+        /// <typeparam name="T">The type of object to find</typeparam>
+        /// <param name="obj">Object from where to start the search</param>
+        /// <returns>Array with the results</returns>
+        public static T[] Find<T>(this DependencyObject p, DependencyObject obj)
+        {
+
+            List<T> result = new List<T>();
+            int count = VisualTreeHelper.GetChildrenCount(obj);
+
+            for (int i = 0; i < count; i++)
+            {
+
+                DependencyObject d = VisualTreeHelper.GetChild(obj, i);
+
+                if (d is T)
+                {
+                    result.Add((T)(object)d);
+                }
+
+                result.AddRange(Find<T>(p, d));
+            }
+
+            return result.ToArray();
+
         }
     }
 }

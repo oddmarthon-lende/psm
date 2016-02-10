@@ -374,7 +374,7 @@ namespace PSMViewer
         {
             
             Visibility = Visibility.Visible;
-            ShowActivated = false;
+            ShowActivated = true;
 
             ColumnDefinitions = new ColumnDefinitionList();
             RowDefinitions    = new RowDefinitionList();

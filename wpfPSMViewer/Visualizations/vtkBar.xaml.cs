@@ -1,4 +1,5 @@
 ﻿using Kitware.VTK;
+using PSMViewer.ViewModels;
 
 namespace PSMViewer.Visualizations
 {

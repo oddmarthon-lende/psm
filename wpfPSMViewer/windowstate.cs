@@ -16,7 +16,7 @@ namespace PSMViewer
 {
 
     /// <summary>
-    /// Used for serialization of window state
+    /// Used for serialization of window state properties of intrest
     /// </summary>
     public class WindowSavedState
     {
@@ -38,7 +38,7 @@ namespace PSMViewer
             WindowState = window.WindowState;
         }
 
-        public void Restore(Window window)
+        public virtual void Restore(Window window)
         {
             window.Left   = Left;
             window.Top    = Top;

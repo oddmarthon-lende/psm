@@ -1,6 +1,7 @@
 ﻿
 using OxyPlot;
 using OxyPlot.Series;
+using PSMViewer.ViewModels;
 using System.Collections.Generic;
 using System.Windows.Data;
 using Xceed.Wpf.Toolkit.PropertyGrid;

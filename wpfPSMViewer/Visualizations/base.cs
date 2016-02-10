@@ -23,6 +23,8 @@ using System.Collections;
 using System.Windows.Media.Imaging;
 using System.Threading;
 using System.Windows.Threading;
+using PSMViewer.Editors;
+using PSMonitor.Stores;
 
 namespace PSMViewer.Visualizations
 {
@@ -110,6 +112,7 @@ namespace PSMViewer.Visualizations
     [Icon("../icons/application_view_gallery.png")]
     public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged, IUndo
     {
+
 
         /// <summary>
         /// <see cref="IReload.Cancel"/>
@@ -477,7 +480,7 @@ namespace PSMViewer.Visualizations
                 return controls;
             }
         }
-
+        
         /// <summary>
         /// The timespan that will be used when loading time data
         /// </summary>
@@ -495,7 +498,16 @@ namespace PSMViewer.Visualizations
         /// <summary>
         /// Defines how data is loaded based on the <typeparamref name="ControlType"/>
         /// </summary>
-        public ControlType SelectedControlType { get; set; } = ControlType.Index;
+        [Editor(typeof(StoreEnumEditor), typeof(StoreEnumEditor))]
+        public string DataIndexField { get; set; }
+
+        private Enum DataIndexFieldAsEnum
+        {
+            get
+            {
+                return (Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, DataIndexField);
+            }
+        }
 
         /// <summary>
         /// The vertical position in the grid (If any)
@@ -560,23 +572,7 @@ namespace PSMViewer.Visualizations
         }
         
         #endregion
-
-
-        /// <summary>
-        /// Defines how data can be loaded
-        /// </summary>
-        public enum ControlType
-        {
-            /// <summary>
-            /// Load data using time as index
-            /// </summary>
-            Time,
-            /// <summary>
-            /// Loads data using index as index
-            /// </summary>
-            Index
-        }
-
+        
         /// <summary>
         /// A thumbnail of the controls contents
         /// </summary>
@@ -589,138 +585,7 @@ namespace PSMViewer.Visualizations
             }
 
         }
-
-        /// <summary>
-        /// A multicontrol can handle the different <typeparamref name="ControlType"/> in one object.
-        /// Each key gets a <typeparamref name="MultiControl"/> when added to the <typeparamref name="VisualizationControl"/>
-        /// </summary>
-        public class MultiControl : IDisposable, IUndo
-        {
-            public KeyItem Key { get; private set; }
-            public ObservableCollection<EntryItem> Entries { get; set; }
-            public event DataChangedEventHandler DataChanged;
-
-            private Dictionary<ControlType, Controls> Controls = new Dictionary<ControlType, ViewModels.Controls>();
-
-            /// <summary>
-            /// The constructor
-            /// </summary>
-            /// <param name="key">The <typeparamref name="KeyItem"/> this <typeparamref name="MultiControl"/> is for</param>
-            /// <param name="Entries">An alternate collection for the data. Used to share a collection between different controls.</param>
-            public MultiControl(KeyItem key, LoadHandler load = null, ObservableCollection<EntryItem> Entries = null)
-            {
-
-                this.Key = key;
-                this.Entries = Entries ?? new ObservableCollection<EntryItem>();
-
-                Controls.Add(ControlType.Index, new Controls<long, long>(this.Entries, 0, 1) { Selected = key });
-                Controls.Add(ControlType.Time, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan()) { Selected = key });
-
-                Stack = new Stack<Dictionary<ControlType, ViewModels.Controls>>();
-
-                foreach (var pair in Controls)
-                {
-
-                    if (load != null)
-                        pair.Value.Load += load;
-
-                    pair.Value.DataChanged += Value_DataChanged;
-                }
-
-            }
-
-            private Stack<Dictionary<ControlType, ViewModels.Controls>> Stack;
-
-            /// <summary>
-            /// Make a copy of the current state and push it to the stack
-            /// </summary>
-            public void PushState()
-            {
-
-                Dictionary<ControlType, Controls> c = new Dictionary<ControlType, ViewModels.Controls>();
-
-                Stack.Push(c);
-
-                foreach (KeyValuePair<ControlType, Controls> pair in Controls)
-                {
-                    c[pair.Key] = (Controls)Activator.CreateInstance(pair.Value.GetType(), Controls[pair.Key]);
-                    c[pair.Key].DataChanged += Value_DataChanged;
-                }
-            }
-
-            /// <summary>
-            /// Pop off the stack and restore the saved state
-            /// </summary>
-            public void PopState()
-            {
-
-                Dictionary<ControlType, Controls> c = Stack.Pop();
-
-                if (c != null)
-                {
-                    foreach (KeyValuePair<ControlType, Controls> pair in c)
-                    {
-                        Controls[pair.Key].Dispose();
-                        Controls[pair.Key] = c[pair.Key];
-                    }
-
-                }
-            }
-
-            /// <summary>
-            /// Called when the data has changed for a control type
-            /// </summary>
-            /// <param name="sender"></param>
-            private void Value_DataChanged(object sender)
-            {
-                if (DataChanged != null)
-                    DataChanged(sender);
-            }
-
-            /// <summary>
-            /// Gets the controls
-            /// </summary>
-            /// <param name="type"></param>
-            /// <param name="Start"></param>
-            /// <param name="Count"></param>
-            /// <returns>The controls</returns>
-            public Controls Get(ControlType type, object Start = null, object Count = null)
-            {
-
-                Controls c = Controls[type];
-
-                if (c != null)
-                {
-
-                    c.Activate(this);
-
-                    if (Start != null)
-                        c.Start = Start;
-
-                    if (Count != null)
-                        c.Count = Count;
-                }
-
-                return c;
-            }
-
-            /// <summary>
-            /// Cleans up and releases any resource used by this object.
-            /// </summary>
-            public void Dispose()
-            {
-
-                foreach (var pair in Controls)
-                {
-                    pair.Value.DataChanged -= Value_DataChanged;
-                }
-
-                foreach (var pair in Controls)
-                {
-                    pair.Value.Dispose();
-                }
-            }
-        }
+               
 
         #region Commands
 
@@ -781,7 +646,8 @@ namespace PSMViewer.Visualizations
 
             Tree tree = null;
             Window window = null;
-            
+            PropertiesWindow grid = null;
+
             switch (cmd)
             {
 
@@ -860,16 +726,19 @@ namespace PSMViewer.Visualizations
 
                     PushState();                    
                     
-                    window = (new PropertiesWindow(this, Properties.ToArray())
+                    window = ((grid = new PropertiesWindow(this, Properties.ToArray())
                     {
+
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
                         Owner = this.Owner,
                         Width = Math.Sqrt(this.Owner.Width * this.Owner.Height)
-                    });
+
+                    }));
+
+                    grid.PropertyGrid.PropertyValueChanged += (s, a) => Refresh();
 
                     window.Height = window.Width;
-
                     window.ShowDialog();
                     
                     break;
@@ -888,7 +757,9 @@ namespace PSMViewer.Visualizations
         /// </summary>
         public VisualizationControl()
         {
-            
+
+            DataIndexField = PSMonitor.PSM.Store(Dispatcher).Default.ToString();
+
             DataContext = this;
             Template    = (ControlTemplate)FindResource("VisualizationControlTemplate");
             Title       = String.Format("<{0}> [{1}]", GetType().Name, Id);
@@ -918,7 +789,7 @@ namespace PSMViewer.Visualizations
                 Properties.Add(new PropertyDefinition()
                 { 
                     Category = "Controls",
-                    TargetProperties = new List<object>(new string[] { "Timespan", "Count", "StartIndex", "SelectedControlType" })
+                    TargetProperties = new List<object>(new string[] { "Timespan", "Count", "StartIndex", "DataIndexField" })
                 });
 
                 Properties.Add(new PropertyDefinition()
@@ -949,8 +820,8 @@ namespace PSMViewer.Visualizations
 
             RegisterUserCommand("Properties", CommandsSource["Properties"]);
             RegisterUserCommand();
-            RegisterUserCommand("Remove Key(s)", CommandsSource["Remove"]);
-            RegisterUserCommand("Add Key(s)", CommandsSource["Add"]);
+            RegisterUserCommand("Remove Data", CommandsSource["Remove"]);
+            RegisterUserCommand("Add Data", CommandsSource["Add"]);
             
             #endregion
 
@@ -1243,28 +1114,54 @@ namespace PSMViewer.Visualizations
 
             object Start = null;
             object Count = null;
-
-            switch (SelectedControlType)
+            
+            switch(DataIndexFieldAsEnum.GetType().FullName)
             {
 
-                case ControlType.Index:
+                case "PSMonitor.Stores.DB+IndexType":
 
-                    Start = StartIndex;
-                    Count = this.Count;
+                    switch((DB.IndexType)DataIndexFieldAsEnum)
+                    {
+                        case DB.IndexType.Index:
+                        case DB.IndexType.Id:
+                        case DB.IndexType.Value:
+
+                            Start = StartIndex;
+                            Count = this.Count;
+
+                            break;
+
+                        case DB.IndexType.Timestamp:
+
+                            Count = Timespan;
+
+                            break;
+
+                        default:
+                            break;
+                    }
 
                     break;
 
-                case ControlType.Time:
+                case "PSMonitor.Stores.Advantage+IndexType":
 
-                    Count = Timespan;
+                    //switch ((Advantage.IndexType)DataIndexFieldAsEnum)
+                    //{
+
+                    //}
 
                     break;
+
+                default:
+
+                    throw new Exception("Unsupported Index Type");
+
             }
 
             foreach (MultiControl m in controls)
             {
 
-                Controls control = m.Get(SelectedControlType, Start, Count);
+                Controls control = m.Get(DataIndexFieldAsEnum, Start, Count);
 
                 control.PropertyChanged -= Control_PropertyChanged;
                 control.PropertyChanged += Control_PropertyChanged;
@@ -1290,7 +1187,7 @@ namespace PSMViewer.Visualizations
                 foreach (MultiControl controls in Controls)
                 {
 
-                    IReload reloadable = controls.Get(SelectedControlType);
+                    IReload reloadable = controls.Get(DataIndexFieldAsEnum);
 
                     if (reloadable.Status != ReloadStatus.Idle)
                     {
@@ -1317,7 +1214,7 @@ namespace PSMViewer.Visualizations
 
             foreach (MultiControl control in controls)
             {
-                yn |= control.Get(SelectedControlType).Next();
+                yn |= control.Get(DataIndexFieldAsEnum).Next();
             }
 
             return yn;
@@ -1334,7 +1231,7 @@ namespace PSMViewer.Visualizations
 
             foreach (MultiControl control in controls)
             {
-                yn |= control.Get(SelectedControlType).Previous();
+                yn |= control.Get(DataIndexFieldAsEnum).Previous();
             }
 
             return yn;

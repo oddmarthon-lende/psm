@@ -16,6 +16,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Threading;
+using PSMViewer.ViewModels;
 
 namespace PSMViewer.Visualizations
 {

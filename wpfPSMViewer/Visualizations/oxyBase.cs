@@ -21,6 +21,7 @@ using System.Windows;
 using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 using System.Windows.Controls;
 using PSMonitor;
+using PSMViewer.ViewModels;
 
 namespace PSMViewer.Visualizations
 {

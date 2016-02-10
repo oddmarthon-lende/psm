@@ -12,7 +12,7 @@
     <Application.Resources>
 
         <c:ReloadStatusToCursorConverter x:Key="CursorConverter" />
-        <c:ReloadStatusToBooleanConverter x:Key="StatusConverter" />
+        <c:ReloadStatusToBooleanConverter x:Key="BooleanConverter" />
 
         <Image Source="{Binding Icon}" x:Key="Icon" x:Shared="False" />
 
@@ -22,77 +22,7 @@
             <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Setter Property="Icon" Value="{StaticResource Icon}"/>
         </Style>
-       
-
-        <ToolBar HorizontalAlignment="Right" DataContext="{Binding Indexbased}" x:Key="IndexNavigationToolBar" x:Shared="False">
-
-            <Button ToolTip="Previous" Command="{Binding Commands[Previous], ElementName=window}" >
-                <Image Source="..\icons\resultset_previous.png"/>
-            </Button>
-            <Button ToolTip="Next" Command="{Binding Commands[Next], ElementName=window}">
-                <Image Source="..\icons\resultset_next.png"/>
-            </Button>
-            <Button ToolTip="Refresh" Command="{Binding Commands[RefreshTable], ElementName=window}">
-                <Image Source="..\icons\table_refresh.png"/>
-            </Button>
-            
-            <Label VerticalAlignment="Center" Content="Start"/>
-            <TextBox  Text="{Binding Start, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Width="100" />
-            
-            <Label VerticalAlignment="Center" Content="End"/>
-            <TextBox  Text="{Binding End, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Width="100" />
-
-        </ToolBar>
-
-        <ToolBar DataContext="{Binding Timebased}" x:Key="TimeNavigationToolBar" x:Shared="False" >
-
-            <ToolBar.Resources>
-                <Style TargetType="{x:Type DatePicker}">
-                    <Setter Property="SelectedDateFormat" Value="Long" />
-                </Style>
-                <Style TargetType="{x:Type toolkit:DateTimePicker}">
-                    <Setter Property="TimeFormat" Value="SortableDateTime"/>
-                </Style>
-            </ToolBar.Resources>
-
-            <Button ToolTip="Previous" Command="{Binding Commands[Previous], ElementName=window}" >
-                <Image Source="..\icons\resultset_previous.png"/>
-            </Button>
-            <Button ToolTip="Next" Command="{Binding Commands[Next], ElementName=window}">
-                <Image Source="..\icons\resultset_next.png"/>
-            </Button>
-            <Button ToolTip="Refresh" Command="{Binding Commands[RefreshTable], ElementName=window}">
-                <Image Source="..\icons\table_refresh.png"/>
-            </Button>
-
-            <Label Content="From"/>
-            <toolkit:DateTimePicker Value="{Binding Start, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" >
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="ValueChanged">
-                        <i:InvokeCommandAction Command="{Binding Commands[RefreshTable], ElementName=window}" />
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </toolkit:DateTimePicker>
-            <Label Content="To"/>
-            <toolkit:DateTimePicker Value="{Binding End, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" >
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="ValueChanged">
-                        <i:InvokeCommandAction Command="{Binding Commands[RefreshTable], ElementName=window}" />
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </toolkit:DateTimePicker>
-            <Label Content="Count"/>
-            <toolkit:TimeSpanUpDown Value="{Binding Count, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" >
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="ValueChanged">
-                        <i:InvokeCommandAction Command="{Binding Commands[RefreshTable], ElementName=window}" />
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </toolkit:TimeSpanUpDown>
-
-        </ToolBar>
-
-        
+              
         <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}" >
             
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{TemplateBinding Background}">
@@ -159,7 +89,7 @@
 
                 </Grid>
 
-                <toolkit:BusyIndicator Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" IsBusy="{TemplateBinding Status, Converter={StaticResource StatusConverter}}" Foreground="Black" FontFamily="Segoe UI" FontSize="12" Background="Transparent" Panel.ZIndex="50" />
+                <toolkit:BusyIndicator Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" IsBusy="{TemplateBinding Status, Converter={StaticResource BooleanConverter}}" Foreground="Black" FontFamily="Segoe UI" FontSize="12" Background="Transparent" Panel.ZIndex="50" />
 
             </Grid>
             

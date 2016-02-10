@@ -23,11 +23,13 @@ namespace PSMViewer
         public double FloatingWidth { get; set; } = 0D;
         public double FloatingLeft { get; set; } = 0D;
         public double FloatingTop { get; set; } = 0D;
+        public double AutoHideWidth { get; set; } = 200D;
 
         public LayoutAnchorableSavedState() { }
 
         public LayoutAnchorableSavedState(LayoutAnchorable layout)
         {
+            AutoHideWidth = layout.AutoHideWidth;
             ContentId = layout.ContentId;
             IsFloating = layout.IsFloating;
             IsHidden = layout.IsHidden;
@@ -41,6 +43,8 @@ namespace PSMViewer
 
         public void Restore(LayoutAnchorable layout)
         {
+
+            layout.AutoHideWidth  = AutoHideWidth;
             layout.FloatingHeight = FloatingHeight;
             layout.FloatingWidth  = FloatingWidth;
             layout.FloatingLeft   = FloatingLeft;

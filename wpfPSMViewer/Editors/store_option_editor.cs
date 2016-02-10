@@ -19,7 +19,7 @@ namespace PSMViewer.Editors
     /// <summary>
     /// A class used to create a combobox editor for object that implements the <see cref="PSMonitor.Stores.IOptions"/> interface.
     /// </summary>
-    public class StoreOptionsEditor : ComboBoxEditor
+    public class StoreOptionEditor : ComboBoxEditor
     {
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace PSMViewer.Editors
         /// Constructor
         /// </summary>
         /// <param name="descriptor">The propertydescriptor this object is associated with.</param>
-        public StoreOptionsEditor(PropertyDescriptor descriptor)
+        public StoreOptionEditor(PropertyDescriptor descriptor)
         {
             this._descriptor = descriptor;
         }

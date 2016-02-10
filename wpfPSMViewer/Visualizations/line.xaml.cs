@@ -3,6 +3,7 @@ using System.Windows.Data;
 using OxyPlot;
 using System.Collections.Generic;
 using Xceed.Wpf.Toolkit.PropertyGrid;
+using PSMViewer.ViewModels;
 
 namespace PSMViewer.Visualizations
 {

@@ -10,6 +10,7 @@ using OxyPlot.Axes;
 using OxyPlot.Series;
 using PSMonitor;
 using PSMViewer.Models;
+using PSMViewer.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;

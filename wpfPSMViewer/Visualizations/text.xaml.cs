@@ -17,6 +17,7 @@ using PSMViewer.Visualizations;
 using System.Windows.Controls.Primitives;
 using System.Linq;
 using System.Collections.ObjectModel;
+using PSMViewer.ViewModels;
 
 namespace PSMViewer.Converters
 {

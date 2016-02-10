@@ -4,7 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:PSMViewer"
-             xmlns:m="clr-namespace:PSMViewer.Models"             
+             xmlns:m="clr-namespace:PSMViewer.Models"  
+             xmlns:c="clr-namespace:PSMViewer.Converters"
              mc:Ignorable="d" Background="{x:Null}" BorderThickness="0" Cursor="{Binding Status, Converter={StaticResource CursorConverter}}">
 
     <TreeView.Resources>
@@ -48,15 +49,24 @@
             <DataTemplate>
                 <StackPanel>
                     <Grid>
-
+                        
+                        <Grid.Resources>
+                            <c:TreeIconConverter x:Key="iconConverter"/>
+                        </Grid.Resources>
+                        
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="45*"/>
                             <ColumnDefinition Width="10*"/>
                             <ColumnDefinition Width="45*"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="{Binding Name, Mode=OneWay}" Grid.Column="0"   />
+                        <StackPanel Orientation="Horizontal" Grid.Column="0">
+                            <Image Source="{Binding Converter={StaticResource iconConverter}}" Margin="0,0,10,0" />
+                            <TextBlock Text="{Binding Name, Mode=OneWay}" />
+                        </StackPanel>
+                        
                         <TextBlock Text=" " Grid.Column="1"/>
+
                         <TextBlock Text="{Binding Type.Name, Mode=OneWay}" Grid.Column="2" FontWeight="Bold"/>
 
                     </Grid>
