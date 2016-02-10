@@ -4,7 +4,7 @@
 	@Value SQL_VARIANT,
 	@Timestamp DATETIME = null
 AS 
-	declare @nsid bigint, @keyid bigint, @basetype varchar(100);
+	declare @nsid bigint, @keyid bigint, @basetype varchar(100), @q nvarchar(max);
 
 	select @nsid = [Id] from [namespaces] where [Namespace] = @Namespace;
 
@@ -25,13 +25,28 @@ AS
 	else
 	begin
 
-		if(SQL_VARIANT_PROPERTY(@Value,'BaseType') != @basetype)
+		if(SQL_VARIANT_PROPERTY(@Value, 'BaseType') != @basetype)
 		begin
-			;throw 50000, 'Invalid data type for this key, a key can only have one type. To change the data type for this key, first delete the key and all associated data.', 1;
+			if(@basetype is null)
+			begin
+				select @basetype = cast(SQL_VARIANT_PROPERTY(@Value,'BaseType') as varchar(100));
+				update [keys] set [Type] = @basetype, [Visible] = 1;
+			end
+			else
+			begin
+				;throw 50000, 'Invalid data type for this key, a key can only have one type. To change the data type for this key, first delete the key and all associated data.', 1;
+			end
 		end
 
 	end
 
-	insert into [values] ([NamespaceId], [KeyId], [Value], [Timestamp]) values (@nsid, @keyid, @Value, coalesce(@Timestamp, GETDATE()));
+	exec usp_create_table @basetype;
+
+	set @q = N'insert into [tbl_'+@basetype+'] ([NamespaceId], [KeyId], [Value], [Timestamp]) values (@nsid, @keyid, convert('+@basetype+', @Value), coalesce(@Timestamp, GETDATE()));';
+
+	exec sp_executesql
+		@q,
+		N'@nsid bigint, @keyid bigint, @Value sql_variant, @Timestamp datetime',
+		@nsid = @nsid, @keyid = @keyid, @Value = @Value, @Timestamp = @Timestamp;
 
 RETURN 0

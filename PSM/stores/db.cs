@@ -577,7 +577,7 @@ namespace PSMonitor.Stores
                         while (reader.Read())
                         {
 
-                            dict.Add(reader.GetString(reader.GetOrdinal("Name")), reader.GetValue(reader.GetOrdinal("Value")));
+                            dict.Add(reader.GetString(reader.GetOrdinal("Key")), reader.GetValue(reader.GetOrdinal("Value")));
 
                         }
                     }
@@ -715,7 +715,7 @@ namespace PSMonitor.Stores
                     {
 
                         command.CommandType = CommandType.Text;
-                        command.CommandText = String.Format("select [Name], [Type] from [keys] where [NamespaceId] = {0};", id);
+                        command.CommandText = String.Format("select [Name], [Type] from [keys] where [Visible] = 1 and [NamespaceId] = {0};", id);
 
                         using (SqlDataReader reader = command.ExecuteReader())
                         {

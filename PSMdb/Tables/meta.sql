@@ -1,9 +1,9 @@
 ﻿CREATE TABLE [dbo].[meta]
 (
     [Id] BIGINT IDENTITY(1,1) NOT NULL,
-	[Name] VARCHAR(100) NOT NULL,
-	[Value] sQL_VARIANT NOT NULL,
+	[KeyId] BIGINT NOT NULL,
 	[NamespaceId] BIGINT NOT NULL,
+	[Value] sQL_VARIANT NULL,
 	CONSTRAINT [PK_META] PRIMARY KEY CLUSTERED
 	(
 		[Id] ASC
@@ -11,5 +11,16 @@
 ) ON [PRIMARY]
 GO
 
-CREATE INDEX IX_meta_Name ON [dbo].[meta] ([Name]);
+ALTER TABLE [dbo].[meta]  WITH CHECK ADD  CONSTRAINT [FK_meta_ns] FOREIGN KEY([NamespaceId])
+REFERENCES [dbo].[namespaces] ([Id])
+GO
+
+ALTER TABLE [dbo].[meta]  WITH CHECK ADD  CONSTRAINT [FK_meta_k] FOREIGN KEY([KeyId])
+REFERENCES [dbo].[keys] ([Id])
+GO
+
+CREATE INDEX IX_meta_KeyId ON [dbo].[meta] ([KeyId]);
+GO
+
+CREATE INDEX IX_meta_NamespaceId ON [dbo].[meta] ([NamespaceId]);
 GO
