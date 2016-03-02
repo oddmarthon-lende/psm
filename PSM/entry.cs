@@ -12,7 +12,6 @@ using System.Runtime.Serialization.Json;
 
 namespace PSMonitor
 {
-
     
     /// <summary>
     /// Class that wraps one data entry

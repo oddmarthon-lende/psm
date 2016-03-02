@@ -1,4 +1,8 @@
-﻿using System;
+﻿/// <copyright file="cda.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+using System;
 using System.Runtime.InteropServices;
 using System.Management.Automation;
 using System.Reflection;

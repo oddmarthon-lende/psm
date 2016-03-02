@@ -90,6 +90,21 @@ namespace PSMonitor.Stores
                     Setup.Set<DB>("maxAge", value);
                 }
             }
+
+            [Category("Database")]
+            [Description("The interval in milliseconds polling should occur")]
+            public uint PollingInterval
+            {
+                get
+                {
+                    return Setup.Get<DB, uint>("pollingInterval");
+                }
+
+                set
+                {
+                    Setup.Set<DB>("pollingInterval", value);
+                }
+            }
             
         }
 
@@ -122,7 +137,7 @@ namespace PSMonitor.Stores
             /// <summary>
             /// The name of the index column
             /// </summary>
-            private IndexType _column;
+            private Enum _column;
 
 
             /// <summary>
@@ -138,7 +153,7 @@ namespace PSMonitor.Stores
             /// <param name="p">The path that was used to obtain the results from the database</param>
             /// <param name="connection">The connection used to connect to the database.</param>
             /// <param name="command">The command that will be executed.</param>
-            public Entries(Path p, IndexType indexColumn, SqlConnection connection, SqlCommand command, bool autoCloseConnection = false)
+            public Entries(Path p, Enum indexColumn, SqlConnection connection, SqlCommand command, bool autoCloseConnection = false)
             {
 
                 _path = p;
@@ -248,7 +263,8 @@ namespace PSMonitor.Stores
 
                 return new Entry
                 {
-                    Index = record.GetValue(record.GetOrdinal(indexColumnName)),
+
+                    Index = record.GetValue(record.GetOrdinal("Index")),
                     Key = this.Key,
                     Value = v,
                     Timestamp = record.GetDateTime(record.GetOrdinal("Timestamp")),
@@ -300,7 +316,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// Holds the envelopes that are waiting to be dispatched to the database.
         /// </summary>
-        protected ConcurrentQueue<Envelope> queue;
+        protected ConcurrentQueue<Envelope> _queue;
 
         /// <summary>
         /// Holds the threads created by this instance
@@ -332,7 +348,7 @@ namespace PSMonitor.Stores
 
             Options = new Configuration();
 
-            queue = new ConcurrentQueue<Envelope>();
+            _queue = new ConcurrentQueue<Envelope>();
 
             //Test the connection
             using (SqlConnection connection = CreateConnection())
@@ -344,8 +360,11 @@ namespace PSMonitor.Stores
 
             if (StartThreads == true)
             {
+
                 threads.Add(new Thread(Dispatch));
-                threads.Add(new Thread(Cleanup));
+
+                if(Options.Get<int>("MaxAge") > 0)
+                    threads.Add(new Thread(Cleanup));
             }
 
             threads.Add(new Thread(Receive));
@@ -354,7 +373,7 @@ namespace PSMonitor.Stores
             foreach (Thread thread in threads)
             {
                 thread.Name = String.Format("DB Store [{0}] Thread #{1}", _id, index++);
-                //thread.Start(this);
+                thread.Start(this);
             }
 
             _threads = threads;
@@ -395,7 +414,7 @@ namespace PSMonitor.Stores
 
                     p.ToCommandParameters(command);
 
-                    command.Parameters.Add(new SqlParameter("@Start", SqlDbType.DateTime)
+                    command.Parameters.Add(new SqlParameter("@Start", SqlDbType.Variant)
                     {
 
                         Direction = ParameterDirection.Input,
@@ -403,7 +422,7 @@ namespace PSMonitor.Stores
 
                     });
 
-                    command.Parameters.Add(new SqlParameter("@End", SqlDbType.DateTime)
+                    command.Parameters.Add(new SqlParameter("@End", SqlDbType.Variant)
                     {
 
                         Direction = ParameterDirection.Input,
@@ -532,8 +551,7 @@ namespace PSMonitor.Stores
             return new Entries(p, (IndexType)index, connection, command, true);
 
 
-        }
-                
+        }                
 
         /// <summary>
         /// <see cref="IStore.Put(Envelope)"/>
@@ -542,7 +560,7 @@ namespace PSMonitor.Stores
         {
 
             if (!_disposed)
-                queue.Enqueue(data);
+                _queue.Enqueue(data);
 
         }
 
@@ -755,30 +773,21 @@ namespace PSMonitor.Stores
             using (SqlCommand command = connection.CreateCommand())
             {
 
-                IndexType indexIdentifier;
+                IndexType indexIdentifier = (IndexType)path.Index;
+                
+                command.CommandType = CommandType.StoredProcedure;
+                command.CommandText = "usp_get_many";
 
-                switch (indexTypeCode)
-                {
-
-                    case TypeCode.DateTime:
-
-                        indexIdentifier = IndexType.Timestamp;
-                        break;                                            
-
-                    default:
-
-                        indexIdentifier = IndexType.Id;
-                        break;
-
-                }
-
-                command.CommandType = CommandType.Text;
-                command.CommandText = String.Format("select [Value], [Timestamp], [Id] from [Data] where [{0}] > @StartIndex and [Namespace] = @Namespace and [Key] = @Key", indexIdentifier);
-
-                command.Parameters.Add(new SqlParameter("@StartIndex", GetType(indexType))
+                command.Parameters.Add(new SqlParameter("@Start", GetType(indexType))
                 {
                     Direction = ParameterDirection.Input,
                     SqlValue = path.StartIndex
+                });
+
+                command.Parameters.Add(new SqlParameter("@End", GetType(indexType))
+                {
+                    Direction = ParameterDirection.Input,
+                    SqlValue = null
                 });
 
                 command.Parameters.Add(new SqlParameter("@Namespace", SqlDbType.VarChar)
@@ -802,10 +811,12 @@ namespace PSMonitor.Stores
                     {
 
                         case TypeCode.DateTime:
-                            entries = (from entry in entries where entry.Timestamp > (DateTime)path.StartIndex select entry).ToArray();
+
+                            entries = (from entry in entries where (DateTime)entry.Index > (DateTime)path.StartIndex select entry).ToArray();
                             break;
 
                         case TypeCode.Int64:
+
                             entries = (from entry in entries where (long)entry.Index > (long)path.StartIndex select entry).ToArray();
                             break;
 
@@ -828,7 +839,6 @@ namespace PSMonitor.Stores
                         Entries = entries,
                         Timestamp = DateTime.Now
                     });
-
 
                     if (path.StartIndex == null)
                         throw new NullReferenceException("The delegate returned null. Delegate must return a valid next StartIndex");
@@ -853,7 +863,7 @@ namespace PSMonitor.Stores
         {
 
             DB context = (DB)instance;
-
+            
             try
             {
 
@@ -882,8 +892,8 @@ namespace PSMonitor.Stores
                     }
 
                     Debug.WriteLine("{1}.DB.Receive(object instance) : Count {0}, Going to sleep now...", totalCount, Thread.CurrentThread.Name);
-
-                    Thread.Sleep(1000);
+                    
+                    Thread.Sleep(Setup.Get<DB, int>("pollingInterval"));
                 }
 
             }
@@ -996,14 +1006,14 @@ namespace PSMonitor.Stores
 
                         Thread.Sleep(context.sleepTime);
 
-                        if (!context.queue.IsEmpty)
+                        if (!context._queue.IsEmpty)
                         {
 
                             Envelope envelope;
 
                             VerifyConnection(connection);
 
-                            int count = context.queue.Count;
+                            int count = context._queue.Count;
 
                             using (SqlCommand command = connection.CreateCommand())
                             {
@@ -1014,7 +1024,7 @@ namespace PSMonitor.Stores
                                 for (int i = 0; i < count; i++)
                                 {
 
-                                    while (!context.queue.TryDequeue(out envelope)) ;
+                                    while (!context._queue.TryDequeue(out envelope)) ;
 
                                     foreach (Entry entry in envelope.Entries)
                                     {

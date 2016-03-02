@@ -1,4 +1,9 @@
-﻿using System;
+﻿/// <copyright file="commands.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+///
+using System;
 using System.Management.Automation;
 
 namespace PSMonitor
@@ -21,7 +26,7 @@ namespace PSMonitor
             Mandatory = true,
             HelpMessage = "Sets the interval the script will run in milliseconds")]
         [ValidateNotNullOrEmpty]
-        public double interval
+        public double Interval
         {
             get; set;
         }
@@ -45,7 +50,7 @@ namespace PSMonitor
             Mandatory = true,
             HelpMessage = "Sets the current namespace for the data output")]
         [ValidateNotNullOrEmpty]
-        public string path
+        public string Path
         {
             get; set;
         }
@@ -68,7 +73,7 @@ namespace PSMonitor
             Mandatory = true,
             HelpMessage = "Sets the timeout, thread will exit if it exceeds timeout")]
         [ValidateNotNullOrEmpty]
-        public double timeout
+        public double Timeout
         {
             get; set;
         }
@@ -92,7 +97,7 @@ namespace PSMonitor
             ValueFromPipeline = true,
             HelpMessage = "The key under the current namespace which to store the value")]
         [ValidateNotNullOrEmpty]
-        public string key
+        public string Key
         {
             get; set;
         }
@@ -102,7 +107,7 @@ namespace PSMonitor
             Mandatory = true,
             HelpMessage = "The data to store for the associated key")]
         [ValidateNotNullOrEmpty]
-        public PSObject data
+        public PSObject Data
         {
             get; set;
         }
@@ -125,7 +130,7 @@ namespace PSMonitor
             Mandatory = false,
             HelpMessage = "If true flush all data, if false only flushes the last added data point.")]
         [AllowNull]
-        public bool? flushAll
+        public bool? FlushAll
         {
             get; set;
         }
@@ -137,6 +142,61 @@ namespace PSMonitor
         }
     }
 
+    [Cmdlet(VerbsCommon.Get, "Data")]
+    public class GetDataCommand : PSCmdlet
+    {
+
+        [Parameter(
+            Position = 0,
+            Mandatory = true,
+            HelpMessage = "The path")]
+        public string Path
+        {
+            get; set;
+        }
+
+        [Parameter(
+            Position = 1,
+            Mandatory = true,
+            HelpMessage = "Start Index")]
+        public PSObject Start
+        {
+            get; set;
+        }
+
+        [Parameter(
+            Position = 2,
+            Mandatory = true,
+            HelpMessage = "End Index")]
+        public PSObject End
+        {
+            get; set;
+        }
+
+        [Parameter(
+            Position = 3,
+            Mandatory = true,
+            HelpMessage = "The Index Identifier")]
+        public string IndexID
+        {
+            get; set;
+        }
+
+        protected override void ProcessRecord()
+        {
+            try {
+                if (Start == null || End == null || IndexID == null)
+                    WriteObject(PSM.Store().Get(Path));
+                else
+                    WriteObject(PSM.Store().Get(Path, Start.BaseObject, End.BaseObject, (Enum)Enum.Parse(PSM.Store().Index, IndexID, true)));
+            }
+            catch(Exception error)
+            {
+                WriteError(new ErrorRecord(error, "GET", ErrorCategory.NotSpecified, this));
+            }
+        }
+    }
+
     [Cmdlet(VerbsCommon.Clear, "Data")]
     public class DeleteCommand : PSCmdlet
     {
@@ -145,7 +205,7 @@ namespace PSMonitor
             Position = 0,
             Mandatory = true,
             HelpMessage = "The path to the key")]
-        public string path
+        public string Path
         {
             get; set;
         }
@@ -153,11 +213,56 @@ namespace PSMonitor
         protected override void ProcessRecord()
         {
             try {
-                PSM.Store().Delete(path);
+                PSM.Store().Delete(Path);
             }
             catch(Exception error)
             {
                 WriteError(new ErrorRecord(error, "DELETE", ErrorCategory.NotSpecified, this));
+            }
+        }
+    }
+
+    [Cmdlet(VerbsCommon.Set, "Meta")]
+    public class SetMetaCommand : PSCmdlet
+    {
+
+        [Parameter(
+            Position = 0,
+            Mandatory = true,
+            HelpMessage = "The path")]
+        public string Path
+        {
+            get; set;
+        }
+
+        [Parameter(
+            Position = 1,
+            Mandatory = true,
+            HelpMessage = "The key")]
+        public string Key
+        {
+            get; set;
+        }
+
+        [Parameter(
+            Position = 2,
+            Mandatory = true,
+            HelpMessage = "The value")]
+        [ValidateNotNullOrEmpty]
+        public PSObject Value
+        {
+            get; set;
+        }
+
+        protected override void ProcessRecord()
+        {
+            try
+            {
+                PSM.Store().Meta(Path, Key, Value);
+            }
+            catch (Exception error)
+            {
+                WriteError(new ErrorRecord(error, "SET", ErrorCategory.NotSpecified, this));
             }
         }
     }

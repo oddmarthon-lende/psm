@@ -15,7 +15,7 @@ namespace PSMonitor.Stores
     /// <summary>
     /// A class that holds the <see cref="PropertyDescriptor"/>'s for the properties in a type that implements <see cref="IOptions"/> interface and a dictionary that can be filled with valid values for a property.
     /// </summary>
-    public class Properties : Dictionary<PropertyDescriptor, Dictionary<object, object>> { };
+    public class Properties : Dictionary<PropertyDescriptor, List<KeyValuePair<object, object>>> { };
     
     /// <summary>
     /// Interface for accessing options and get valid choice values for each option.
@@ -56,7 +56,7 @@ namespace PSMonitor.Stores
         /// The enum type with index identifiers
         /// </summary>
         Type Index { get; }
-
+                
         /// <summary>
         /// Gets an object that contains properties that can be used to configure the store and be exposed to the user.
         /// </summary>
@@ -108,7 +108,7 @@ namespace PSMonitor.Stores
         /// <param name="ns">The namespace</param>
         /// <returns>An array that contains the <see cref="Key"/>'s</returns>
         Key[] Keys(string ns);
-
+        
         /// <summary>
         /// Sets the units for a key
         /// </summary>
@@ -144,8 +144,9 @@ namespace PSMonitor.Stores
         /// <param name="context">An object that will be used to identify the request.</param>
         /// <param name="path">The path to the key.</param>
         /// <param name="startingIndex">The starting index</param>
+        /// <param name="index">The index used when fetching data</param>
         /// <param name="handler">The delegate that will receive the data <see cref="Envelope"/></param>
-        void Register(object context, string path, object startingIndex, RealTimeData handler);
+        void Register(object context, string path, object startingIndex, Enum index, RealTimeData handler);
 
         /// <summary>
         /// Unregister the context and stop the data transfer for all keys that was <see cref="Register(object, string, object, RealTimeData)"/>d with this context.
@@ -183,16 +184,15 @@ namespace PSMonitor.Stores
         public Type Type { get; private set; }
 
         /// <summary>
-        /// Create a new Key with the provided <paramref name="Name"/>  and <paramref name="Type"/>
+        /// Create a new Key with the provided <paramref name="name"/>  and <paramref name="type"/>
         /// </summary>
-        /// <param name="Name"></param>
-        /// <param name="Type"></param>
-        public Key(string Name, Type Type)
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        public Key(string name, Type type)
         {
-            this.Name = Name;
-            this.Type = Type;
-
-            this.Units = new Units("normal"); /// < Temporary
+            this.Name = name;
+            this.Type = type;
+            this.Units = new Units();
         }
 
         /// <summary>
@@ -237,18 +237,23 @@ namespace PSMonitor.Stores
 
         public string DisplayName { get; private set; }
 
-        public double Factor { get; private set; }
+        public double Multiplier { get; private set; }
                 
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="factor">A conversion factor that scales the value up or down. Defaults to 1.</param>
-        public Units(string name, double factor = 1D)
+        /// <param name="multiplier">A conversion factor that scales the value up or down. Defaults to 1.</param>
+        public Units(string name = null, double multiplier = 1D)
         {
             this.DisplayName = name;
-            this.Factor = factor;
+            this.Multiplier = multiplier;
+        }
+
+        public T Convert<T>(Entry entry)
+        {
+            return Convert<T>(entry.Value);
         }
 
         /// <summary>
@@ -257,12 +262,12 @@ namespace PSMonitor.Stores
         /// <typeparam name="T"></typeparam>
         /// <param name="Value"></param>
         /// <returns></returns>
-        public T Convert<T>(Entry entry)
+        public T Convert<T>(object value)
         {
 
             double? v = null;
 
-            switch (Type.GetTypeCode(entry.Value.GetType()))
+            switch (Type.GetTypeCode(value.GetType()))
             {
                 
                 case TypeCode.Byte:
@@ -282,14 +287,14 @@ namespace PSMonitor.Stores
 
                 case TypeCode.String:
 
-                    if (System.Text.RegularExpressions.Regex.IsMatch((string)entry.Value, @"^(\d+)", System.Text.RegularExpressions.RegexOptions.Compiled))
+                    if (System.Text.RegularExpressions.Regex.IsMatch((string)value, @"^(\d+)", System.Text.RegularExpressions.RegexOptions.Compiled))
                     {
 
-                        double value;
+                        double _value;
 
-                        if (double.TryParse((string)entry.Value, out value))
+                        if (double.TryParse((string)value, out _value))
                         {
-                            v = value;
+                            v = _value;
                             break;
                         }
 
@@ -300,7 +305,7 @@ namespace PSMonitor.Stores
                     break;
             }
 
-            return (T)(object)(v.HasValue ? v.Value : System.Convert.ToDouble(entry.Value) * Factor);
+            return (T)(object)(v.HasValue ? v.Value : System.Convert.ToDouble(value) * Multiplier);
 
         }
 

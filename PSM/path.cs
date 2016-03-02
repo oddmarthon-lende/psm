@@ -1,21 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
+﻿/// <copyright file="path.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+
+using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PSMonitor
 {
-
+    /// <summary>
+    /// Path Data Object
+    /// </summary>
     public class Path
     {
 
+        /// <summary>
+        /// The namespace
+        /// </summary>
         public string Namespace { get; protected set; }
 
+        /// <summary>
+        /// The Key
+        /// Last component of path string
+        /// </summary>
         public string Key { get; protected set; }
         
+        /// <summary>
+        /// Number of path components
+        /// </summary>
         public int Length
         {
             get
@@ -24,6 +37,11 @@ namespace PSMonitor
             }
         }        
 
+        /// <summary>
+        /// Creates a <see cref="Path"/> object from the specified string
+        /// </summary>
+        /// <param name="path">The path in string format</param>
+        /// <returns>The path object</returns>
         public static Path Extract(string path)
         {
             string[] result; string key;

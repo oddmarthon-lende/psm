@@ -140,7 +140,7 @@ namespace PSMonitor.Stores
                 foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(this) )
                 {
 
-                    properties.Add(descriptor, new Dictionary<object, object>());
+                    properties.Add(descriptor, new List<KeyValuePair<object, object>>());
 
                     switch(descriptor.Name)
                     {
@@ -158,7 +158,7 @@ namespace PSMonitor.Stores
                                     
                                     if (m.Equals(f))
                                     {
-                                        properties.Last().Value.Add(type.Name, type);
+                                        properties.Last().Value.Add(new KeyValuePair<object, object>(type.Name, type));
                                         return true;
                                     }
 
@@ -196,6 +196,11 @@ namespace PSMonitor.Stores
             /// The index used when polling for new data.
             /// </summary>
             public object StartIndex { get; set; }
+
+            /// <summary>
+            /// The index used when fetching data
+            /// </summary>
+            public Enum Index { get; set; }
 
             /// <summary>
             /// The handler that will receive the data, when there is new data available.
@@ -260,7 +265,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Register(object, string, object, RealTimeData)"/>
         /// </summary>
-        public virtual void Register(object context, string path, object startingIndex, RealTimeData handler)
+        public virtual void Register(object context, string path, object startingIndex, Enum index, RealTimeData handler)
         {
 
             ConcurrentBag<Path> paths = null;
@@ -298,6 +303,7 @@ namespace PSMonitor.Stores
 
             p1.StartIndex = startingIndex;
             p1.Handler = handler;
+            p1.Index = index;
 
         }
 

@@ -1,4 +1,9 @@
-﻿using System.Diagnostics;
+﻿/// <copyright file="logger.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using System.Diagnostics;
 using System;
 using System.Reflection;
 

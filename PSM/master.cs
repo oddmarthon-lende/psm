@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿/// <copyright file="master.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Timers;

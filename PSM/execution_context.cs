@@ -1,4 +1,9 @@
-﻿using System;
+﻿/// <copyright file="execution_context.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using System;
 using System.IO;
 using System.Threading;
 using System.Management.Automation;
@@ -46,6 +51,8 @@ namespace PSMonitor
             state.Commands.Add(new SessionStateCmdletEntry("set-timeout", typeof(SetTimeoutCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("push-data", typeof(PushDataCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("pop-data", typeof(PopDataCommand), null));
+            state.Commands.Add(new SessionStateCmdletEntry("get-data", typeof(GetDataCommand), null));
+            state.Commands.Add(new SessionStateCmdletEntry("set-meta", typeof(SetMetaCommand), null));
             //state.Commands.Add(new SessionStateCmdletEntry("get-cda", typeof(GetCDACommand), null));
             //state.Commands.Add(new SessionStateCmdletEntry("set-cda", typeof(SetCDACommand), null));
 
@@ -82,7 +89,7 @@ namespace PSMonitor
             string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
 
             if (id == ID)
-                script.interval = sender.interval;
+                script.interval = sender.Interval;
         }
 
         private void NamespaceChanged(SetNamespaceCommand sender) {
@@ -90,7 +97,7 @@ namespace PSMonitor
             string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
 
             if (id == ID)
-                script.path = sender.path;
+                script.path = sender.Path;
 
         }
 
@@ -99,7 +106,7 @@ namespace PSMonitor
             string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
 
             if (id == ID)
-                script.timeout = sender.timeout;
+                script.timeout = sender.Timeout;
 
         }
 
@@ -114,9 +121,9 @@ namespace PSMonitor
                 queue.Enqueue(new Entry()
                 {
 
-                    Key       = sender.key,
-                    Value     = sender.data.BaseObject,
-                    Type      = sender.data.BaseObject.GetType(),
+                    Key       = sender.Key,
+                    Value     = sender.Data.BaseObject,
+                    Type      = sender.Data.BaseObject.GetType(),
                     Timestamp = DateTime.Now
 
                 });
@@ -160,7 +167,7 @@ namespace PSMonitor
             if (id == ID)
             {
 
-                Flush(sender.flushAll == null || sender.flushAll == false);
+                Flush(sender.FlushAll == null || sender.FlushAll == false);
 
             }
 
