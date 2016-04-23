@@ -39,8 +39,8 @@ namespace PSMonitor.Controllers
             Entry entry;
 
             try {
-
-                entry = Store.Get(path, ActionContext);               
+                
+                entry = Store.Get(path, PSM.Store().Default, ActionContext);               
 
             }
             catch(KeyNotFoundException)

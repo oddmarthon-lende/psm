@@ -213,7 +213,7 @@ namespace PSMonitor.Controllers
         /// <param name="path">The data path</param>
         /// <param name="context">The currently executing HTTP action context</param>
         /// <returns><see cref="IStore.Get(string)"/></returns>
-        public static Entry Get(string path, HttpActionContext context)
+        public static Entry Get(string path, Enum indexIdentifier, HttpActionContext context)
         {
 
             Entry entry = PSM.Store().Get(path);
@@ -221,7 +221,7 @@ namespace PSMonitor.Controllers
 
             if (!_receivers.Contains(receiver))
             {                
-                Register(receiver, path, receiver.Index, receiver.Handler);
+                Register(receiver, path, receiver.Index, indexIdentifier, receiver.Handler);
             }                     
 
             return entry;
@@ -235,17 +235,17 @@ namespace PSMonitor.Controllers
         /// <param name="end">The end index</param>
         /// <param name="context">The currently executing HTTP action context</param>
         /// <returns><see cref="IStore.Get(string, long, long)"/></returns>
-        public static IEnumerable<Entry> Get(string path, object start, object end, Enum index, HttpActionContext context)
+        public static IEnumerable<Entry> Get(string path, object start, object end, Enum indexIdentifier, HttpActionContext context)
         {
                         
             Receiver receiver = new Receiver(context, path, PSM.Store().Get(path).Timestamp);
             
             if (!_receivers.Contains(receiver))
             {                
-                Register(receiver, path, receiver.Index, receiver.Handler);
+                Register(receiver, path, receiver.Index, indexIdentifier, receiver.Handler);
             }
             
-            return PSM.Store().Get(path, start, end, index);
+            return PSM.Store().Get(path, start, end, indexIdentifier);
 
         }
         
@@ -272,10 +272,10 @@ namespace PSMonitor.Controllers
         /// <see cref="IStore.Register(object, string, object, RealTimeData)"/>
         /// Also adds the <paramref name="context"/> to the <see cref="_receivers"/> stack.
         /// </summary>
-        private static void Register(object context, string path, object startingIndex, RealTimeData handler)
+        private static void Register(object context, string path, object startingIndex, Enum indexIdentifier, RealTimeData handler)
         {
             
-            PSM.Store().Register(context, path, startingIndex, handler);
+            PSM.Store().Register(context, path, startingIndex, indexIdentifier, handler);
 
             if(!_receivers.Contains(context))
                 _receivers.Push(context);
