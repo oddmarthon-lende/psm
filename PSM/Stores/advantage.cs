@@ -9,8 +9,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
-using System.Data.SqlTypes;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -22,7 +20,7 @@ namespace PSMonitor.Stores
     /// </summary>
     public sealed class Advantage : DB
     {
-
+        
         public new enum IndexType
         {
 
@@ -46,294 +44,100 @@ namespace PSMonitor.Stores
             {
                 return typeof(IndexType);
             }
-        }
+        }     
 
-        private new class Configuration : Store.Configuration
+        private class ParameterizedPath : DB.Path
         {
-
             
-            [Category("Database")]
-            [Description("The connection string that is used to connect to the database")]
-            public string ConnectionString
-            {
+            /// <summary>
+            /// The well name
+            /// </summary>
+            public string Well { get; private set; }
 
-                get {
-                    
-                    return Setup.Get<Advantage, string>("connectionString");
-                }
+            /// <summary>
+            /// The wellbore name
+            /// </summary>
+            public string Wellbore { get; private set; }
 
-                set {
 
-                    Setup.Set<Advantage>("connectionString", value);
+            /// <summary>
+            /// The run number
+            /// </summary>
+            public string RunNo { get; private set; }
 
-                }
-            }
+            /// <summary>
+            /// The name of the table
+            /// </summary>
+            public string Table { get; private set; }
 
-            [Category("Advantage")]
-            public string Well
-            {
 
-                get
-                {
-
-                    return Setup.Get<Advantage, string>("well", true);
-                }
-
-                set
-                {
-
-                    Setup.Set<Advantage>("well", value);
-
-                }
-            }
-
-            [Category("Advantage")]
-            public string Wellbore
-            {
-
-                get
-                {
-
-                    return Setup.Get<Advantage, string>("wellbore", true);
-                }
-
-                set
-                {
-
-                    Setup.Set<Advantage>("wellbore", value);
-
-                }
-            }
-
-            [Category("Advantage")]
-            public int Run
-            {
-
-                get
-                {
-
-                    return Setup.Get<Advantage, int>("run", true);
-                }
-
-                set
-                {
-
-                    Setup.Set<Advantage>("run", value);
-
-                }
-            }
-
-            [Category("Information")]
-            public double? MaxDepth { get; private set; }
-
-            [Category("Information")]
-            public DateTime? MaxTime { get; private set; }
-
-            [Category("Information")]
-            public double? MinDepth { get; private set; }
-
-            [Category("Information")]
-            public DateTime? MinTime { get; private set; }
-
-            [Category("Information")]
-            public int MaxRun { get; private set; }
-
-            private Advantage _advantage = null;
+            /// <summary>
+            /// The name of the column
+            /// </summary>
+            public string Column { get; private set; }
 
             /// <summary>
             /// Constructor
             /// </summary>
-            /// <param name="store">The <see cref="Advantage"/> store instance</param>
-            public Configuration(Advantage store) : base()
-            {
-                this._advantage = store;
-            }
-
-            public override Properties Get()
+            /// <param name="path"></param>
+            public ParameterizedPath(Path path) : base(path)
             {
 
-                Properties properties = base.Get();
-
-                foreach (KeyValuePair<PropertyDescriptor, List<KeyValuePair<object, object>>> p in properties)
+                int i = 0;
+                foreach (string p_value in path)
                 {
 
-                    switch (p.Key.Name)
+                    switch (i++)
                     {
-                        case "Well"     :
 
-                            GetWells(p.Value);
+                        case 0:
+
+                            Well = p_value;
                             break;
 
-                        case "Wellbore" :
+                        case 1:
 
-                            GetWellbores(p.Value);
+                            Wellbore = p_value;
                             break;
 
-                        case "Run":
+                        case 2:
 
-                            GetRunNumbers(p.Value);
+                            RunNo = p_value;
                             break;
+
+                        case 3:
+
+                            Table = p_value;
+                            break;
+
+                        case 4:
+
+                            Column = p_value;
+                            break;
+
                     }
 
                 }
 
-                SetBounds();
-
-                return properties;
             }
 
-            private void GetWells(List<KeyValuePair<object, object>> container)
+
+            /// <summary>
+            /// Extracts the path as parameters.
+            /// </summary>
+            /// <param name="path"></param>
+            /// <returns></returns>
+            public static ParameterizedPath Extract(string path)
             {
-                
-                using (SqlConnection connection = _advantage.CreateConnection())
-                {
-
-                    VerifyConnection(connection);
-
-                    using (SqlCommand command = connection.CreateCommand())
-                    {
-
-                        command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = "select well_name, well_identifier from well order by well_name asc;";
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                                container.Add(new KeyValuePair<object, object>(reader.GetString(0), reader.GetString(1)));
-                        }
-
-                    }
-                }
+                return new ParameterizedPath(Path.Extract(path));
             }
 
-            private void GetWellbores(List<KeyValuePair<object, object>> container)
-            {
-
-                using (SqlConnection connection = _advantage.CreateConnection())
-                {
-
-                    VerifyConnection(connection);
-
-                    using (SqlCommand command = connection.CreateCommand())
-                    {
-
-                        command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = String.Format("select wlbr_name, wlbr_identifier from wellbore where well_identifier = '{0}' order by wlbr_name asc;", Well);
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                                container.Add(new KeyValuePair<object, object>(reader.GetString(0), reader.GetString(1)));
-                        }
-
-                    }
-                }
-            }
-
-            private void GetRunNumbers(List<KeyValuePair<object, object>> container)
-            {
-
-                using (SqlConnection connection = _advantage.CreateConnection())
-                {
-
-                    VerifyConnection(connection);
-
-                    using (SqlCommand command = connection.CreateCommand())
-                    {
-
-                        command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = String.Format("select distinct runno from gendataset where wellboreid = '{0}' and runno is not null order by runno asc;", Wellbore);
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read()) {
-                                object runno = reader.GetValue(0);
-                                container.Add(new KeyValuePair<object, object>(runno.ToString(), Convert.ToInt32(runno)));
-                            }
-                        }
-
-                    }
-                }
-            }
-
-            private void SetBounds()
-            {
-
-                using (SqlConnection connection = _advantage.CreateConnection())
-                {
-
-                    VerifyConnection(connection);
-
-                    using (SqlCommand command = connection.CreateCommand())
-                    {
-
-                        command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = String.Format("select max(t1.Depth), max(t1.Time), min(t1.Depth), min(t1.Time) from gendataindex t1 where t1.gendatasetid in (select Id from gendataset where wellboreid = '{0}' and runno = {1});", Wellbore, Run);
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-
-                            if (reader.Read())
-                            {
-
-                                try {
-
-                                    MaxDepth = reader.GetDouble(0);
-                                    MinDepth = reader.GetDouble(2);
-
-                                    MaxTime = reader.GetDateTime(1);
-                                    MinTime = reader.GetDateTime(3);
-                                }
-                                catch(SqlNullValueException e)
-                                {
-                                    Debug.WriteLine(e);
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                    using (SqlCommand command = connection.CreateCommand())
-                    {
-
-                        command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = String.Format("select max(runno) from gendataset where wellboreid = '{0}';", Wellbore);
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-
-                            if (reader.Read())
-                            {
-
-                                try
-                                {
-                                    MaxRun = reader.GetInt16(0);
-                                }
-                                catch (SqlNullValueException e)
-                                {
-                                    Debug.WriteLine(e);
-                                }
-
-                            }
-
-                        }
-
-                    }
-                }
-            }
-        }        
-        
+        }
+                        
         /// <summary>
         /// Constructor
         /// </summary>
-        public Advantage() : base(false)
-        {
-
-            Options = new Configuration(this);
-
-        }
+        public Advantage() : base(false) { }
 
         /// <summary>
         /// This method has been disabled in this implementation of the <see cref="IStore"/> interface
@@ -351,8 +155,8 @@ namespace PSMonitor.Stores
         /// <returns>An array of <see cref="Key"/> type</returns>
         public override Key[] Keys(string path)
         {
-            
-            int Length = String.IsNullOrEmpty(path) ? 0 : 1;
+
+            ParameterizedPath p = ParameterizedPath.Extract(path);
 
             List<Key> keys = new List<Key>();
             Configuration config = (Configuration)Options;
@@ -367,21 +171,59 @@ namespace PSMonitor.Stores
 
                     command.CommandType = System.Data.CommandType.Text;
 
-                    switch(Length)
+                    switch(p.Length)
                     {
+
                         case 0:
 
-                            command.CommandText = "select name from sys.tables where name like 'Gen%' and name not like 'GenAux%'";
+                            command.CommandText = "select well_name as name from well;";
                             break;
 
                         case 1:
 
-                            command.CommandText = String.Format("select t1.name, t2.name as type from sys.columns t1 left join sys.types t2 on (t1.user_type_id = t2.user_type_id) where t1.object_id = (select object_id from sys.tables where name = '{0}');", path);
+                            command.CommandText = "select wlbr_name as name from wellbore where well_identifier = (select well_identifier from well where well_name = @WellName);";
+
+                            command.Parameters.Add(new SqlParameter("@WellName", SqlDbType.NVarChar)
+                            {
+                                Direction = ParameterDirection.Input,
+                                SqlValue = p.Well
+                            });
+
                             break;
+
+                        case 2:
+
+                            command.CommandText = "select distinct RunNo from GenDataset where WellboreId = (select wlbr_identifier from wellbore where wlbr_name = @WellboreName);";
+
+                            command.Parameters.Add(new SqlParameter("@WellboreName", SqlDbType.NVarChar)
+                            {
+                                Direction = ParameterDirection.Input,
+                                SqlValue = p.Wellbore
+                            });
+
+                            break;
+
+                        case 3:
+
+                            command.CommandText = "select name from sys.tables where name like 'Gen%' and name not like 'GenAux%'";
+
+                            break;
+
+                        case 4:
+
+                            command.CommandText = "select t1.name, t2.name as type from sys.columns t1 left join sys.types t2 on (t1.user_type_id = t2.user_type_id) where t1.object_id = (select object_id from sys.tables where name = @Table);";
+
+                            command.Parameters.Add(new SqlParameter("@Table", SqlDbType.NVarChar)
+                            {
+                                Direction = ParameterDirection.Input,
+                                SqlValue = p.Table
+                            });
+
+                            break;                       
 
                         default:
 
-                            throw new KeyNotFoundException("Cannot find this path in the Advantage database");
+                            return keys.ToArray();
                     }                    
                     
                     using (SqlDataReader reader = command.ExecuteReader())
@@ -390,7 +232,7 @@ namespace PSMonitor.Stores
                         while (reader.Read())
                         {
                             
-                            keys.Add(new Key(reader.GetString(0), Length == 0 ? null : DB.GetType(reader.GetString(1))));
+                            keys.Add(new Key(Convert.ToString(reader.GetValue(0)), p.Length == 4 ? DB.GetType(reader.GetString(1)) : null));
                         }
                     }
                 }
@@ -414,23 +256,34 @@ namespace PSMonitor.Stores
         /// <param name="hasEnd">Set to false when query is used to fetch new rows</param>
         /// <param name="parameters">The parameters used to format the string</param>
         /// <returns>The generated SQL query</returns>
-        private string GenerateQuery(Enum index, bool hasEnd, params object[] parameters)
+        private string GenerateQuery(Enum index, bool hasEnd, ParameterizedPath path)
         {
+
+            object[] parameters = new object[] {
+
+                path.Column,
+                path.Table,
+                path.Wellbore,
+                Regex.Replace(path.Table, @"^(Gen)", "", RegexOptions.Compiled),
+                index.ToString(),
+                path.RunNo
+
+            };
 
             switch (index.ToString())
             {
-
+                
                 case "Index":
 
-                    return String.Format("select ([RowNumber_Reversed] - 1) as [Index], {0} as [Value], [Time] as [Timestamp] from (select ROW_NUMBER() over (order by [Time] desc) as RowNumber, ROW_NUMBER() over (order by [Time] asc) as [RowNumber_Reversed], * from gendataindex t1 left join {1} t2 on (t1.Id = t2.gendataindexid) where t1.gendatasetid = (select Id from gendataset where wellboreid = '{2}' and [name] = '{3}' and runno = {5})) as Result where " + (hasEnd ? "(RowNumber - 1) >=" : "([RowNumber_Reversed] - 1) >") +" @StartIndex " + (hasEnd ? "and (RowNumber - 1) <= @EndIndex" : "") + " order by RowNumber asc", parameters);
+                    return String.Format("select ([RowNumber_Reversed] - 1) as [Index], {0} as [Value], [Time] as [Timestamp] from (select ROW_NUMBER() over (order by [Time] desc) as RowNumber, ROW_NUMBER() over (order by [Time] asc) as [RowNumber_Reversed], * from gendataindex t1 left join {1} t2 on (t1.Id = t2.gendataindexid) where t1.gendatasetid = (select Id from gendataset where wellboreid = (select wlbr_identifier from wellbore where wlbr_name = '{2}') and [name] = '{3}' and runno = {5})) as Result where " + (hasEnd ? "(RowNumber - 1) >=" : "([RowNumber_Reversed] - 1) >") +" @StartIndex " + (hasEnd ? "and (RowNumber - 1) <= @EndIndex" : "") + " order by RowNumber asc", parameters);
 
                 case "Time":
 
-                    return String.Format("select t1.{4} as [Index], t2.{0} as [Value], t1.Time as [Timestamp] from gendataindex t1 left join {1} t2 on (t1.Id = t2.gendataindexid) where t1.gendatasetid = (select Id from gendataset where wellboreid = '{2}' and [name] = '{3}' and runno = {5}) and t1.Time >" + (hasEnd ? "" : "=") + " @StartIndex " + (hasEnd ? "and t1.Time <= @EndIndex" : "") + " order by t1.Time desc", parameters);
+                    return String.Format("select t1.{4} as [Index], t2.{0} as [Value], t1.Time as [Timestamp] from gendataindex t1 left join {1} t2 on (t1.Id = t2.gendataindexid) where t1.gendatasetid = (select Id from gendataset where wellboreid = (select wlbr_identifier from wellbore where wlbr_name = '{2}') and [name] = '{3}' and runno = {5}) and t1.Time >" + (hasEnd ? "" : "=") + " @StartIndex " + (hasEnd ? "and t1.Time <= @EndIndex" : "") + " order by t1.Time desc", parameters);
 
                 case "Depth":
 
-                    return String.Format("select [Index], [Value], [Timestamp] from (select max(t1.{4}) over (partition by 0) - t1.{4} as [Index_Inversed], t1.{4} as [Index], t2.{0} as [Value], t1.Time as [Timestamp] from gendataindex t1  left join {1} t2 on (t1.Id = t2.gendataindexid)  where t1.gendatasetid = (select Id from gendataset where wellboreid = '{2}' and [name] = '{3}' and runno = {5})) as Result where " + (hasEnd ? "[Index_Inversed] >=" : "[Index] >") + " @StartIndex " + (hasEnd ? "and [Index_Inversed] <= @EndIndex" : "") + " order by [Index] desc", parameters);
+                    return String.Format("select [Index], [Value], [Timestamp] from (select max(t1.{4}) over (partition by 0) - t1.{4} as [Index_Inversed], t1.{4} as [Index], t2.{0} as [Value], t1.Time as [Timestamp] from gendataindex t1  left join {1} t2 on (t1.Id = t2.gendataindexid)  where t1.gendatasetid = (select Id from gendataset where wellboreid = (select wlbr_identifier from wellbore where wlbr_name = '{2}') and [name] = '{3}' and runno = {5})) as Result where " + (hasEnd ? "[Index_Inversed] >=" : "[Index] >") + " @StartIndex " + (hasEnd ? "and [Index_Inversed] <= @EndIndex" : "") + " order by [Index] desc", parameters);
 
             }
 
@@ -443,17 +296,16 @@ namespace PSMonitor.Stores
         /// </summary>
         public override IEnumerable<Entry> Get(string path, object start, object end, Enum index)
         {
-            
-            Path p = Path.Extract(path);
+
+            ParameterizedPath p = ParameterizedPath.Extract(path);
             SqlConnection connection = CreateConnection();
             SqlCommand command = connection.CreateCommand();
-            
-            int count = (int)Meta(path)["Row Count"];
-
+                        
             VerifyConnection(connection);
 
             command.CommandType = System.Data.CommandType.Text;
-            command.CommandText = GenerateQuery(index, true, p.Key, p.Namespace, Options.Get<string>("Wellbore"), Regex.Replace(p.Namespace, @"^(Gen)", "", RegexOptions.Compiled), index.ToString(), Options.Get<int>("Run"));
+            command.CommandText = GenerateQuery(index, true, p); 
+            
 
             command.Parameters.Add(new SqlParameter("@StartIndex", GetType(start.GetType()))
             {
@@ -478,85 +330,14 @@ namespace PSMonitor.Stores
         {
 
             Dictionary<string, object> dict = new Dictionary<string, object>();
-            Path p = null;
+            Path p = ParameterizedPath.Extract(path);
 
 
             using (SqlConnection connection = CreateConnection())
             {
 
                 VerifyConnection(connection);
-
-                try
-                {
-
-                    p = Path.Extract(path);
-
-                    using (SqlCommand command = connection.CreateCommand())
-                    {
-
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = String.Format("select count(*) as [Row Count], (select MnemonicDesc from RefMnemonic where MnemonicName = @Key) as [Description] from gendataindex t1 where t1.gendatasetid = (select Id from gendataset where wellboreid = '{0}' and [name] = '{1}' and runno = {2});", Options.Get<string>("Wellbore"), Regex.Replace(p.Namespace, @"^(Gen)", "", RegexOptions.Compiled), Options.Get<int>("Run"));
-
-                        command.Parameters.Add(new SqlParameter("@Key", SqlDbType.VarChar)
-                        {
-
-                            Direction = ParameterDirection.Input,
-                            SqlValue = p.Key
-
-                        });
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-
-                            while (reader.Read())
-                            {                                
-                                dict.Add(reader.GetName(0), reader.GetValue(0));
-                                dict.Add(reader.GetName(1), reader.GetValue(1));
-                            }
-
-                        }
-                    }
-
-
-
-                }
-                catch(SqlException error )
-                {
-                    throw error;
-                }
-                catch (Exception error)
-                {
-
-                    
-                    using (SqlCommand command = connection.CreateCommand())
-                    {
-
-                        command.CommandType = CommandType.Text;
-                        command.CommandText = "select MnemonicName, MnemonicDesc from RefMnemonic where MnemonicName in (select name from sys.columns where object_id = (select object_id from sys.tables where name = @Table)) order by MnemonicName asc";
-
-                        command.Parameters.Add(new SqlParameter("@Table", SqlDbType.VarChar)
-                        {
-
-                            Direction = ParameterDirection.Input,
-                            SqlValue = path
-
-                        });
-
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-
-                            while (reader.Read())
-                            {
-                                try {
-                                    dict.Add(reader.GetString(0), reader.GetString(1));
-                                }
-                                catch(ArgumentException e) {
-                                    Logger.Error(e);
-                                }
-                            }
-                        }
-                    }
-                }
+                
             }
 
             return dict;
@@ -600,7 +381,7 @@ namespace PSMonitor.Stores
                 IndexType indexIdentifier = (IndexType)path.Index;
 
                 command.CommandType = CommandType.Text;
-                command.CommandText = GenerateQuery(path.Index, false, path.Key, path.Namespace, Options.Get<string>("Wellbore"), Regex.Replace(path.Namespace, @"^(Gen)", "", RegexOptions.Compiled), path.Index.ToString(), Options.Get<int>("Run"));
+                command.CommandText = GenerateQuery(path.Index, false, new ParameterizedPath(new DB.Path(path)));
 
                 command.Parameters.Add(new SqlParameter("@StartIndex", GetType(indexType))
                 {
@@ -674,6 +455,6 @@ namespace PSMonitor.Stores
             }
 
         }
-
+                
     }
 }

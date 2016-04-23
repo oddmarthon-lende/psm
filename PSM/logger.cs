@@ -33,7 +33,12 @@ namespace PSMonitor
             }
             catch (Exception)
             {
-                EventLog.CreateEventSource(Source, LogName);
+                try
+                {
+                    EventLog.CreateEventSource(Source, LogName);
+                }
+                catch(Exception) { }
+
             }
             
 

@@ -192,6 +192,7 @@ namespace PSMonitor.Stores
         /// </summary>
         protected class Path : PSMonitor.Path
         {
+
             /// <summary>
             /// The index used when polling for new data.
             /// </summary>
@@ -215,6 +216,7 @@ namespace PSMonitor.Stores
             {
                 this.Namespace = path.Namespace;
                 this.Key = path.Key;
+                this._components = path.Components;
             }
 
             /// <summary>
@@ -387,7 +389,7 @@ namespace PSMonitor.Stores
 
         public virtual Dictionary<string, object> Meta(string path)
         {
-            throw new NotImplementedException();
+            return new Dictionary<string, object>();
         }
     }
 

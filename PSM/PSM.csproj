@@ -55,7 +55,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>psm.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.AspNet.SignalR.Client, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -92,6 +93,7 @@
     <Compile Include="path.cs" />
     <Compile Include="Stores\advantage.cs" />
     <Compile Include="Stores\db.cs" />
+    <Compile Include="Stores\dummy.cs" />
     <Compile Include="Stores\istore.cs" />
     <Compile Include="logger.cs" />
     <Compile Include="master.cs" />
@@ -106,7 +108,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <None Include="psm.pfx" />
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="MsgWrapper">

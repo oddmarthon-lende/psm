@@ -144,9 +144,9 @@ namespace PSMonitor.Stores
         /// <param name="context">An object that will be used to identify the request.</param>
         /// <param name="path">The path to the key.</param>
         /// <param name="startingIndex">The starting index</param>
-        /// <param name="index">The index used when fetching data</param>
+        /// <param name="indexIdentifier">The index used when fetching data</param>
         /// <param name="handler">The delegate that will receive the data <see cref="Envelope"/></param>
-        void Register(object context, string path, object startingIndex, Enum index, RealTimeData handler);
+        void Register(object context, string path, object startingIndex, Enum indexIdentifier, RealTimeData handler);
 
         /// <summary>
         /// Unregister the context and stop the data transfer for all keys that was <see cref="Register(object, string, object, RealTimeData)"/>d with this context.

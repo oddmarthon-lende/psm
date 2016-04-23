@@ -123,10 +123,10 @@ namespace PSMonitor
 
         internal static ConcurrentDictionary<object, IStore> Pool = new ConcurrentDictionary<object, IStore>();
                 
-        public static IStore Store(object context = null)
+        public static IStore Store(object context = null, Type store = null)
         {
 
-            Type store = Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
+            store = store ?? Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
 
             lock (Pool)
             {
@@ -155,7 +155,7 @@ namespace PSMonitor
                         }, typeof(IStore));
 
 
-                        while (!Pool.TryAdd(context, instance)) ;
+                        while (!Pool.TryAdd(context, instance));
 
 
                     }

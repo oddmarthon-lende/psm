@@ -5,6 +5,8 @@
 /// 
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PSMonitor
@@ -12,7 +14,7 @@ namespace PSMonitor
     /// <summary>
     /// Path Data Object
     /// </summary>
-    public class Path
+    public class Path : IEnumerable<string>
     {
 
         /// <summary>
@@ -33,9 +35,22 @@ namespace PSMonitor
         {
             get
             {
-                return Namespace.Split('.').Select(c => { return c.Trim(' '); }).Count() + 1;
+                return _components.ToArray().Length;
             }
-        }        
+        }
+
+        protected IEnumerable<string> _components = new List<string>();
+
+        /// <summary>
+        /// The path components enumerator
+        /// </summary>
+        public IEnumerable<string> Components {
+
+            get
+            {
+                return _components;
+            }
+        }
 
         /// <summary>
         /// Creates a <see cref="Path"/> object from the specified string
@@ -44,18 +59,28 @@ namespace PSMonitor
         /// <returns>The path object</returns>
         public static Path Extract(string path)
         {
-            string[] result; string key;
 
-            result = path.Trim(' ', '\t').Split('.');
+            string ns;
+            string key;
+            List<string> components = path.Trim(' ', '\t').Split('.').ToList();
 
-            if (result.Length < 2)
-                throw new Exception("The path given is too short.");
+            components = path.Length == 0 ? new List<string>() : components;
 
-            key = result[result.GetUpperBound(0)];
+            switch(components.Count)
+            {
+                case 0:
 
-            Array.Resize<string>(ref result, result.Length - 1);
+                    return new Path() { _components = components };
 
-            return new Path { Namespace = String.Join(".", result), Key = key };
+                case 1:
+
+                    return new Path { Namespace = components[0], _components = components };
+            }
+
+            key = components.Last();
+            ns = String.Join(".", components.GetRange(0, components.Count - 1));
+
+            return new Path { Namespace = ns, Key = key, _components = components };
 
         }        
 
@@ -107,6 +132,16 @@ namespace PSMonitor
         public override string ToString()
         {
             return String.Join(".", Namespace, Key);
+        }
+
+        public IEnumerator<string> GetEnumerator()
+        {
+            return _components.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _components.GetEnumerator();
         }
     }
 }
