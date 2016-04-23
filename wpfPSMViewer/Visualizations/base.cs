@@ -1,4 +1,6 @@
-﻿/// <copyright file="base.cs" company="Baker Hughes Incorporated">
+﻿using PSMonitor.Stores;
+using PSMViewer.Editors;
+/// <copyright file="base.cs" company="Baker Hughes Incorporated">
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
@@ -11,20 +13,18 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Controls;
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows;
-using Xceed.Wpf.Toolkit.PropertyGrid;
-using System.Windows.Input;
-using System.Collections;
-using System.Windows.Media.Imaging;
 using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using PSMViewer.Editors;
-using PSMonitor.Stores;
+using Xceed.Wpf.Toolkit.PropertyGrid;
+using System.Collections;
 
 namespace PSMViewer.Visualizations
 {
@@ -101,6 +101,35 @@ namespace PSMViewer.Visualizations
     }
 
     /// <summary>
+    /// Used to attach a widget to a category or subcategories in the menu
+    /// </summary>
+    class SubCategoryAttribute : Attribute, IEnumerable<string>
+    {
+
+        private List<string> _categories;
+        
+        public SubCategoryAttribute(params string[] categories)
+        {
+            _categories = new List<string>(categories);
+        }
+
+        public IEnumerator<string> GetEnumerator()
+        {
+            return _categories.GetEnumerator();
+        }
+
+        public override bool IsDefaultAttribute()
+        {
+            return false;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _categories.GetEnumerator();
+        }
+    }
+
+    /// <summary>
     /// A wrapper class around List<string>.
     /// Used to hold the key paths when the VisualizationControl is serialized to XAML
     /// </summary>
@@ -115,9 +144,9 @@ namespace PSMViewer.Visualizations
 
 
         /// <summary>
-        /// <see cref="IReload.Cancel"/>
+        /// <see cref="IReload.CancellationTokenSource"/>
         /// </summary>
-        public CancellationTokenSource Cancel { get; protected set; } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
 
         #region Static Properties and Methods
 
@@ -134,6 +163,7 @@ namespace PSMViewer.Visualizations
                 PropertyChangedEventHandler handler = PropertyChanged;
                 if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
             }
+
             protected bool SetField<TField>(ref TField field, TField value, [CallerMemberName] string propertyName = "")
             {
                 if (EqualityComparer<TField>.Default.Equals(field, value)) return false;
@@ -448,7 +478,7 @@ namespace PSMViewer.Visualizations
         /// </summary>
         protected List<PropertyDefinition> Properties { get; set; } = new List<PropertyDefinition>();
         
-        private KeyItemPathList keys = new KeyItemPathList();
+        private KeyItemPathList _keys = new KeyItemPathList();
         /// <summary>
         /// Holds the key paths.
         /// Used for serialization, need only paths not the whole <typeparamref name="KeyItem"/>
@@ -457,7 +487,7 @@ namespace PSMViewer.Visualizations
         {
             get
             {
-                return keys;
+                return _keys;
             }
 
             set
@@ -574,7 +604,7 @@ namespace PSMViewer.Visualizations
         #endregion
         
         /// <summary>
-        /// A thumbnail of the controls contents
+        /// A thumbnail image of the widget
         /// </summary>
         public BitmapSource Thumbnail
         {
@@ -735,16 +765,14 @@ namespace PSMViewer.Visualizations
                         Width = Math.Sqrt(this.Owner.Width * this.Owner.Height)
 
                     }));
-
-                    grid.PropertyGrid.PropertyValueChanged += (s, a) => Refresh();
+                    
+                    grid.PropertyGrids[0].PropertyValueChanged += (s, a) => Refresh();
 
                     window.Height = window.Width;
                     window.ShowDialog();
                     
                     break;
-            }
-
-            this.OnReload(this);
+            }            
 
         }
         
@@ -1019,11 +1047,48 @@ namespace PSMViewer.Visualizations
         public virtual MultiControl Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
         {
 
+            VariableDefinitionList variables;
+
             if (key == null) return null;
+
+            try
+            {
+
+                if(Owner != null) {
+
+                    variables = ((VisualizationWindow)Owner).VariableDefinitions;
+
+                    if (variables.Count > 0)
+                    {
+
+                        string[] path = key.StaticPath.Split('.');
+                        bool changed = false;
+
+                        foreach (VariableDefinition variable in variables)
+                        {
+
+                            if (variable.Position <= (path.Length - 1))
+                            {
+                                path[variable.Position] = "{" + variable.Name + "}";
+                                changed = true;
+                            }
+                        }
+
+                        if (changed)
+                            key = KeyItem.CreateFromPath(String.Join(".", path));
+
+                    }
+
+                }
+
+                
+
+            }
+            catch(Exception) { }
 
             if (key.Type == null)
             {
-                Keys.Add(key.Path);
+                Keys.Add(key.StaticPath);
 
                 key.Children.CollectionChanged += Key_Children_CollectionChanged;
 
@@ -1040,8 +1105,8 @@ namespace PSMViewer.Visualizations
                 control = new MultiControl(key, this.OnReload, collection);                
                 controls.Add(control);
 
-                if (key.Parent != null && !keys.Contains(key.Parent.Path))
-                    keys.Add(key.Path);
+                if (key.Parent != null && !_keys.Contains(key.Parent.StaticPath))
+                    _keys.Add(key.StaticPath);
 
             }
 
@@ -1061,13 +1126,13 @@ namespace PSMViewer.Visualizations
 
             key.Children.CollectionChanged -= Key_Children_CollectionChanged;
 
-            foreach(MultiControl m in (from s in Controls.ToArray() where s.Key.Path == key.Path || (s.Key.Parent != null && s.Key.Parent.Path == key.Path) select s))
+            foreach(MultiControl m in (from s in Controls.ToArray() where s.Key.StaticPath == key.StaticPath || (s.Key.Parent != null && s.Key.Parent.StaticPath == key.StaticPath) select s))
             {
                 Controls.Remove(m);
                 m.Dispose();
             }
 
-            Keys.Remove(key.Path);
+            Keys.Remove(key.StaticPath);
 
             if (RefreshOperation == null)
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
@@ -1118,6 +1183,13 @@ namespace PSMViewer.Visualizations
             switch(DataIndexFieldAsEnum.GetType().FullName)
             {
 
+                case "PSMonitor.Stores.Dummy+IndexType":
+
+                    Start = StartIndex;
+                    Count = this.Count;
+
+                    break;
+
                 case "PSMonitor.Stores.DB+IndexType":
 
                     switch((DB.IndexType)DataIndexFieldAsEnum)
@@ -1145,10 +1217,24 @@ namespace PSMViewer.Visualizations
 
                 case "PSMonitor.Stores.Advantage+IndexType":
 
-                    //switch ((Advantage.IndexType)DataIndexFieldAsEnum)
-                    //{
+                    switch ((Advantage.IndexType)DataIndexFieldAsEnum)
+                    {
+                        case Advantage.IndexType.Index:
+                        case Advantage.IndexType.Depth:
+                        
+                            Start = StartIndex;
+                            Count = this.Count;
 
-                    //}
+                            break;
+
+                        case Advantage.IndexType.Time:
+
+                            Count = Timespan;
+                            break;
+
+                        default:
+                            break;
+                    }
 
                     break;
 

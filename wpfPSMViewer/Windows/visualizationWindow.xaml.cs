@@ -22,6 +22,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Data;
 using PSMViewer.Utilities;
 using System.Threading;
+using PSMonitor.Stores;
+using PSMViewer.Models;
 
 namespace PSMViewer
 {
@@ -30,6 +32,11 @@ namespace PSMViewer
     /// A collection of <see cref="VisualizationControl"/>
     /// </summary>
     public class VisualizationControlList : ObservableCollection<VisualizationControl> { }
+
+    /// <summary>
+    /// Collection of <see cref="KeyItem.Variable"/>
+    /// </summary>
+    public class VariableDefinitionList : ObservableCollection<VariableDefinition> { }
 
     /// <summary>
     /// A wrapper for <see cref="System.Windows.Controls.RowDefinition"/>.
@@ -111,6 +118,24 @@ namespace PSMViewer
     }
 
     /// <summary>
+    /// 
+    /// </summary>
+    public class VariableDefinition
+    {
+        
+        /// <summary>
+        /// The variable name
+        /// </summary>
+        public string Name { get; set; }
+
+        /// <summary>
+        /// The variable position
+        /// </summary>
+        public uint Position { get; set; }
+
+    }
+
+    /// <summary>
     /// An observable collection of <see cref="RowDefinition"/>'s
     /// </summary>
     public class RowDefinitionList        : ObservableCollection<RowDefinition> { }
@@ -128,13 +153,9 @@ namespace PSMViewer
         
         
         /// <summary>
-        /// <see cref="IReload.Cancel"/>
+        /// <see cref="IReload.CancellationTokenSource"/>
         /// </summary>
-        public CancellationTokenSource Cancel
-        {
-            get;
-            private set;
-        } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
 
         #region Properties              
 
@@ -190,7 +211,12 @@ namespace PSMViewer
                 _children.CollectionChanged += Children_CollectionChanged;
             }
         }
-        
+
+        /// <summary>
+        /// The variable definitions in the window
+        /// </summary>
+        public VariableDefinitionList VariableDefinitions { get; set; }
+
         private RowDefinitionList _rowdefs = null;
 
         /// <summary>
@@ -334,7 +360,9 @@ namespace PSMViewer
                 return this.GetThumbnail();
             }
         }
-        
+
+        private Settings _options;
+                
         #endregion
 
         /// <summary>
@@ -361,44 +389,69 @@ namespace PSMViewer
             new PropertyDefinition() {
 
                 Category = "Layout",
-                TargetProperties = new List<object>(new string[] { "RowDefinitions", "ColumnDefinitions" })
+                TargetProperties = new List<object>(new string[] { "RowDefinitions", "ColumnDefinitions", "VariableDefinitions" })
             }
         };
 
+
+        /// <summary>
+        /// Gets the variables
+        /// </summary>
+        public ObservableCollection<Models.KeyItem.Variable> Variables
+        {
+            get {
+
+                return Models.KeyItem.GetGlobalVariables();
+            }
+        }
+
+        /// <summary>
+        /// Used to show hide the variable dropdown lists
+        /// </summary>
+        public Visibility VariablesVisibility {
+
+            get
+            {
+
+                if(Variables != null)
+                    foreach(Models.KeyItem.Variable v in Variables)
+                    {
+                        return System.Windows.Visibility.Visible;
+                    }
+
+                return System.Windows.Visibility.Collapsed;
+            }
+        }
+
         #endregion
-        
+
         /// <summary>
         /// The default constructor
         /// </summary>
         public VisualizationWindow() : base()
         {
             
+            _options = new Settings(this);
+
             Visibility = Visibility.Visible;
             ShowActivated = true;
 
             ColumnDefinitions = new ColumnDefinitionList();
             RowDefinitions    = new RowDefinitionList();
+            VariableDefinitions = new VariableDefinitionList();
             Children          = new VisualizationControlList();
             Title             = String.Format("<{0}> [{1}]", GetType().Name, Id);
 
             #region Commands
 
-            Commands.Add("Export", new RelayCommand(ExecuteCommand, canExecute, CommandType.EXPORT));
-            Commands.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
-            Commands.Add("PropertiesW", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES_W));
-            Commands.Add("Refresh", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH));
-            Commands.Add("Delete", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
-            Commands.Add("ControlsVisibility", new RelayCommand(ExecuteCommand, canExecute, CommandType.CONTROLS));
-            Commands.Add("AddChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD));
-            Commands.Add("Save", new RelayCommand(ExecuteCommand, canExecute, CommandType.SAVE));
-            Commands.Add("Undo", new RelayCommand(ExecuteCommand, delegate { return UndoExtension.Count > 0; }, CommandType.UNDO));
+            CreateCommands();
 
             #endregion
 
             InitializeComponent();
             
-            this.DataContext = this;
-            this.Closing += VisualizationWindow_Closing;                       
+            DataContext = this;
+            Closing += VisualizationWindow_Closing;                       
 
             #region Bindings
 
@@ -478,6 +531,19 @@ namespace PSMViewer
             #endregion
 
         }
+
+        private void CreateCommands()
+        {
+            Commands.Add("Export", new RelayCommand(ExecuteCommand, canExecute, CommandType.EXPORT));
+            Commands.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
+            Commands.Add("PropertiesW", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES_W));
+            Commands.Add("Refresh", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH));
+            Commands.Add("Delete", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
+            Commands.Add("ControlsVisibility", new RelayCommand(ExecuteCommand, canExecute, CommandType.CONTROLS));
+            Commands.Add("AddChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD));
+            Commands.Add("Save", new RelayCommand(ExecuteCommand, canExecute, CommandType.SAVE));
+            Commands.Add("Undo", new RelayCommand(ExecuteCommand, delegate { return UndoExtension.Count > 0; }, CommandType.UNDO));
+        }
         
         /// <summary>
         /// A constuctor that can be passed <see cref="VisualizationControl"/> objects as parameters and are added to the window.
@@ -485,6 +551,7 @@ namespace PSMViewer
         /// <param name="chart"></param>
         public VisualizationWindow(params VisualizationControl[] charts) : this()
         {
+
             foreach (VisualizationControl chart in charts)
             {
 
@@ -495,8 +562,7 @@ namespace PSMViewer
             }
 
         }
-        
-                
+                        
         #region Event Handlers
 
         /// <summary>
@@ -835,13 +901,17 @@ namespace PSMViewer
                 case CommandType.REFRESH:
 
                     this.OnReload(this);
+
+                    OnPropertyChanged("Variables");
+                    OnPropertyChanged("VariablesVisibility");
+
                     break;
 
                 case CommandType.PROPERTIES:
 
                     PushState();
                     
-                    window = (new PropertiesWindow(this)
+                    window = (new PropertiesWindow(this, _options.Store)
                     {
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
@@ -886,10 +956,7 @@ namespace PSMViewer
         /// <returns><c>true</c> if the property should be serialize, <c>false</c> if not.</returns>
         protected override bool ShouldSerializeProperty(DependencyProperty dp)
         {
-            //ControlsVisibility
-            //    CaptureRightClick
-            //    
-
+            
             DependencyProperty[] properties = new DependencyProperty[]
             {
                 IconProperty,
@@ -1014,5 +1081,16 @@ namespace PSMViewer
             Dispatcher.InvokeShutdown();
                         
         }
+
+        /// <summary>
+        /// Reloads the window contents when the combo selection is changed
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void variable_combos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Reload();
+        }
+
     }
 }

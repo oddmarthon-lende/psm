@@ -94,7 +94,7 @@ namespace PSMViewer
         /// </summary>
         /// <param name="obj">The object that implements the <see cref="IReload"/> interface</param>
         /// 
-        public static void OnReload(this Control control, IReload obj)
+        public static void OnReload(this object control, IReload obj)
         {
             OnReload(control, obj, (error) =>
             {
@@ -126,15 +126,18 @@ namespace PSMViewer
         /// </summary>
         /// <param name="obj">The object that implements the <see cref="IReload"/> interface </param>
         /// <param name="ErrorHandler">The delegate that will handle any exceptions that occur.</param>
-        public static void OnReload(this Control control, IReload obj, Action<Exception> ErrorHandler)
+        public static void OnReload(this object control, IReload obj, Action<Exception> ErrorHandler)
         {
+
+            obj.CancellationTokenSource.Cancel();
+            obj.CancellationTokenSource = new System.Threading.CancellationTokenSource();
 
             obj.Dispatcher.Invoke(delegate
             {
                 obj.Status = ReloadStatus.Loading;
             });
 
-            obj.Dispatcher.InvokeAsync(obj.Reload, DispatcherPriority.Background, obj.Cancel.Token).Task.ContinueWith(task =>
+            obj.Dispatcher.InvokeAsync(obj.Reload, DispatcherPriority.Background, obj.CancellationTokenSource.Token).Task.ContinueWith(task =>
             {
 
                 switch (task.Status)
@@ -285,16 +288,16 @@ namespace PSMViewer
         /// <typeparam name="T">The type of object to find</typeparam>
         /// <param name="obj">Object from where to start the search</param>
         /// <returns>Array with the results</returns>
-        public static T[] Find<T>(this DependencyObject p, DependencyObject obj)
+        public static T[] Find<T>(this DependencyObject p, DependencyObject obj = null)
         {
 
             List<T> result = new List<T>();
-            int count = VisualTreeHelper.GetChildrenCount(obj);
+            int count = VisualTreeHelper.GetChildrenCount(obj ?? p);
 
             for (int i = 0; i < count; i++)
             {
 
-                DependencyObject d = VisualTreeHelper.GetChild(obj, i);
+                DependencyObject d = VisualTreeHelper.GetChild(obj ?? p, i);
 
                 if (d is T)
                 {

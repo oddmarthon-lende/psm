@@ -2,7 +2,7 @@
 
 namespace PSMViewer.Visualizations
 {
-
+    [SubCategory("OxyPlot")]
     public sealed partial class Area : OxyBase<TwoColorAreaSeries>
     {
         public static string DisplayName { get { return typeof(Area).Name; } }

@@ -36,64 +36,95 @@
             <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
 
-        <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding ControlsVisibility}" >
+        <DockPanel Visibility="{Binding ControlsVisibility}">
 
-            <Menu.Resources>
-                <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="AddChartStyle" TargetType="{x:Type MenuItem}">
-                    <Setter Property="Command" Value="{Binding Commands[AddChart], ElementName=window}"/>
-                </Style>
+            <ToolBarTray DockPanel.Dock="Top">
+
+                <ToolBar>
+        
+                    <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" >
+
+                        <Menu.Resources>
+                            <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="AddChartStyle" TargetType="{x:Type MenuItem}">
+                                <Setter Property="Command" Value="{Binding Commands[AddChart], ElementName=window}"/>
+                            </Style>
                 
-            </Menu.Resources>
+                        </Menu.Resources>
 
-            <MenuItem Header="File">
-                <MenuItem Header="Add" ItemsSource="{x:Static v:VisualizationControl.List}" ItemContainerStyle="{DynamicResource AddChartStyle}"/>
-                <Separator />
-                <MenuItem Header="Save" InputGestureText="Ctrl+S" Command="{Binding Commands[Save]}" />
-                <MenuItem Header="Export" InputGestureText="Ctrl+E" Command="{Binding Commands[Export]}" />
-                <Separator />
-                <MenuItem Header="Delete" InputGestureText="Ctrl+Delete" Command="{Binding Commands[Delete]}" />
-            </MenuItem>
+                        <MenuItem Header="File">
+                            <MenuItem Header="Add" ItemsSource="{x:Static v:VisualizationControl.List}" ItemContainerStyle="{DynamicResource AddChartStyle}"/>
+                            <Separator />
+                            <MenuItem Header="Save" InputGestureText="Ctrl+S" Command="{Binding Commands[Save]}" />
+                            <MenuItem Header="Export" InputGestureText="Ctrl+E" Command="{Binding Commands[Export]}" />
+                            <Separator />
+                            <MenuItem Header="Delete" InputGestureText="Ctrl+Delete" Command="{Binding Commands[Delete]}" />
+                        </MenuItem>
 
-            <MenuItem Header="Edit" >
+                        <MenuItem Header="Edit" >
 
-                <MenuItem.Resources>
+                            <MenuItem.Resources>
 
-                    <CollectionViewSource Source="{Binding Children, ElementName=window}" x:Key="ChildrenViewSource" />
+                                <CollectionViewSource Source="{Binding Children, ElementName=window}" x:Key="ChildrenViewSource" />
 
-                    <Style TargetType="{x:Type MenuItem}">
-                        <Setter Property="Header" Value="{Binding Title}" />
-                        <Setter Property="ItemsSource" Value="{Binding MenuItems}" />
+                                <Style TargetType="{x:Type MenuItem}">
+                                    <Setter Property="Header" Value="{Binding Title}" />
+                                    <Setter Property="ItemsSource" Value="{Binding MenuItems}" />
 
-                    </Style>
+                                </Style>
 
-                </MenuItem.Resources>
+                            </MenuItem.Resources>
                 
-                <MenuItem.ItemsSource>
-                    <CompositeCollection>
-                        <MenuItem Header="Undo" InputGestureText="Ctrl+Z" Command="{Binding Commands[Undo]}" />
-                        <Separator />
-                        <CollectionContainer Collection="{Binding Source={StaticResource ChildrenViewSource}}" />
-                    </CompositeCollection>
-                </MenuItem.ItemsSource>
+                            <MenuItem.ItemsSource>
+                                <CompositeCollection>
+                                    <MenuItem Header="Undo" InputGestureText="Ctrl+Z" Command="{Binding Commands[Undo]}" />
+                                    <Separator />
+                                    <CollectionContainer Collection="{Binding Source={StaticResource ChildrenViewSource}}" />
+                                </CompositeCollection>
+                            </MenuItem.ItemsSource>
                 
-            </MenuItem>
+                        </MenuItem>
 
-            <MenuItem Header="Tools" >                
+                        <MenuItem Header="Tools" >                
 
-                <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}"  />
-                <Separator />
-                <MenuItem Header="Show / Hide Controls" InputGestureText="Space" Command="{Binding Commands[ControlsVisibility]}"  />
-                <MenuItem Header="Capture Mouse" IsCheckable="True" IsChecked="{Binding CaptureRightClick}"  />
-                <Separator />
-                <MenuItem Header="Properties" InputGestureText="Ctrl + W, P" Command="{Binding Commands[Properties]}"  />
+                            <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}"  />
+                            <Separator />
+                            <MenuItem Header="Show / Hide Controls" InputGestureText="Space" Command="{Binding Commands[ControlsVisibility]}"  />
+                            <MenuItem Header="Capture Mouse" IsCheckable="True" IsChecked="{Binding CaptureRightClick}"  />
+                            <Separator />
+                            <MenuItem Header="Properties" InputGestureText="Ctrl + W, P" Command="{Binding Commands[Properties]}"  />
 
-            </MenuItem>
+                        </MenuItem>
             
-        </Menu>
+                    </Menu>
+
+                </ToolBar>
+
+                <ToolBar Visibility="{Binding VariablesVisibility}" Width="Auto" x:Name="variableToolbar">
+
+                    <ItemsControl ItemsSource="{Binding Variables}" >
+
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Target="{Binding ElementName=list}" HorizontalAlignment="Left" Content="{Binding Name}" />
+                                    <ComboBox ItemsSource="{Binding Keys}" x:Name="list" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}" SelectionChanged="variable_combos_SelectionChanged" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </ToolBar>
+
+            </ToolBarTray>
+
+        </DockPanel>
 
         <Grid x:Name="grid" Grid.Row="1" Grid.Column="0" />
-
     </Grid>
-
-
 </Window>

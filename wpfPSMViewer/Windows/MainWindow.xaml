@@ -76,18 +76,22 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
-        <DockPanel  Grid.Row="0" Grid.RowSpan="1">
+        <DockPanel Grid.Row="0" Grid.RowSpan="1">
 
-            <ToolBarTray DockPanel.Dock="Top" IsHitTestVisible="True">
+            <ToolBarTray DockPanel.Dock="Top" IsHitTestVisible="True" Background="{x:Null}">
 
-                <ToolBar>
+                <ToolBar Background="{x:Null}">
 
                     <Menu>
 
                         <MenuItem Header="File" >
+                            <!--
                             <MenuItem Header="New" InputGestureText="Ctrl+N" Command="{Binding Commands[NewWindow], ElementName=window}" />
+                            -->
                             <MenuItem Header="Save" InputGestureText="Ctrl+S" Command="{Binding Commands[Save], ElementName=window}" />
+                            <!--
                             <MenuItem Header="Import" InputGestureText="Ctrl+I" Command="{Binding Commands[Import], ElementName=window}" />
+                            -->
                             <MenuItem Header="Exit" InputGestureText="Alt+F4" Command="{Binding Commands[Exit], ElementName=window}" />
 
                         </MenuItem>
@@ -100,8 +104,11 @@
                             <Separator />
                             <MenuItem Header="Next" InputGestureText="Alt+Right" Command="{Binding Commands[Next], ElementName=window}"  />
                             <MenuItem Header="Previous" InputGestureText="Alt+Left" Command="{Binding Commands[Previous], ElementName=window}"  />
+                            <Separator />
+                            <MenuItem Header="Visualization Properties" Command="{Binding Commands[OpenChartProperties], ElementName=window}" />
                         </MenuItem>
-
+                        
+                        <!--
                         <MenuItem Header="Windows" ItemsSource="{Binding Windows, ElementName=window}">
 
                             <MenuItem.ItemContainerStyle>
@@ -118,29 +125,40 @@
                             </MenuItem.ItemContainerStyle>
 
                         </MenuItem>
+                        -->
                         <MenuItem Header="Help">
                             <MenuItem Header="About" Command="{Binding Commands[About], ElementName=window}" />
                         </MenuItem>
                     </Menu>
                 </ToolBar>
 
-                <ToolBar>
-
+                <ToolBar Background="{x:Null}">
+                    
+                    <!--
                     <Button ToolTip="New Window" Command="{Binding Commands[NewWindow], ElementName=window}">
                         <Image Source="..\icons\application_add.png" />
                     </Button>
-
+                    
+                    -->
+                    
                     <Button ToolTip="Save" Command="{Binding Commands[Save], ElementName=window}">
                         <Image Source="..\icons\database_save.png" />
                     </Button>
-
+                    
+                    <!--
+                    
                     <Button ToolTip="Import" Command="{Binding Commands[Import], ElementName=window}">
                         <Image Source="..\icons\application_get.png" />
                     </Button>
 
+                    -->
+                    <Button ToolTip="Visualization Properties" Command="{Binding Commands[OpenChartProperties], ElementName=window}">
+                        <Image Source="..\icons\application_view_gallery.png" x:Name="chartPropertiesButtonImage" />
+                    </Button>
+
                 </ToolBar>
 
-                <ToolBar>
+                <ToolBar Background="{x:Null}">
 
                     <Button ToolTip="Event Log" Command="{Binding Commands[EventLog], ElementName=window}">
                         <Image Source="..\icons\application_view_list.png" />
@@ -201,23 +219,20 @@
 
                             <xcad:LayoutAnchorable ContentId="datagrid" Title="Log"  CanHide="False" CanClose="False" >
 
-                                <dg:DataGridControl x:Name="dataGrid" ItemsSource="{Binding Source={StaticResource viewSource}}" Grid.RowSpan="1" Grid.Row="1" Background="{x:Null}" BorderThickness="0" AllowDrag="True" AutoCreateColumns="False">
+                                <dg:DataGridControl x:Name="dataGrid" ItemsSource="{Binding Source={StaticResource viewSource}}" Grid.RowSpan="1" Grid.Row="1" BorderBrush="{x:Null}" Background="{x:Null}" BorderThickness="0" AllowDrag="True" AutoCreateColumns="False">
 
                                     <dg:DataGridControl.View>
                                         <dg:TableflowView UseDefaultHeadersFooters="False">
                                             <dg:TableflowView.FixedHeaders>
                                                 <DataTemplate>
-                                                    <dg:GroupByControl AllowSort="True" AllowGroupingModification="True" Background="Black" Foreground="White"/>
-                                                </DataTemplate>
-                                                <DataTemplate>
-                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True"/>
+                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" Background="{x:Null}" BorderThickness="0" BorderBrush="{x:Null}" />
                                                 </DataTemplate>
                                             </dg:TableflowView.FixedHeaders>
                                         </dg:TableflowView>
                                     </dg:DataGridControl.View>
 
                                     <dg:DataGridControl.Columns>
-                                        <dg:Column FieldName="Index" Title="Index" Width="10*" IsMainColumn="True" />
+                                        <dg:Column FieldName="Index" Title="Index" Width="10*" IsMainColumn="True"  />
                                         <dg:Column FieldName="Value" Title="Value" Width="70*" />
                                         <dg:Column FieldName="Timestamp" Width="20*" Title="Timestamp"  />
                                     </dg:DataGridControl.Columns>
@@ -226,15 +241,15 @@
 
                             </xcad:LayoutAnchorable>
 
-                            <xcad:LayoutAnchorable ContentId="metaDataGrid" Title="Meta" CanHide="False" CanClose="False" >
-                                
-                                <dg:DataGridControl x:Name="metaDataGrid" Background="{x:Null}" BorderThickness="0" AllowDrag="False" AutoCreateColumns="False">
+                            <xcad:LayoutAnchorable ContentId="metaDataGrid" Title="Meta" CanHide="False" CanClose="False"  >
+
+                                <dg:DataGridControl x:Name="metaDataGrid" Background="{x:Null}" BorderThickness="0" BorderBrush="{x:Null}" AllowDrag="False" AutoCreateColumns="False">
 
                                     <dg:DataGridControl.View>
                                         <dg:TableView FixedColumnCount="2" UseDefaultHeadersFooters="False">
                                             <dg:TableView.FixedHeaders>                                               
                                                 <DataTemplate>
-                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True"/>
+                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" Background="{x:Null}" BorderThickness="0" BorderBrush="{x:Null}" />
                                                 </DataTemplate>
                                             </dg:TableView.FixedHeaders>
                                         </dg:TableView>

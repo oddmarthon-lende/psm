@@ -102,8 +102,8 @@ namespace PSMViewer.Editors
         /// <returns>A <see cref="Dictionary{object, object}"/> that contains the valid keys/values for the property</returns>
         protected override IEnumerable CreateItemsSource(PropertyItem propertyItem)
         {
-            
-            Dictionary<object, object> dict;
+
+            List<KeyValuePair<object, object>> dict;
 
             if (Properties.TryGetValue(propertyItem.PropertyDescriptor, out dict))
                 return dict;

@@ -6,6 +6,7 @@ namespace PSMViewer.Visualizations
     [Visible(true)]
     [DisplayName("Bars (OxyPlot)")]
     [Icon("../icons/chart_bar.png")]
+    [SubCategory("OxyPlot")]
     public sealed partial class Bar : BarBase<BarSeries, BarItem>
     {
 

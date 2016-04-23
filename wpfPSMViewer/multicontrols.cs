@@ -45,7 +45,7 @@ namespace PSMViewer.ViewModels
 
         public Dispatcher Dispatcher { get; protected set; } = Dispatcher.CurrentDispatcher;
 
-        public CancellationTokenSource Cancel { get; protected set; } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
 
         private ReloadStatus _status = ReloadStatus.Idle;
         public ReloadStatus Status {
@@ -98,8 +98,10 @@ namespace PSMViewer.ViewModels
             Controls.Add(PSMonitor.Stores.DB.IndexType.Id, new Controls<long, long>(this.Entries, 0, 1));
             Controls.Add(PSMonitor.Stores.DB.IndexType.Value, new Controls<long, long>(this.Entries, 0, 1));
             Controls.Add(PSMonitor.Stores.DB.IndexType.Timestamp, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan(1, 0, 0)));
-            //Controls.Add(PSMonitor.Stores.Advantage.IndexType.Time, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan()));
-            //Controls.Add(PSMonitor.Stores.Advantage.IndexType.Depth, new Controls<long, long>(this.Entries, 0, 100));
+            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Time, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan()));
+            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Depth, new Controls<long, long>(this.Entries, 0, 100));
+            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Index, new Controls<long, long>(this.Entries, 0, 1));
+            Controls.Add(PSMonitor.Stores.Dummy.IndexType.Dummy, new Controls<long, long>(this.Entries, 0, 1));
 
             Stack = new Stack<Dictionary<Enum, ViewModels.Controls>>();
 

@@ -135,8 +135,25 @@ namespace PSMViewer.Visualizations
 
         public DateTime LastResetTime { get; set; } = new DateTime(1970, 1, 1);
         
-        public Highlight Highlighting { get; set; } = new Highlight() { New = new SolidColorBrush(Color.FromArgb(255, 255, 255, 0)), Threshold = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0)), HighlightNew = false, HighlightThresholdExceeded = false };
-        public Threshold Threshold { get; set; } = new Threshold() { Low = 0, High = 1 };
+        public Highlight Highlighting
+        {
+            get { return (Highlight)GetValue(HighlightingProperty); }
+            set { SetValue(HighlightingProperty, value); }
+        }
+        public static readonly DependencyProperty HighlightingProperty =
+            DependencyProperty.Register("Highlighting", typeof(Highlight), typeof(Text), new PropertyMetadata(new Highlight() { New = new SolidColorBrush(Color.FromArgb(255, 255, 255, 0)), Threshold = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0)), HighlightNew = false, HighlightThresholdExceeded = false }));
+
+        
+        public Threshold Threshold
+        {
+            get { return (Threshold)GetValue(ThresholdProperty); }
+            set { SetValue(ThresholdProperty, value); }
+        }
+
+        public static readonly DependencyProperty ThresholdProperty =
+            DependencyProperty.Register("Threshold", typeof(Threshold), typeof(Text), new PropertyMetadata(new Threshold() { Low = 0, High = 1 }));
+
+
 
         public double MaxColumnWidth
         {
@@ -359,17 +376,19 @@ namespace PSMViewer.Visualizations
 
             LineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
 
+            SizeChanged += delegate
+            {
+
+                OnPropertyChanged("MaxColumnWidth");
+                OnPropertyChanged("MaxColumnHeight");
+
+            };
+
         }
 
 
         public override void Refresh()
         {
-            OnPropertyChanged("Highlighting");
-            OnPropertyChanged("Threshold");
-            OnPropertyChanged("ItemTemplate");
-            OnPropertyChanged("MaxColumnWidth");
-            OnPropertyChanged("MaxColumnHeight");
-            
             base.Refresh();
         }
 

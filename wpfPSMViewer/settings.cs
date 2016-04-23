@@ -3,7 +3,9 @@ using PSMViewer.Editors;
 using PSMViewer.ViewModels;
 using PSMViewer.Visualizations;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
@@ -14,9 +16,23 @@ namespace PSMViewer
     /// Mainwindow options
     /// </summary>
     [Serializable]
-    public class Settings : DependencyObject
+    public class Settings : DependencyObject, INotifyPropertyChanged
     {
+        /// <summary>
+        /// <see cref="INotifyPropertyChanged.PropertyChanged"/>
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName"></param>
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+        
         /// <summary>
         /// A list of chart types for the <see cref="ChartType"/> property.
         /// </summary>
@@ -40,7 +56,7 @@ namespace PSMViewer
         /// <summary>
         /// References the main window.
         /// </summary>
-        MainWindow _window = (MainWindow)App.Current.MainWindow;
+        Window _window;
 
         /// <summary>
         /// The type of chart to display in the main window.
@@ -57,8 +73,7 @@ namespace PSMViewer
         /// Identifies the <see cref="ChartType"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty ChartTypeProperty =
-            DependencyProperty.Register("ChartType", typeof(Type), typeof(Settings), new PropertyMetadata(null));
-        
+            DependencyProperty.Register("ChartType", typeof(Type), typeof(Settings), new PropertyMetadata(null));        
 
 
         [Category("Controls")]
@@ -67,17 +82,48 @@ namespace PSMViewer
         [Description("Gets/Sets the data index field")]
         public string IndexField
         {
-            get { return (string)GetValue(IndexFieldProperty); }
-            set { SetValue(IndexFieldProperty, value); }
+
+            get {
+
+                string value = (string)GetValue(IndexFieldProperty);
+
+                try {                
+                    
+                    Enum.Parse(_index, value);
+                }
+                catch(Exception)
+                {
+                    value = PSMonitor.PSM.Store(Dispatcher).Default.ToString();
+                }
+                                
+                return value;
+
+            }
+
+            set {
+
+                try {
+
+                    Enum.Parse(_index, value);                                        
+                }
+                catch(Exception) {
+                    value = PSMonitor.PSM.Store(Dispatcher).Default.ToString();
+                }
+                finally
+                {
+                    SetValue(IndexFieldProperty, value);
+                }
+
+                OnPropertyChanged();
+
+            }
         }
 
         /// <summary>
         /// Identifies the <see cref="IndexField"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty IndexFieldProperty =
-            DependencyProperty.Register("IndexField", typeof(string), typeof(Settings), new PropertyMetadata(null));
-
-
+            DependencyProperty.Register("IndexField", typeof(string), typeof(Settings), new PropertyMetadata(null));        
 
         [Category("Controls")]
         [PropertyOrder(0)]
@@ -92,6 +138,7 @@ namespace PSMViewer
             set
             {
                 ((MultiControl)_window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).Start = value;
+                OnPropertyChanged();
             }
         }
 
@@ -109,6 +156,7 @@ namespace PSMViewer
             set
             {
                 ((MultiControl)_window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).End = value;
+                OnPropertyChanged();
             }
         }
 
@@ -138,16 +186,9 @@ namespace PSMViewer
         /// Constructor
         /// </summary>
         /// <param name="window">The <see cref="MainWindow"/></param>
-        public Settings(MainWindow window) : this()
+        public Settings(Window window)
         {            
             _window = window;
-        }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public Settings()
-        {
             IndexField = PSMonitor.PSM.Store(_window.Dispatcher).Default.ToString();
         }
 

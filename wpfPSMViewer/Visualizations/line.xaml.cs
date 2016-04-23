@@ -11,6 +11,7 @@ namespace PSMViewer.Visualizations
     [Visible(true)]
     [DisplayName("Line (OxyPlot)")]
     [Icon("../icons/chart_line.png")]
+    [SubCategory("OxyPlot")]
     public sealed partial class Line : OxyBase<TwoColorLineSeries>
     {
 

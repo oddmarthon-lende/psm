@@ -210,6 +210,10 @@ namespace PSMViewer.Visualizations
         }
     }
 
+    /// <summary>
+    /// Base class used when creating widgets using <see cref="OxyPlot"/>
+    /// </summary>
+    /// <typeparam name="T">The oxyplot chart type</typeparam>
     public class OxyBase<T> : VisualizationControl, IDisposable
     {
         
@@ -267,7 +271,7 @@ namespace PSMViewer.Visualizations
 
                 Parent.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
 
-            }
+            }            
 
             Model.InvalidatePlot(true);
 
@@ -277,6 +281,15 @@ namespace PSMViewer.Visualizations
         protected void DataChanged(object sender)
         {
             Refresh();
+            
+            foreach(MultiControl c in Controls)
+            {
+
+                if (c.Entries.Count > 0)
+                    SetAxis(AxisPosition.Bottom, c.Entries[0].Index.GetType());
+
+                break;
+            }            
         }
 
         #region Dependency Properties
@@ -520,6 +533,60 @@ namespace PSMViewer.Visualizations
 
         #endregion
 
+
+        protected void RemoveAxis(AxisPosition pos)
+        {
+            foreach(Axis axis in Model.Axes.ToArray())
+            {
+                if (axis.Position == pos)
+                {
+                    Model.Axes.Remove(axis);
+                }                    
+            }
+        }
+
+        protected Axis GetAxis(AxisPosition pos)
+        {
+            foreach (Axis axis in Model.Axes)
+            {
+                if (axis.Position == pos)
+                    return axis;
+            }
+
+            return null;
+        }
+
+        protected virtual void SetAxis(AxisPosition pos, Type type = null)
+        {
+
+            Axis axis = GetAxis(pos);
+
+            switch(type == null ? "" : type.Name)
+            {
+
+                case "DateTime":
+
+                    if(axis == null || !axis.GetType().Equals(typeof(DateTimeAxis)))
+                    {
+                        RemoveAxis(pos);
+                        Model.Axes.Add(new DateTimeAxis { Position = pos, Angle = 45 });
+                    }
+                    break;
+
+                default:
+
+                    if(axis == null || !axis.GetType().Equals(typeof(LinearAxis)))
+                    {
+                        RemoveAxis(pos);
+                        Model.Axes.Add(new LinearAxis { Position = pos, Angle = -45 });
+                    }
+                    break;
+            }
+
+            Model.InvalidatePlot(false);
+
+        }
+
         public OxyBase() : base()
         {
 
@@ -530,9 +597,9 @@ namespace PSMViewer.Visualizations
 
             Colors = new OxySolidColorBrushList(Model.DefaultColors);
 
-            Model.Axes.Add(new DateTimeAxis { Position = AxisPosition.Bottom, Angle = 45 });
-            Model.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Angle = -45 });
-
+            SetAxis(AxisPosition.Bottom, typeof(double));
+            SetAxis(AxisPosition.Left, typeof(double));
+            
             Model.InvalidatePlot(false);
 
             Model.Background = OxyColor.FromArgb(0, 0, 0, 0);
@@ -980,6 +1047,7 @@ namespace PSMViewer.Visualizations
 
         protected virtual void Controls_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+
             IList items = e.OldItems;
 
             if (items != null)
@@ -1021,8 +1089,7 @@ namespace PSMViewer.Visualizations
                             ((DataPointSeries)series).Mapping = (obj) => {
 
                                 EntryItem entry = (EntryItem)obj;
-
-                                return new DataPoint(DateTimeAxis.ToDouble(entry.Timestamp), m.Key.Units.Convert<double>((Entry)entry));
+                                return new DataPoint(DateTimeAxis.ToDouble(entry.Index), m.Key.Units.Convert<double>((Entry)entry));
                             };
 
                         this.Series.Add(new KeyValuePair<KeyItem, T>(m.Key, (T)(object)series));
@@ -1037,11 +1104,21 @@ namespace PSMViewer.Visualizations
             }
         }
 
+        public override void Reload()
+        {
+            foreach(KeyValuePair<KeyItem, T> s in Series)
+            {
+                ((Series)(object)s.Value).Title = s.Key.Name;
+            }
+
+            base.Reload();
+        }
+
         protected virtual Series CreateInstance(MultiControl control)
         {
 
             XYAxisSeries s = (XYAxisSeries)Activator.CreateInstance(typeof(T));
-
+            
             s.Title = control.Key.Name;
             s.ItemsSource = control.Entries;
             s.Background = OxyColor.FromArgb(0, 0, 0, 0);

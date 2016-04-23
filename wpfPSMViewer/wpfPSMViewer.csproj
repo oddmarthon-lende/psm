@@ -97,7 +97,7 @@
     <Compile Include="propertywrapper.cs" />
     <Compile Include="settings.cs" />
     <Compile Include="Utilities\bindingwrapper.cs" />
-    <Compile Include="Visualizations\gauge.cs" />
+    <None Include="Visualizations\gauge.cs" />
     <Compile Include="Visualizations\replicator.cs" />
     <Compile Include="Utilities\tracker.cs" />
     <Compile Include="tree.xaml.cs">
@@ -106,7 +106,7 @@
     <Compile Include="ireload.cs" />
     <EmbeddedResource Include="Shaders\gauge.fs" />
     <EmbeddedResource Include="Shaders\gauge.vs" />
-    <None Include="Visualizations\barBase.cs" />
+    <Compile Include="Visualizations\barBase.cs" />
     <None Include="Visualizations\bar.xaml.cs">
       <DependentUpon>bar.xaml</DependentUpon>
     </None>
@@ -127,18 +127,15 @@
     <None Include="Visualizations\pie.xaml.cs">
       <DependentUpon>pie.xaml</DependentUpon>
     </None>
-    <None Include="Visualizations\datagrid.xaml.cs">
-      <DependentUpon>datagrid.xaml</DependentUpon>
-    </None>
     <None Include="Visualizations\column.xaml.cs">
       <DependentUpon>column.xaml</DependentUpon>
     </None>
     <None Include="Visualizations\area.xaml.cs">
       <DependentUpon>area.xaml</DependentUpon>
     </None>
-    <None Include="Visualizations\stairstep.xaml.cs">
+    <Compile Include="Visualizations\stairstep.xaml.cs">
       <DependentUpon>stairstep.xaml</DependentUpon>
-    </None>
+    </Compile>
     <Compile Include="Visualizations\line.xaml.cs">
       <DependentUpon>line.xaml</DependentUpon>
     </Compile>
@@ -173,7 +170,6 @@
     </Page>
     <None Include="Visualizations\bar.xaml">
       <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
     </None>
     <None Include="Visualizations\vtkBar.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -194,9 +190,6 @@
     <None Include="Visualizations\pie.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
-    <None Include="Visualizations\datagrid.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
     <None Include="Visualizations\column.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -205,10 +198,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <None Include="Visualizations\stairstep.xaml">
+    <Page Include="Visualizations\stairstep.xaml">
       <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </None>
+    </Page>
     <Page Include="Visualizations\line.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -1183,7 +1175,7 @@
     <Resource Include="Icons\table_go.png" />
     <Resource Include="Icons\table_key.png" />
     <Resource Include="Icons\table_lightning.png" />
-    <Resource Include="Icons\table_link.png" />
+    <EmbeddedResource Include="Icons\table_link.png" />
     <Resource Include="Icons\table_multiple.png" />
     <Resource Include="Icons\table_refresh.png" />
     <Resource Include="Icons\table_relationship.png" />
@@ -1323,7 +1315,7 @@
     <Resource Include="Icons\zoom_out.png" />
   </ItemGroup>
   <ItemGroup>
-    <SplashScreen Include="splash.png" />
+    <None Include="splash.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\left.png" />

@@ -29,7 +29,7 @@ namespace PSMViewer
     {
 
         Dispatcher Dispatcher { get; }
-        CancellationTokenSource Cancel { get; }
+        CancellationTokenSource CancellationTokenSource { get; set; }
 
         ReloadStatus Status { get; set; }
 

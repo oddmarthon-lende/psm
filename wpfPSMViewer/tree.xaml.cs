@@ -23,6 +23,9 @@ namespace PSMViewer
     /// </summary>
     public partial class Tree : TreeView, IReload, INotifyPropertyChanged
     {
+        public delegate void KeyEvent(Tree sender, KeyItem key, MouseEventArgs args);
+        public event KeyEvent KeyRightClick;
+
         /// <summary>
         /// The currently selected key
         /// </summary>
@@ -105,14 +108,14 @@ namespace PSMViewer
         /// <summary>
         /// IReload.Cancel
         /// </summary>
-        public CancellationTokenSource Cancel { get; private set; } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
 
         /// <summary>
         /// The default contructor
         /// </summary>
         public Tree()
         {
-
+            
             InitializeComponent();
 
             AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(Reload));
@@ -135,6 +138,30 @@ namespace PSMViewer
                 }
                 
 
+            }));
+
+            AddHandler(TreeViewItem.MouseRightButtonUpEvent, new RoutedEventHandler((sender, e) =>
+            {
+
+                MouseEventArgs m = (MouseEventArgs)e;
+
+                KeyItem key = null;
+
+                try
+                {
+                    key = (KeyItem)((TextBlock)m.OriginalSource).DataContext;
+                }
+                catch(Exception)
+                {
+
+                }
+
+                if(key != null)
+                {
+                    if (KeyRightClick != null)
+                        KeyRightClick(this, key, m);
+                }
+                
             }));
 
             SelectedItemChanged += Tree_SelectedItemChanged;

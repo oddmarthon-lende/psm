@@ -65,9 +65,9 @@ namespace PSMViewer.ViewModels
         }
 
         /// <summary>
-        /// <see cref="IReload.Cancel"/>
+        /// <see cref="IReload.CancellationTokenSource"/>
         /// </summary>
-        public CancellationTokenSource Cancel { get; protected set; } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
 
         /// <summary>
         /// Hold references to all controls that has been instantiated.
@@ -380,7 +380,7 @@ namespace PSMViewer.ViewModels
 
         private Task<IEnumerable<EntryItem>> ReloadTask = null;
 
-        private ConcurrentDictionary<string, ConcurrentQueue<Entry>> Data = new ConcurrentDictionary<string, ConcurrentQueue<Entry>>();
+        private ConcurrentDictionary<string, ConcurrentQueue<Entry>> _data = new ConcurrentDictionary<string, ConcurrentQueue<Entry>>();
 
         private DispatcherOperation ProcessQueueOperation = null;
 
@@ -402,6 +402,11 @@ namespace PSMViewer.ViewModels
         }
 
         private object _start = null;
+
+        private object _count = default(TCount);
+
+        private object _startIndex = null;
+
         /// <summary>
         /// <see cref="Controls.Start"/>
         /// </summary>
@@ -543,9 +548,7 @@ namespace PSMViewer.ViewModels
 
                 }                
             }
-        }
-
-        private object _count = default(TCount);
+        }        
 
         /// <summary>
         /// <see cref="Controls.Count"/>
@@ -653,8 +656,8 @@ namespace PSMViewer.ViewModels
             if (ReloadTask != null)
             {
 
-                Cancel.Cancel();
-                Cancel = new CancellationTokenSource();
+                CancellationTokenSource.Cancel();
+                CancellationTokenSource = new CancellationTokenSource();
                 
             }
 
@@ -702,7 +705,7 @@ namespace PSMViewer.ViewModels
                         
                     }
 
-                }, Cancel.Token);
+                }, CancellationTokenSource.Token);
 
                 await Dispatcher.InvokeAsync(delegate
                 {
@@ -730,14 +733,14 @@ namespace PSMViewer.ViewModels
             foreach (EntryItem entry in data)
             {
                 Entries.Add(entry);
-            }                                
+            }
 
             SetField(ref _status, ReloadStatus.Idle, "Status");
 
             if ( Entries.Count > 0 && (_startIndex == null || _start == null) )
-                _startIndex = Entries.Max(entry => { return ((Entry)entry).Index; });
+                _startIndex = _start is DateTime ? DateTime.Now : Entries.Max(entry => { return ((Entry)entry).Index; });
 
-            if (_startIndex != null)
+            if (_start != null && !Convert.ToBoolean(_start) && _startIndex != null)
             {
                 
                 Dispatcher.InvokeAsync(delegate
@@ -747,17 +750,13 @@ namespace PSMViewer.ViewModels
                         return;
 
                     Debug.WriteLine("Registering... {0}", Selected);
-                    PSM.Store(Dispatcher).Register(this, Selected.ToString(), _startIndex, Received);
+                    PSM.Store(Dispatcher).Register(this, Selected.ToString(), _startIndex, Selected.IndexIdentifier, Received);
 
                 }, DispatcherPriority.ContextIdle);
 
 
             }
-            
-
-        }      
-        
-        private object _startIndex = null;
+        }
 
         /// <summary>
         /// Handles the receival of new data that is added to the store after the last reload
@@ -770,14 +769,14 @@ namespace PSMViewer.ViewModels
             if (IsActive)
             {
                 
-                if (!Data.ContainsKey(data.Path))
-                    while(!Data.TryAdd(data.Path, new ConcurrentQueue<Entry>()));
+                if (!_data.ContainsKey(data.Path))
+                    while(!_data.TryAdd(data.Path, new ConcurrentQueue<Entry>()));
 
                 ConcurrentQueue<Entry> queue;
 
-                while(!Data.TryGetValue(data.Path, out queue));
+                while(!_data.TryGetValue(data.Path, out queue));
 
-                foreach (Entry entry in data.Entries)
+                foreach (Entry entry in data.Entries.OrderBy( (e) => { return e.Index; }))
                 {
                     queue.Enqueue(entry);
                 }
@@ -802,7 +801,7 @@ namespace PSMViewer.ViewModels
 
             ProcessQueueOperation = null;
 
-            if (!Data.TryGetValue(Selected.Parent.Path, out queue))
+            if (!_data.TryGetValue(Selected.Parent.Path, out queue))
                 return;            
 
             while (queue.Count > 0)

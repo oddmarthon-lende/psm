@@ -27,7 +27,7 @@ namespace PSMViewer.Visualizations
             set { SetValue(OrientationProperty, value); }
         }
         public static readonly DependencyProperty OrientationProperty =
-            DependencyProperty.Register("Orientation", typeof(Orientation), typeof(Gauge), new PropertyMetadata(Orientation.Vertical));
+            DependencyProperty.Register("Orientation", typeof(Orientation), typeof(Replicator<T>), new PropertyMetadata(Orientation.Vertical));
 
         public double MaxColumnWidth
         {

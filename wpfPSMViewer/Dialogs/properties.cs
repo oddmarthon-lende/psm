@@ -1,4 +1,5 @@
-﻿/// <copyright file="properties.xaml.cs" company="Baker Hughes Incorporated">
+﻿using System.ComponentModel;
+/// <copyright file="properties.xaml.cs" company="Baker Hughes Incorporated">
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
@@ -6,6 +7,8 @@
 /// 
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Threading;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 
@@ -25,39 +28,20 @@ namespace PSMViewer
     /// </summary>
     public partial class PropertiesWindow : Window
     {
-
-        /// <summary>
-        /// Holds the property definitions that will be visible to the user
-        /// </summary>
-        public PropertyDefinition[] PropertyDefinitions
-        {
-            get
-            {
-                return PropertyGrid.PropertyDefinitions.ToArray();
-            }
-            private set
-            {
-                if (value == null) return;
-
-                PropertyGrid.PropertyDefinitions.Clear();
-
-                foreach (PropertyDefinition d in value)
-                {
-                    PropertyGrid.PropertyDefinitions.Add(d);
-                }
-
-            }
-
-        }
-
+        
         /// <summary>
         /// Gets a refrerence to the propertygrid
         /// </summary>
-        public PropertyGrid PropertyGrid
+        public PropertyGrid[] PropertyGrids
         {
             get
             {
-                return (PropertyGrid)Content;
+
+                if (Content is PropertyGrid)
+                    return new PropertyGrid[] { (PropertyGrid)Content };
+                
+                return this.Find<PropertyGrid>(this);
+
             }
         }
 
@@ -70,14 +54,15 @@ namespace PSMViewer
         /// <summary>
         /// A constructor that takes the object and property definitions as its arguments.
         /// </summary>
-        /// <param name="SelectedObject">The object to show properties for</param>
-        /// <param name="Definitions">The properties that will be visible to the user.</param>
-        public PropertiesWindow(object SelectedObject, PropertyDefinition[] Definitions)
+        /// <param name="selectedObject">The object to show properties for</param>
+        /// <param name="definitions">The properties that will be visible to the user.</param>
+        public PropertiesWindow(object selectedObject, PropertyDefinition[] definitions = null)
         {
 
-            Content = new PropertyGrid() {
+            PropertyGrid g = new PropertyGrid()
+            {
 
-                AutoGenerateProperties = false,
+                AutoGenerateProperties = definitions == null,
                 ShowDescriptionByTooltip = true,
                 ShowSearchBox = false,
                 ShowSortOptions = false,
@@ -85,11 +70,69 @@ namespace PSMViewer
                 ShowSummary = false,
                 ShowTitle = false,
                 ShowAdvancedOptions = false
-            };
+            };           
 
-            PropertyDefinitions = Definitions;
-            PropertyGrid.SelectedObject = SelectedObject;
+            if (definitions != null)
+                foreach (PropertyDefinition d in definitions)
+                {
+                    g.PropertyDefinitions.Add(d);
+                }
 
+            g.SelectedObject = selectedObject;
+
+            Content = g;
+
+            AddHandler(selectedObject, g);
+
+        }
+
+        private void AddHandler(object selectedObject, PropertyGrid grid)
+        {
+            if(selectedObject is INotifyPropertyChanged)
+            {
+                ((INotifyPropertyChanged)selectedObject).PropertyChanged += (sender, e) => grid.Update();
+            }
+        }
+
+        public PropertiesWindow(params object[] selectedObjects)
+        {
+
+            Content = new StackPanel() { Orientation = Orientation.Vertical };
+
+            foreach (object p in selectedObjects)
+            {
+
+                PropertyGrid g = new PropertyGrid()
+                {
+
+                    AutoGenerateProperties = !(p is IPropertyProvider),
+                    ShowDescriptionByTooltip = true,
+                    ShowSearchBox = false,
+                    ShowSortOptions = false,
+                    ShowPreview = false,
+                    ShowSummary = false,
+                    ShowTitle = false,
+                    ShowAdvancedOptions = false
+
+                };
+
+                if (p is IPropertyProvider)
+                {
+
+                    foreach(PropertyDefinition d in ((IPropertyProvider)p).Properties)
+                    {
+                        g.PropertyDefinitions.Add(d);
+                    }
+
+                }                    
+
+                ((StackPanel)Content).Children.Add(g);
+
+                g.SelectedObject = p;
+
+                AddHandler(p, g);
+
+            }
         }
     }
 }

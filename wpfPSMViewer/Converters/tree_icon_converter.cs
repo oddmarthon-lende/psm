@@ -1,4 +1,9 @@
-﻿using PSMViewer.Models;
+﻿/// <copyright file="tree_icon_converter.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+
+using PSMViewer.Models;
 using System;
 using System.Globalization;
 using System.IO;
