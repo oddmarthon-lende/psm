@@ -44,24 +44,27 @@ namespace PSMonitor.Stores
             }
         }
 
-        protected new class Configuration : Store.Configuration
+        public new class Configuration : Store.Configuration
         {
 
-            
+            private string _url;
+
             [Category("HTTP")]
             [Description("The url used to connect to the server")]
             public string Url
             {
                 get
                 {
-                    return Setup.Get<HTTP, string>("url");
+                    return _url == null ? Setup.Get<HTTP, string>("url") : _url;
                 }
 
                 set
                 {
-                    Setup.Set<HTTP>("url", value);
+                    _url = value;
                 }
             }
+
+            private int? _connectionTimeout;
 
             [Category("HTTP")]
             [Description("The number of milliseconds to wait before raising an error when connecting to the server")]
@@ -70,18 +73,22 @@ namespace PSMonitor.Stores
 
                 get
                 {
-                    return Setup.Get<HTTP, int>("connectionTimeout");
+                    return _connectionTimeout.HasValue ? _connectionTimeout.Value : Setup.Get<HTTP, int>("connectionTimeout");
                 }
 
                 set
                 {
-                    Setup.Set<HTTP>("connectionTimeout", value);
+                    _connectionTimeout = value;
                 }
 
             }
 
             
         }
+
+        protected Frequency _rateIn = new Frequency();
+
+        protected Frequency _rateOut = new Frequency();
 
         /// <summary>
         /// The serializer used to convert data to JSON
@@ -262,6 +269,9 @@ namespace PSMonitor.Stores
                 thread.Join();
             }
 
+            _rateIn.Dispose();
+            _rateOut.Dispose();
+
             base.Dispose();
 
         }
@@ -411,10 +421,12 @@ namespace PSMonitor.Stores
         /// </summary>
         public override void Put(Envelope data)
         {
-            if(!_disposed)
+            
+            if (!_disposed)
                 _dispatch_queue.Enqueue(data);
+            
         }
-        
+
         /// <summary>
         /// Entry point for the thread that dispatches data.
         /// </summary>
@@ -423,24 +435,31 @@ namespace PSMonitor.Stores
         {
 
             HTTP context = (HTTP)ctx;
+            Envelope envelope;
+            
+            int count = 0;
 
-            try {
+            while (!context._disposed)
+            {
 
-                HttpClient client   = context.CreateClient();
+                count = context._dispatch_queue.Count;
 
-                while(!context._disposed)
+                try
                 {
 
-                    Thread.Sleep(context._sleepTime);                                      
+                    Thread.Sleep(context._sleepTime);
 
-                    if (!context._dispatch_queue.IsEmpty) {
+                    HttpClient client = context.CreateClient();
+
+                    if (!context._dispatch_queue.IsEmpty)
+                    {
 
 
                         using (MemoryStream stream = new MemoryStream())
                         {
 
                             Envelope[] data = context._dispatch_queue.ToArray();
-                           
+
                             json.WriteObject(stream, data);
                             stream.Seek(0, SeekOrigin.Begin);
 
@@ -454,23 +473,16 @@ namespace PSMonitor.Stores
                                 if (task.Status != TaskStatus.RanToCompletion)
                                 {
 
-                                    Debug.WriteLine("HTTP::Dispatch - Task did not run to completion. Status = {0}", Convert.ToString(task.Status)??"null");
-
-                                    context._sleepTime = Math.Max(context._sleepTime * 2, 1000 * 60 * 60 * 24);
-
-                                    foreach (Envelope envelope in data)
-                                    {
-                                        envelope.Retry = envelope.Retry == 0 ? 2 : envelope.Retry;
-                                    }
+                                    Debug.WriteLine("HTTP::Dispatch - Task did not run to completion. Status = {0}", Convert.ToString(task.Status) ?? "null");
 
                                     if (task.Exception != null)
                                     {
 
-                                        Logger.Error(task.Exception);
+                                        Debug.WriteLine(task.Exception);
 
                                         foreach (Exception e in task.Exception.InnerExceptions)
                                         {
-                                            Logger.Error(e);
+                                            Debug.WriteLine(e);
                                         }
 
                                     }
@@ -480,50 +492,36 @@ namespace PSMonitor.Stores
                                 {
 
                                     HttpResponseMessage response = task.Result;
-                                    
-                                    
+
                                     if (!response.IsSuccessStatusCode)
-                                        Logger.Failure(String.Format("Server responded with {0} {1}", response.StatusCode, response.ReasonPhrase));
-
-                                    context._sleepTime = 1000;
+                                        Debug.WriteLine(String.Format("Server responded with {0} {1}", response.StatusCode, response.ReasonPhrase));
 
                                 }
-
-                                for (int i = 0; i < data.Length; i++)
-                                {
-
-                                    Envelope envelope;
-
-                                    while (!context._dispatch_queue.TryDequeue(out envelope)) ;
-
-                                    if (--envelope.Retry > 0)
-                                    {
-                                        context._dispatch_queue.Enqueue(envelope);
-                                    }
-
-                                }
-
+                                
                             }).Wait();
                         }
 
                     }
-                    
+
+                    client.Dispose();
+
+                }
+                catch (ThreadInterruptedException e)
+                {
+                    Debug.WriteLine(e.ToString());
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
                 }
 
-                client.Dispose();
-               
-            }
-            catch (ThreadInterruptedException e)
-            {
-                Debug.WriteLine(e.ToString());
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
+                for (int i = 0; i < count; i++)
+                    while (!context._dispatch_queue.TryDequeue(out envelope)) ;
+
             }
 
         }
-        
+
         /// <summary>
         /// <see cref="IStore.Keys(string)"/>
         /// </summary>

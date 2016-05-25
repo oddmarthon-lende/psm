@@ -79,37 +79,37 @@ namespace PSMonitor
         public static void Error(string msg)
         {
             Write(msg, EventLogEntryType.Error);
-            Debug.WriteLine(msg);
+            
         }
 
         public static void Error(Exception exc)
         {
             Write(exc.Message, EventLogEntryType.Error);
-            Debug.WriteLine(exc.ToString());
+            
         }
 
         public static void Warn(string msg)
         {
             Write(msg, EventLogEntryType.Warning);
-            Debug.WriteLine(msg);
+            
         }
 
         public static void Info(string msg)
         {
             Write(msg, EventLogEntryType.Information);
-            Debug.WriteLine(msg);
+            
         }
 
         public static void Success(string msg)
         {
             Write(msg, EventLogEntryType.SuccessAudit);
-            Debug.WriteLine(msg);
+            
         }
 
         public static void Failure(string msg)
         {
             Write(msg, EventLogEntryType.FailureAudit);
-            Debug.WriteLine(msg);
+            
         }
         
     }

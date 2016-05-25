@@ -10,115 +10,85 @@ using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
-namespace PSMonitor
+namespace PSMonitor.Powershell
 {
-    /// <summary>
-    /// The realtime data handler delegate that is invoked when new data arrives.
-    /// </summary>
-    /// <param name="data">The data that is being transferred.</param>
-    /// <returns>A starting index from which the next transfer occurs.</returns>
-    public delegate object RealTimeData(Envelope data);
+    
     
     class ScriptExecutionContext : IDisposable
     {
         
-        private const string ScriptExecutionContextID = "ScriptExecutionContextID";
-        private string ID;
-        private volatile Script script;
-        private volatile IAsyncResult async;
-        private volatile PowerShell   powerShell;
-        private volatile ConcurrentQueue<Entry> queue;
-        private List<Thread> threads;
-        private RealTimeData OnData;
+        private const string _scriptExecutionContextIDString = "ScriptExecutionContextID";
 
-        private bool disposed = false;
+        private string _id;
+
+        private volatile Script _script;
+
+        private volatile PowerShell   _powerShell;
+
+        private volatile ConcurrentQueue<Entry> _queue;
+
+        private Thread _thread;
+
+        private RealTimeData _onData;
+
+        private bool _disposed = false;
+
+        private DateTime _lastExecutionTime = new DateTime(1970, 01, 01);
         
         public ScriptExecutionContext(Script s)
         {
             
-            ID = Guid.NewGuid().ToString();
-
-            queue = new ConcurrentQueue<Entry>();
-
-            script = s;
-            script.executionContext = this;
+            _id = Guid.NewGuid().ToString();
+            _queue = new ConcurrentQueue<Entry>();
+            _script = s;
 
             InitialSessionState state = InitialSessionState.CreateDefault();
 
             state.Commands.Add(new SessionStateCmdletEntry("set-interval", typeof(SetIntervalCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("set-namespace", typeof(SetNamespaceCommand), null));
-            state.Commands.Add(new SessionStateCmdletEntry("set-timeout", typeof(SetTimeoutCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("push-data", typeof(PushDataCommand), null));
-            state.Commands.Add(new SessionStateCmdletEntry("pop-data", typeof(PopDataCommand), null));
-            state.Commands.Add(new SessionStateCmdletEntry("get-data", typeof(GetDataCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("set-meta", typeof(SetMetaCommand), null));
-            //state.Commands.Add(new SessionStateCmdletEntry("get-cda", typeof(GetCDACommand), null));
-            //state.Commands.Add(new SessionStateCmdletEntry("set-cda", typeof(SetCDACommand), null));
 
-            state.Variables.Add(new SessionStateVariableEntry(ScriptExecutionContextID, ID, "The Guid of the ScriptExecutionContext that executed this script", ScopedItemOptions.Constant));
+            state.Variables.Add(new SessionStateVariableEntry(_scriptExecutionContextIDString, _id, "The Guid of the ScriptExecutionContext that executed this script", ScopedItemOptions.Constant));
 
             SetIntervalCommand.Changed  += IntervalChanged;
             SetNamespaceCommand.Changed += NamespaceChanged;
-            SetTimeoutCommand.Changed   += TimeoutChanged;
             PushDataCommand.Pushed      += DataPushed;
-            PopDataCommand.Popped       += DataPopped;
 
-            powerShell = PowerShell.Create(state).AddScript(File.ReadAllText(script.file.FullName));
+            _powerShell = PowerShell.Create(state).AddScript(File.ReadAllText(_script.File.FullName));
 
-            threads = new List<Thread>(3);
-
-            threads.Add(new Thread(CheckErrors));
-            threads.Add(new Thread(CheckTimeout));
-            threads.Add(new Thread(WaitForResult));
-
-            threads.ForEach(thread => thread.Start(this));
-
+            _thread = new Thread(Execute);
+            _thread.Name = _script.File.ToString();
         }
-
-        public bool IsCompleted
-        {
-            get
-            {
-                return (async == null) || (async != null && async.IsCompleted);
-            }
-        }
-
+        
         private void IntervalChanged(SetIntervalCommand sender) {
 
-            string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
+            string id = (string)sender.GetVariableValue(_scriptExecutionContextIDString);
 
-            if (id == ID)
-                script.interval = sender.Interval;
+            if (id == _id)
+                _script.Interval = sender.Interval;
         }
 
         private void NamespaceChanged(SetNamespaceCommand sender) {
 
-            string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
+            string id = (string)sender.GetVariableValue(_scriptExecutionContextIDString);
 
-            if (id == ID)
-                script.path = sender.Path;
-
-        }
-
-        private void TimeoutChanged(SetTimeoutCommand sender) {
-
-            string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
-
-            if (id == ID)
-                script.timeout = sender.Timeout;
+            if (id == _id)
+                _script.Path = sender.Path;
 
         }
 
         private void DataPushed(PushDataCommand sender)
         {
 
-            string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
+            string id = (string)sender.GetVariableValue(_scriptExecutionContextIDString);
 
-            if (id == ID)
+            if (id == _id)
             {
 
-                queue.Enqueue(new Entry()
+                _queue.Enqueue(new Entry()
                 {
 
                     Key       = sender.Key,
@@ -135,11 +105,11 @@ namespace PSMonitor
         private void Flush (bool all)
         {
 
-            int count = queue.Count;
+            int count = _queue.Count;
             Entry entry;            
             Envelope env = new Envelope()
             {
-                Path = script.path,
+                Path = _script.Path,
                 Entries = new Entry[all ? count : 1],
                 Timestamp = DateTime.Now
             };
@@ -147,7 +117,7 @@ namespace PSMonitor
             for(int i = 0; i < count; i++)
             {
 
-                while(!queue.TryDequeue(out entry));
+                while(!_queue.TryDequeue(out entry));
 
                 env.Entries[i] = entry;
 
@@ -155,131 +125,62 @@ namespace PSMonitor
                     break;
             }
             
-            OnData(env);
+            if(env.Entries.Length > 0)
+                _onData(env);
 
         }
 
-        private void DataPopped(PopDataCommand sender)
-        {
-
-            string id = (string)sender.GetVariableValue(ScriptExecutionContextID);
-
-            if (id == ID)
-            {
-
-                Flush(sender.FlushAll == null || sender.FlushAll == false);
-
-            }
-
-        }
-
-        private static void WaitForResult(object ctx)
-        {
-            
-            ScriptExecutionContext context = (ScriptExecutionContext) ctx;
-
-            while (!context.disposed)
-            {
-
-                if (context.async != null)
-                {
-
-                    try {
-
-                        foreach (PSObject obj in context.powerShell.EndInvoke(context.async))
-                        {
-                            Logger.Info(obj.ToString());
-                        }
-
-                    }
-                    catch(PipelineStoppedException)
-                    {
-
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e.Message);
-                    }
-
-                    context.Flush(true);
-                    context.async = null;
-
-                }
-
-                Thread.Sleep(1);
-
-            }
-            
-        }
-
-        private static void CheckTimeout(object ctx)
+        private static void Execute(object ctx)
         {
 
             ScriptExecutionContext context = (ScriptExecutionContext)ctx;
+            PowerShell powerShell = context._powerShell;
 
-            while (!context.disposed)
+            while (!context._disposed)
             {
-
-                if (context.async != null)
-                {
-
-                    if (context.script.hasTimedOut)
-                    {
-                        Logger.Error(String.Format("Aborted, Reason => Timeout exceeded for script '{0}'", context.script.file.Name));
-                        context.Abort();
-                    }
-
+                try {
+                    Thread.Sleep(100);
                 }
+                catch(ThreadInterruptedException) { };
 
-                Thread.Sleep(1);
-            }
-        }
 
-        private static void CheckErrors(object ctx)
-        {
-            ScriptExecutionContext context    = (ScriptExecutionContext)ctx;
-            PowerShell             powerShell = context.powerShell;
-            
-            while (!context.disposed)
-            {
+                if (DateTime.Now.Subtract(context._lastExecutionTime).TotalMilliseconds > context._script.Interval)
+                {
+                    powerShell.Streams.Error.Clear();
+
+                    context._powerShell.Streams.ClearStreams();
+                    context._lastExecutionTime = DateTime.Now;
+
+                    context._powerShell.Invoke();
+                }
 
                 foreach (ErrorRecord errorRecord in powerShell.Streams.Error)
                 {
-                    Logger.Error(errorRecord.ToString());                    
+                    Logger.Error(errorRecord.ToString());
                 }
 
-                powerShell.Streams.Error.Clear();
-
-                Thread.Sleep(1);
-
+                context.Flush(true);
             }
         }
+        
 
         public void Abort()
         {
 
             Entry entry;
 
-            if (disposed) return;           
+            if (_disposed) return;           
 
-            powerShell.Stop();
+            _powerShell.Stop();
 
-            while (queue.Count > 0 && !queue.TryDequeue(out entry));
+            while (_queue.Count > 0 && !_queue.TryDequeue(out entry));
         }
 
-        public void Execute(RealTimeData handler)
+        public void Start(RealTimeData handler)
         {
 
-            OnData = handler;
-
-            if (async != null)
-                return;
-
-            powerShell.Streams.ClearStreams();
-
-            script.lastExecutionTime = DateTime.Now;
-
-            async = powerShell.BeginInvoke();
+            _onData = handler;
+            _thread.Start(this);
 
         }
 
@@ -290,15 +191,14 @@ namespace PSMonitor
 
             SetIntervalCommand.Changed  -= IntervalChanged;
             SetNamespaceCommand.Changed -= NamespaceChanged;
-            SetTimeoutCommand.Changed   -= TimeoutChanged;
             PushDataCommand.Pushed      -= DataPushed;
-            PopDataCommand.Popped       -= DataPopped;
 
-            disposed = true;
+            _disposed = true;
 
-            threads.ForEach(thread => thread.Join());
+            _thread.Interrupt();
+            _thread.Join();
 
-            powerShell.Dispose();
+            _powerShell.Dispose();
             
         }
 

@@ -85,18 +85,19 @@
     <Reference Include="System.Xml.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cda.cs" />
     <Compile Include="entry.cs" />
     <Compile Include="envelope.cs" />
     <Compile Include="execution_context.cs" />
     <Compile Include="commands.cs" />
+    <Compile Include="measure_frequency.cs" />
     <Compile Include="path.cs" />
+    <Compile Include="powershell.cs" />
     <Compile Include="Stores\advantage.cs" />
     <Compile Include="Stores\db.cs" />
     <Compile Include="Stores\dummy.cs" />
     <Compile Include="Stores\istore.cs" />
     <Compile Include="logger.cs" />
-    <Compile Include="master.cs" />
+    <Compile Include="psm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="script.cs" />
     <Compile Include="Stores\http.cs" />
@@ -109,18 +110,10 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="MsgWrapper">
-      <Guid>{10214739-2AA9-4958-B56E-34BCE97E32E7}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /i /Y "$(SolutionDir)$(ProjectName)\$(OutDir)*" "$(SolutionDir)build\Program Files\$(SolutionName)\bin\"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

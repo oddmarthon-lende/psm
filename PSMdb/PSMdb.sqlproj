@@ -107,4 +107,8 @@
   <ItemGroup>
     <RefactorLog Include="PSMdb.refactorlog" />
   </ItemGroup>
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /i /Y "$(SolutionDir)$(ProjectName)\$(OutDir)$(ProjectName).*" "$(SolutionDir)build\Program Files\$(SolutionName)\db\"
+xcopy /i /Y "$(SolutionDir)$(ProjectName)\$(OutDir)$(ProjectName)_Create.*" "$(SolutionDir)build\Program Files\$(SolutionName)\db\"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

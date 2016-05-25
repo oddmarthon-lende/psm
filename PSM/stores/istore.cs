@@ -11,6 +11,7 @@ using System.Runtime.Serialization;
 
 namespace PSMonitor.Stores
 {
+    
 
     /// <summary>
     /// A class that holds the <see cref="PropertyDescriptor"/>'s for the properties in a type that implements <see cref="IOptions"/> interface and a dictionary that can be filled with valid values for a property.
@@ -110,20 +111,6 @@ namespace PSMonitor.Stores
         Key[] Keys(string ns);
         
         /// <summary>
-        /// Sets the units for a key
-        /// </summary>
-        /// <param name="path">The path to the key</param>
-        /// <param name="units">The units</param>
-        void Units(string path, Units units);
-
-        /// <summary>
-        /// Gets the units for a key
-        /// </summary>
-        /// <param name="path">The path to the key</param>
-        /// <returns>The units</returns>
-        Units Units(string path);
-
-        /// <summary>
         /// Sets metadata for a path
         /// </summary>
         /// <param name="path">The path</param>
@@ -171,9 +158,7 @@ namespace PSMonitor.Stores
     [Serializable]
     public class Key : ISerializable
     {
-
-        public Units Units { get; private set; }
-
+        
         /// <summary>
         /// The key name
         /// </summary>
@@ -192,7 +177,6 @@ namespace PSMonitor.Stores
         {
             this.Name = name;
             this.Type = type;
-            this.Units = new Units();
         }
 
         /// <summary>
@@ -225,31 +209,6 @@ namespace PSMonitor.Stores
         {
             return Name;
         }
-    }
-        
-
-    /// <summary>
-    /// Class that describes a Unit and can convert values from,to.
-    /// </summary>
-    [Serializable]
-    public class Units
-    {
-
-        public string DisplayName { get; private set; }
-
-        public double Multiplier { get; private set; }
-                
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="multiplier">A conversion factor that scales the value up or down. Defaults to 1.</param>
-        public Units(string name = null, double multiplier = 1D)
-        {
-            this.DisplayName = name;
-            this.Multiplier = multiplier;
-        }
 
         public T Convert<T>(Entry entry)
         {
@@ -269,7 +228,7 @@ namespace PSMonitor.Stores
 
             switch (Type.GetTypeCode(value.GetType()))
             {
-                
+
                 case TypeCode.Byte:
                 case TypeCode.Decimal:
                 case TypeCode.Double:
@@ -305,7 +264,7 @@ namespace PSMonitor.Stores
                     break;
             }
 
-            return (T)(object)(v.HasValue ? v.Value : System.Convert.ToDouble(value) * Multiplier);
+            return (T)(object)(v.HasValue ? v.Value : System.Convert.ToDouble(value));
 
         }
 

@@ -1,65 +1,42 @@
 ﻿using System;
 using System.IO;
 
-namespace PSMonitor
+namespace PSMonitor.Powershell
 {
     
     class Script : IDisposable
     {
-        public FileInfo               file;
-        public double                 interval = Setup.Master.defaultInterval;
-        public double                 timeout  = Setup.Master.defaultTimeout;
-        public string                 path     = Setup.Master.defaultNamespace;
-        public DateTime               lastExecutionTime;
-        public ScriptExecutionContext executionContext;
 
-        public bool shouldExecute
-        {
-            get
-            {
-               return isCompleted && DateTime.Now.Subtract(lastExecutionTime).TotalMilliseconds > interval;
-            }
-        }
+        public FileInfo               File { get; private set; }
 
-        public bool hasTimedOut
-        {
-            get
-            {
-                return timeout > 0 && !isCompleted && DateTime.Now.Subtract(lastExecutionTime).TotalMilliseconds > timeout;
-            }
-        }
+        public double                 Interval { get; set; } = Setup.Powershell.defaultInterval;
 
-        public bool isCompleted
-        {
-            get
-            {
-                return executionContext.IsCompleted;
-            }
-        }
+        public string                 Path { get; set; } = Setup.Powershell.defaultNamespace;
 
-        public Script(Script s)
+        public ScriptExecutionContext Context { get; private set; }
+        
+        public Script(Script script)
         {
 
-            file = s.file;
-            interval = s.interval;
-            lastExecutionTime = s.lastExecutionTime;
-            executionContext = new ScriptExecutionContext(this);
+            File = script.File;
+            Interval = script.Interval;
+            Context = new ScriptExecutionContext(this);
 
         }
 
-        public Script(FileInfo f)
+        public Script(FileInfo fileInfo)
         {
 
-            file = f;
-            interval = 1000;
-            lastExecutionTime = new DateTime(1970, 01, 01);
-            executionContext = new ScriptExecutionContext(this);
+            File = fileInfo;
+            Interval = 1000;
+            
+            Context = new ScriptExecutionContext(this);
 
         }
 
         public void Dispose ()
         {
-            executionContext.Dispose();
+            Context.Dispose();
         }
 
     }

@@ -57,39 +57,28 @@ namespace PSMonitor.Stores
         /// The configuration class.
         /// This class holds user options for the <see cref="DB"/> class
         /// </summary>
-        protected new class Configuration : Store.Configuration
+        public new class Configuration : Store.Configuration
         {
-            
-            
+
+
+            private string _connectionString;
+
             [Category("Database")]
             [Description("The connection string that is used to connect to the database")]
             public string ConnectionString
             {
                 get
                 {
-                    return Setup.Get<DB, string>("connectionString");
+                    return _connectionString == null ? Setup.Get<DB, string>("connectionString") : _connectionString;
                 }
 
                 set
                 {
-                    Setup.Set<DB>("connectionString", value);
+                    _connectionString = value;
                 }
             }
 
-            [Category("Database")]
-            [Description("Entries older than the specified amount in days are deleted")]
-            public int MaxAge
-            {
-                get
-                {
-                    return Setup.Get<DB, int>("maxAge");
-                }
-
-                set
-                {
-                    Setup.Set<DB>("maxAge", value);
-                }
-            }
+            private uint? _pollingInterval;
 
             [Category("Database")]
             [Description("The interval in milliseconds polling should occur")]
@@ -97,12 +86,12 @@ namespace PSMonitor.Stores
             {
                 get
                 {
-                    return Setup.Get<DB, uint>("pollingInterval");
+                    return _pollingInterval.HasValue ? _pollingInterval.Value : Setup.Get<DB, uint>("pollingInterval");
                 }
 
                 set
                 {
-                    Setup.Set<DB>("pollingInterval", value);
+                    _pollingInterval = value;
                 }
             }
             
@@ -312,7 +301,7 @@ namespace PSMonitor.Stores
 
             }
         }
-
+        
         /// <summary>
         /// Holds the envelopes that are waiting to be dispatched to the database.
         /// </summary>
@@ -332,7 +321,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// The number of milliseconds to wait
         /// </summary>
-        private int sleepTime = 1000;
+        private int _sleepTime = 1000;
 
         /// <summary>
         /// If <c>true</c>, this object has been disposed.
@@ -349,13 +338,7 @@ namespace PSMonitor.Stores
             Options = new Configuration();
 
             _queue = new ConcurrentQueue<Envelope>();
-
-            //Test the connection
-            using (SqlConnection connection = CreateConnection())
-            {
-                VerifyConnection(connection);
-            }           
-
+            
             List<Thread> threads = new List<Thread>();
 
             if (StartThreads == true)
@@ -363,8 +346,6 @@ namespace PSMonitor.Stores
 
                 threads.Add(new Thread(Dispatch));
 
-                if(Options.Get<int>("MaxAge") > 0)
-                    threads.Add(new Thread(Cleanup));
             }
 
             threads.Add(new Thread(Receive));
@@ -377,7 +358,7 @@ namespace PSMonitor.Stores
             }
 
             _threads = threads;
-
+            
         }
 
         /// <summary>
@@ -470,7 +451,7 @@ namespace PSMonitor.Stores
                 Debug.WriteLine("DB Store : Waiting for threads to exit");
                 thread.Join();
             }
-
+            
             base.Dispose();
 
         }
@@ -893,7 +874,7 @@ namespace PSMonitor.Stores
 
                     Debug.WriteLine("{1}.DB.Receive(object instance) : Count {0}, Going to sleep now...", totalCount, Thread.CurrentThread.Name);
                     
-                    Thread.Sleep(Setup.Get<DB, int>("pollingInterval"));
+                    Thread.Sleep(context.Options.Get<int>("PollingInterval"));
                 }
 
             }
@@ -916,76 +897,6 @@ namespace PSMonitor.Stores
         }
 
         /// <summary>
-        /// The entry point for the thread that will do the cleanup in the database.
-        /// Entries that are older that the <see cref="Setup"/>.MaxAge property will be deleted.
-        /// </summary>
-        /// <param name="ctx">The <see cref="DB"/> instance that the thread belongs to.</param>
-        protected static void Cleanup(object ctx)
-        {
-
-
-            DB context = (DB)ctx;
-
-            int maxAge = context.Options.Get<int>("MaxAge");
-
-            try
-            {
-
-                while (!context._disposed && maxAge > 0)
-                {
-
-                    Thread.Sleep(1000 * 60 * 60 * 24);
-
-                    using (SqlConnection connection = context.CreateConnection())
-                    {
-
-                        if (VerifyConnection(connection))
-                        {
-
-                            using (SqlCommand command = connection.CreateCommand())
-                            {
-
-                                DateTime d = DateTime.Now.Subtract(new TimeSpan(maxAge, 0, 0, 0));
-
-                                command.CommandType = CommandType.StoredProcedure;
-                                command.CommandText = "usp_clean";
-
-                                command.Parameters.Add(new SqlParameter("@Before", SqlDbType.DateTime)
-                                {
-
-                                    Direction = ParameterDirection.Input,
-                                    SqlValue = d
-
-                                });
-
-                                int count = command.ExecuteNonQuery();
-
-                                if (count > 0)
-                                {
-                                    Logger.Info(String.Format("Deleted {0] rows that was older than {1} days. ({2})", count, maxAge, d));
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-            catch (ThreadInterruptedException e)
-            {
-                Debug.WriteLine(e.ToString());
-            }
-            catch (Exception error)
-            {
-                Logger.Error(error);
-            }
-
-        }
-
-        /// <summary>
         /// The entry point for the thread that will do the task of saving the data that has been added into the database.
         /// <see cref="Put(Envelope)"/>
         /// </summary>
@@ -994,26 +905,27 @@ namespace PSMonitor.Stores
         {
 
             DB context = (DB)ctx;
+            Envelope envelope;
+            int count = 0;
 
-            try
+            while (!context._disposed)
             {
+                count = context._queue.Count;
 
-                using (SqlConnection connection = context.CreateConnection())
+                try
                 {
 
-                    while (!context._disposed)
+                    using (SqlConnection connection = context.CreateConnection())
                     {
 
-                        Thread.Sleep(context.sleepTime);
+                        Thread.Sleep(context._sleepTime);
 
                         if (!context._queue.IsEmpty)
                         {
-
-                            Envelope envelope;
-
+                            
                             VerifyConnection(connection);
 
-                            int count = context._queue.Count;
+                            
 
                             using (SqlCommand command = connection.CreateCommand())
                             {
@@ -1024,7 +936,7 @@ namespace PSMonitor.Stores
                                 for (int i = 0; i < count; i++)
                                 {
 
-                                    while (!context._queue.TryDequeue(out envelope)) ;
+                                    while (!context._queue.TryDequeue(out envelope));
 
                                     foreach (Entry entry in envelope.Entries)
                                     {
@@ -1073,7 +985,7 @@ namespace PSMonitor.Stores
                                         }
                                         catch (Exception error)
                                         {
-                                            Logger.Error(error);
+                                            Debug.WriteLine(error);
                                             continue;
                                         }
 
@@ -1082,23 +994,25 @@ namespace PSMonitor.Stores
                                 }
 
                             }
-
-                            context.sleepTime = 1000;
-
                         }
+
                     }
+
                 }
+                catch (ThreadInterruptedException e)
+                {
+                    Debug.WriteLine(e.ToString());
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                }
+                
+                for(int i = 0; i < count; i++)
+                    while (!context._queue.TryDequeue(out envelope));
 
             }
-            catch (ThreadInterruptedException e)
-            {
-                Debug.WriteLine(e.ToString());
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-                context.sleepTime = Math.Max(context.sleepTime * 2, 1000 * 60 * 60 * 24);
-            }
+
 
         }
 

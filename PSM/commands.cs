@@ -6,14 +6,12 @@
 using System;
 using System.Management.Automation;
 
-namespace PSMonitor
+namespace PSMonitor.Powershell
 {
     
     public delegate void IntervalChanged(SetIntervalCommand sender);
     public delegate void NamespaceChanged(SetNamespaceCommand sender);
-    public delegate void TimeoutChanged(SetTimeoutCommand sender);
     public delegate void DataPushed(PushDataCommand sender);
-    public delegate void DataPopped(PopDataCommand sender);
 
     [Cmdlet(VerbsCommon.Set, "Interval")]
     public class SetIntervalCommand : PSCmdlet
@@ -62,29 +60,6 @@ namespace PSMonitor
         }
     }
 
-    [Cmdlet(VerbsCommon.Set, "Timeout")]
-    public class SetTimeoutCommand : PSCmdlet
-    {
-
-        public static event TimeoutChanged Changed;
-
-        [Parameter(
-            Position = 0,
-            Mandatory = true,
-            HelpMessage = "Sets the timeout, thread will exit if it exceeds timeout")]
-        [ValidateNotNullOrEmpty]
-        public double Timeout
-        {
-            get; set;
-        }
-
-        protected override void ProcessRecord()
-        {
-            Changed(this);
-            base.ProcessRecord();
-        }
-    }
-
     [Cmdlet(VerbsCommon.Push, "Data")]
     public class PushDataCommand : PSCmdlet
     {
@@ -118,110 +93,7 @@ namespace PSMonitor
             base.ProcessRecord();
         }
     }
-
-    [Cmdlet(VerbsCommon.Pop, "Data")]
-    public class PopDataCommand : PSCmdlet
-    {
-
-        public static event DataPopped Popped;
-
-        [Parameter(
-            Position = 0,
-            Mandatory = false,
-            HelpMessage = "If true flush all data, if false only flushes the last added data point.")]
-        [AllowNull]
-        public bool? FlushAll
-        {
-            get; set;
-        }
-
-        protected override void ProcessRecord()
-        {
-            Popped(this);
-            base.ProcessRecord();
-        }
-    }
-
-    [Cmdlet(VerbsCommon.Get, "Data")]
-    public class GetDataCommand : PSCmdlet
-    {
-
-        [Parameter(
-            Position = 0,
-            Mandatory = true,
-            HelpMessage = "The path")]
-        public string Path
-        {
-            get; set;
-        }
-
-        [Parameter(
-            Position = 1,
-            Mandatory = true,
-            HelpMessage = "Start Index")]
-        public PSObject Start
-        {
-            get; set;
-        }
-
-        [Parameter(
-            Position = 2,
-            Mandatory = true,
-            HelpMessage = "End Index")]
-        public PSObject End
-        {
-            get; set;
-        }
-
-        [Parameter(
-            Position = 3,
-            Mandatory = true,
-            HelpMessage = "The Index Identifier")]
-        public string IndexID
-        {
-            get; set;
-        }
-
-        protected override void ProcessRecord()
-        {
-            try {
-                if (Start == null || End == null || IndexID == null)
-                    WriteObject(PSM.Store().Get(Path));
-                else
-                    WriteObject(PSM.Store().Get(Path, Start.BaseObject, End.BaseObject, (Enum)Enum.Parse(PSM.Store().Index, IndexID, true)));
-            }
-            catch(Exception error)
-            {
-                WriteError(new ErrorRecord(error, "GET", ErrorCategory.NotSpecified, this));
-            }
-        }
-    }
-
-    [Cmdlet(VerbsCommon.Clear, "Data")]
-    public class DeleteCommand : PSCmdlet
-    {
-        
-        [Parameter(
-            Position = 0,
-            Mandatory = true,
-            HelpMessage = "The path to the key")]
-        public string Path
-        {
-            get; set;
-        }
-
-        protected override void ProcessRecord()
-        {
-            try {
-                PSM.Store().Delete(Path);
-            }
-            catch(Exception error)
-            {
-                WriteError(new ErrorRecord(error, "DELETE", ErrorCategory.NotSpecified, this));
-            }
-        }
-    }
-
+    
     [Cmdlet(VerbsCommon.Set, "Meta")]
     public class SetMetaCommand : PSCmdlet
     {

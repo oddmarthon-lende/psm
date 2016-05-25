@@ -34,13 +34,7 @@ namespace PSMonitor
         /// The time the object was created
         /// </summary>
         public DateTime Timestamp;
-
-        /// <summary>
-        /// If the data could not be delivered, this field is incremented.
-        /// </summary>
-        [NonSerialized]
-        public int Retry = 0;
-
+        
         /// <summary>
         /// Constructor
         /// </summary>
@@ -60,7 +54,6 @@ namespace PSMonitor
             Path = envelope.Path;
             Entries = envelope.Entries;
             Timestamp = envelope.Timestamp;
-            Retry = envelope.Retry;
         }
 
         /// <summary>

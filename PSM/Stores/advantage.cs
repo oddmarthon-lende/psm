@@ -219,7 +219,7 @@ namespace PSMonitor.Stores
                                 SqlValue = p.Table
                             });
 
-                            break;                       
+                            break;
 
                         default:
 

@@ -12,7 +12,7 @@ using System.ComponentModel;
 using System.Configuration;
 using System.Linq;
 using System.Reflection;
-
+using System.Timers;
 namespace PSMonitor.Stores
 {
 
@@ -77,33 +77,10 @@ namespace PSMonitor.Stores
 
         [ConfigurationProperty("settings", IsRequired = false)]
         public SettingsCollection Settings { get { return (SettingsCollection)base["settings"]; } }
-
-        /// <summary>
-        /// Set a property for a class in the configuration file
-        /// </summary>
-        /// <typeparam name="T">The class type</typeparam>
-        /// <param name="name">The name of the property</param>
-        /// <param name="value">The property value</param>
-        public static void Set<T>(string name, object value)
-        {
-            
-            SettingsCollection settings = Get<Setup>("stores").Settings;
-
-            foreach (SettingElement element in settings)
-            {
-                if ((System.Type.GetType(element.For, false, true) ?? typeof(object)).Equals(typeof(T)) && element.Name == name)
-                {
-                    element.Value = Convert.ToString(value);
-                    break;
-                }
-                    
-            }
-
-            settings.CurrentConfiguration.Save();
-        }
-
+        
     }
 
+    
     public abstract class Store : IStore
     {
 
@@ -111,23 +88,23 @@ namespace PSMonitor.Stores
 
         public abstract Type Index { get; }
 
-        protected class Configuration : IOptions
+        public class Configuration : IOptions
         {
-            
+
+            private Type _store;
+
             [Category("Data")]
             [Description("The data store used when loading data")]
             public Type Store {
 
                 get
                 {
-                    return Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true);
+                    return _store == null ? Type.GetType(Setup.Get<Stores.Setup>("stores").Type, false, true) : _store;
                 }
 
                 set
                 {
-                    Setup s = Setup.Get<Stores.Setup>("stores");
-                    s.Type = value.FullName;
-                    s.CurrentConfiguration.Save();
+                    _store = value;
                                         
                 }
             }
@@ -177,7 +154,16 @@ namespace PSMonitor.Stores
 
             public T Get<T>(string name)
             {
-                return (T)Convert.ChangeType(this.GetType().GetProperty(name).GetValue(this), typeof(T));
+                object value = this.GetType().GetProperty(name).GetValue(this);
+
+                try
+                {
+                    return (T)value;
+                }
+                catch(Exception e)
+                {
+                    return (T)Convert.ChangeType(value, typeof(T));
+                }
             }
 
         }
@@ -185,7 +171,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Options"/>
         /// </summary>
-        public virtual IOptions Options { get; protected set; }
+        public virtual IOptions Options { get; protected set; } = new Configuration();
 
         /// <summary>
         /// Extends the <see cref="PSMonitor.Path"/> with some additional properties
@@ -228,7 +214,7 @@ namespace PSMonitor.Stores
             }
 
         }
-
+        
         /// <summary>
         /// Holds the registered receivers of realtime data updates.
         /// </summary>
@@ -348,38 +334,18 @@ namespace PSMonitor.Stores
         public virtual void Dispose()
         {
 
-            foreach (KeyValuePair<object, IStore> pair in PSM.Pool.ToArray())
+            foreach (KeyValuePair<object, IStore> pair in PSM._instances.ToArray())
             {
 
                 IStore store;
 
                 if (pair.Value == this)
                 {
-                    while(!PSM.Pool.TryRemove(pair.Key, out store));
+                    while(!PSM._instances.TryRemove(pair.Key, out store));
                 }                    
 
             }
 
-        }
-
-        /// <summary>
-        /// Set the units for a key
-        /// </summary>
-        /// <param name="path">The path to the key</param>
-        /// <param name="units">The units object that contains the relevant information about the unit.</param>
-        public virtual void Units(string path, Units units)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Get the current units for a key
-        /// </summary>
-        /// <param name="path">The path to the key</param>
-        /// <returns>The saved unit or default</returns>
-        public virtual Units Units(string path)
-        {
-            throw new NotImplementedException();
         }
         
         public virtual void Meta(string path, string key, object value)
