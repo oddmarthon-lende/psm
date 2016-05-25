@@ -141,6 +141,9 @@ namespace PSMViewer.ViewModels
             {
                 c[pair.Key] = (Controls)Activator.CreateInstance(pair.Value.GetType(), Controls[pair.Key]);
                 c[pair.Key].DataChanged += Value_DataChanged;
+
+                foreach (Delegate d in Controls[pair.Key].Load.GetInvocationList())
+                    c[pair.Key].Load += (LoadHandler)d;
             }
         }
 
@@ -149,6 +152,8 @@ namespace PSMViewer.ViewModels
         /// </summary>
         public void PopState()
         {
+            if (Stack.Count == 0)
+                return;
 
             Dictionary<Enum, Controls> c = Stack.Pop();
 

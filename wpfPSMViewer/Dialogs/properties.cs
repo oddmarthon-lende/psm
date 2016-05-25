@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 /// <copyright file="properties.xaml.cs" company="Baker Hughes Incorporated">
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
@@ -26,23 +28,21 @@ namespace PSMViewer
     /// <summary>
     /// A simple properties window that display a property grid
     /// </summary>
-    public partial class PropertiesWindow : Window
+    public class PropertiesWindow : Window
     {
-        
+
+        private List<PropertyGrid> _grids = new List<PropertyGrid>();
         /// <summary>
         /// Gets a refrerence to the propertygrid
         /// </summary>
-        public PropertyGrid[] PropertyGrids
-        {
-            get
-            {
+        public IEnumerable<PropertyGrid> PropertyGrids {
 
-                if (Content is PropertyGrid)
-                    return new PropertyGrid[] { (PropertyGrid)Content };
-                
-                return this.Find<PropertyGrid>(this);
+            get {
+
+                return _grids;
 
             }
+
         }
 
         /// <summary>
@@ -70,7 +70,9 @@ namespace PSMViewer
                 ShowSummary = false,
                 ShowTitle = false,
                 ShowAdvancedOptions = false
-            };           
+            };
+
+            _grids.Add(g);      
 
             if (definitions != null)
                 foreach (PropertyDefinition d in definitions)
@@ -115,6 +117,8 @@ namespace PSMViewer
                     ShowAdvancedOptions = false
 
                 };
+
+                _grids.Add(g);
 
                 if (p is IPropertyProvider)
                 {

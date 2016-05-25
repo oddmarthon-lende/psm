@@ -137,22 +137,26 @@ namespace PSMViewer
             
         }
 
+
+        private Settings _options;
         /// <summary>
         /// Gets the options object
         /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Browsable(false)]
         public Settings Options
         {
-            get { return (Settings)GetValue(OptionsProperty); }
-            set { SetValue(OptionsProperty, value); }
+            get { return _options; }
+            set {
+
+                _options = value;
+                _options.Window = this;
+
+                propertyGrid_top.SelectedObject = _options;
+                propertyGrid_bottom.SelectedObject = _options.Store;
+
+            }
         }
-
-        /// <summary>
-        /// Identifies the <see cref="Options"/> dependency property
-        /// </summary>
-        public static readonly DependencyProperty OptionsProperty =
-            DependencyProperty.Register("Options", typeof(Settings), typeof(MainWindow), new PropertyMetadata(null));
-
 
         private EventLogWindow EventLogWindow;
 
@@ -225,7 +229,11 @@ namespace PSMViewer
             /// <summary>
             /// Remove key from chart
             /// </summary>
-            REMOVE_KEY_CHART
+            REMOVE_KEY_CHART,
+            /// <summary>
+            /// Delete key from tree
+            /// </summary>
+            DELETE
         }
 
         private VisualizationControl _graph = null;
@@ -235,12 +243,11 @@ namespace PSMViewer
         /// </summary>
         public MainWindow()
         {
-            
-            Options = new Settings(this);
-            
-            CreateCommands();
 
+            CreateCommands();
             InitializeComponent();
+
+            Options = new Settings();
 
             Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             NameScope.SetNameScope(treeContextMenu, NameScope.GetNameScope(this));
@@ -320,22 +327,23 @@ namespace PSMViewer
             Commands.Add("OpenChartProperties", new RelayCommand(ExecuteCommand, canExecute, CommandType.OPEN_VISUALIZATION_PROPERTIES));
             Commands.Add("AddKeyToChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD_KEY_CHART));
             Commands.Add("RemoveKeyFromChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_KEY_CHART));
+            Commands.Add("DeleteFromTree", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
         }
         
         private void TreeView_KeyRightClick(Tree sender, KeyItem key, System.Windows.Input.MouseEventArgs args)
         {
 
+            ContextMenu menu = new ContextMenu();
+            MenuItem item;
+
             if (key.Type != null)
             {
+                item = new MenuItem();
 
-                ContextMenu menu = new ContextMenu();
-
-                MenuItem item = new MenuItem();
-
-                if(_graph != null)
+                if (_graph != null)
                 {
 
-                    if (_graph.Keys.Contains(key.Path))
+                    if (_graph.Paths.Contains(key.Path))
                     {
                         item.Command = Commands["RemoveKeyFromChart"];
                         item.Header = "Remove From Visualization";
@@ -349,12 +357,23 @@ namespace PSMViewer
                     item.CommandParameter = key;
                     menu.Items.Add(item);
 
-                    
                 }
 
-                menu.IsOpen = true;
+                menu.Items.Add(new Separator());
             }
-               
+
+            
+
+            item = new MenuItem();
+
+            item.Command = Commands["DeleteFromTree"];
+            item.CommandParameter = key;
+            item.Header = "Delete";
+
+            menu.Items.Add(item);
+
+            menu.IsOpen = true;
+
         }
 
         private void EvtWindow_Closing(object sender, CancelEventArgs e)
@@ -384,6 +403,23 @@ namespace PSMViewer
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
+
+                case CommandType.DELETE:
+
+                    key = (KeyItem)parameter;
+
+                    try
+                    {
+                        PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Delete(key.Path);
+                        Commands["RefreshTree"].Execute(null);
+                    }
+                    catch(Exception e) {
+                        MessageBox.Show(e.Message, "An Error Occurred", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    
+
+                    break;
+
                 case CommandType.REMOVE_KEY_CHART:
 
                     if(_graph != null)
@@ -503,7 +539,7 @@ namespace PSMViewer
                 case CommandType.ABOUT:
 
                     Assembly assembly = Assembly.GetExecutingAssembly();
-                    MessageBox.Show(String.Format("{0}\n{1}\nVersion : {2}",
+                    MessageBox.Show(String.Format("{0}\n{1}\nVersion {2}",
                         assembly.GetCustomAttribute<AssemblyTitleAttribute>().Title,
                         assembly.GetCustomAttribute<AssemblyCopyrightAttribute>().Copyright,
                         assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version
@@ -540,11 +576,8 @@ namespace PSMViewer
 
                 case CommandType.EXIT:
 
-                    if (MessageBox.Show("Do you want to save before exiting?", "Save", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                        Commands["Save"].Execute(null);
-                                        
-                    Environment.Exit(0);
-
+                    App.Current.Shutdown();
+                    //Environment.Exit(0);
                     break;
                     
             }
@@ -683,7 +716,7 @@ namespace PSMViewer
                 }
 
             }
-            catch (FileNotFoundException)
+            catch (Exception)
             {
 
             }
@@ -813,9 +846,9 @@ namespace PSMViewer
                     _graph.Owner = this;
                     _graph.Title = key.Parent.Path;
 
-                    foreach (string path in _graph.Keys.ToArray())
+                    foreach (KeyItemPath p in _graph.Paths.ToArray())
                     {
-                        _graph.Remove(KeyItem.CreateFromPath(path));
+                        _graph.Remove(KeyItem.CreateFromPath(p.Path));
                     }
 
                     _graph.Add(key, context.Entries);
@@ -906,83 +939,14 @@ namespace PSMViewer
         /// <param name="e"></param>
         private void settings_propertyGrid_SelectedObjectChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            
-            PropertyGrid grid = (PropertyGrid)sender;
-            Dictionary<PropertyDescriptor, PropertyItem> items = new Dictionary<PropertyDescriptor, PropertyItem>();
-            IOptions settings = Options.Store;
 
-            foreach (PropertyItem item in grid.Properties)
-            {
-                items.Add(item.PropertyDescriptor, item);
-            }
-
-            foreach (var p in settings.Get())
-            {
-                
-                PropertyDescriptor descriptor = p.Key;
-
-                PropertyItem item = items[descriptor];
-
-                descriptor.RemoveValueChanged(settings, settings_propertyGrid_PropertyDescriptorValueChanged);
-
-                if(descriptor.Name == "Store")
-                {
-                    descriptor.AddValueChanged(settings, delegate {
-                        MessageBox.Show("Application must be restarted for this change to take effect", "Restart required", MessageBoxButton.OK, MessageBoxImage.Information);
-                        Commands["Exit"].Execute(null);
-                    });
-                }
-                else
-                    descriptor.AddValueChanged(settings, settings_propertyGrid_PropertyDescriptorValueChanged);
-                
-                if (p.Value.Count > 0)
-                {
-                    StoreOptionEditor editor = new StoreOptionEditor(descriptor);
-                    item.Editor = editor.ResolveEditor(item);
-                }
-
-
-            }
-
-            grid.Update();
+            Options.settings_propertyGrid_SelectedObjectChanged(sender, e);
         }
-
-        /// <summary>
-        /// Refreshes the <see cref="settings_propertyGrid"/> editors.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void settings_propertyGrid_PropertyDescriptorValueChanged(object sender, EventArgs e)
-        {
-            settings_propertyGrid_SelectedObjectChanged(settings_propertyGrid, null);
-        }
-
+        
         private void settings_propertyGrid_PropertyValueChanged(object sender, PropertyValueChangedEventArgs e)
         {
 
-            PropertyItem item = (PropertyItem)e.OriginalSource;
-            PropertyGrid grid = (PropertyGrid)sender;
-
-            if (item.DisplayName == "IndexField")
-            {
-                foreach(PropertyItem p in grid.Properties)
-                {
-                    if(p.DisplayName == "StartIndex" || p.DisplayName == "EndIndex")
-                    {
-                        if(p.Value is DateTime)
-                        {
-                            p.Editor = new Xceed.Wpf.Toolkit.PropertyGrid.Editors.DateTimeUpDownEditor().ResolveEditor(p);
-                        }
-                        else
-                        {
-                            p.Editor = new Xceed.Wpf.Toolkit.PropertyGrid.Editors.LongUpDownEditor().ResolveEditor(p);
-                        }
-                    }
-                }
-
-                ((PropertyGrid)sender).Update();
-
-            }
+            Options.settings_propertyGrid_PropertyValueChanged(sender, e);
         }
 
         #endregion

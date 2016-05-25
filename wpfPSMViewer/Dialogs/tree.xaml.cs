@@ -120,6 +120,8 @@ namespace PSMViewer
 
             AddHandler(TreeViewItem.ExpandedEvent, new RoutedEventHandler(Reload));
 
+            AddHandler(TreeViewItem.CollapsedEvent, new RoutedEventHandler(Reload));
+
             AddHandler(TreeViewItem.PreviewMouseMoveEvent, new RoutedEventHandler((sender, e) =>
             {
 
@@ -226,7 +228,7 @@ namespace PSMViewer
 
         private void Reload(object sender, RoutedEventArgs e)
         {
-
+            
             KeyItem key = GetDataContext(e);
 
             key.Forward(this);

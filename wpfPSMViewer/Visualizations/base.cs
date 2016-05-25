@@ -25,6 +25,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Collections;
+using System.Text.RegularExpressions;
+using PSMonitor;
 
 namespace PSMViewer.Visualizations
 {
@@ -129,17 +131,74 @@ namespace PSMViewer.Visualizations
         }
     }
 
+    public class KeyItemPath
+    {
+        public string Path { get; set; }
+
+        public uint? Position { get; set; }
+
+        public KeyItemPath(string path, uint? pos)
+        {
+            Path = path;
+            Position = pos;
+
+        }
+
+        public KeyItemPath()
+        {
+
+        }
+
+        
+    }
+
     /// <summary>
     /// A wrapper class around List<string>.
     /// Used to hold the key paths when the VisualizationControl is serialized to XAML
     /// </summary>
-    public class KeyItemPathList : List<string> {}
+    public class KeyItemPathList : List<KeyItemPath> {
+
+        public bool Contains(string path)
+        {
+
+            foreach (KeyItemPath p in this)
+                if (p.Path == path)
+                    return true;
+
+            return false;
+        }
+
+        public KeyItemPath Get(string path)
+        {
+
+            foreach (KeyItemPath p in this)
+                if (p.Path == path)
+                    return p;
+
+            return null;
+        }
+
+        public bool Remove(string path) {
+
+            foreach(KeyItemPath p in this)
+                if (p.Path == path)
+                    return Remove(p);
+
+            return false;
+        }
+
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class KeyItemTitleList : Dictionary<string, uint?> {}
 
     /// <summary>
     /// The VisualizationControl base class, inherited by all visualization controls
     /// </summary>
     [Icon("../icons/application_view_gallery.png")]
-    public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged, IUndo
+    public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged
     {
 
 
@@ -299,9 +358,15 @@ namespace PSMViewer.Visualizations
                 VisualizationControl w = (VisualizationControl)sender;
 
                 if (((Visibility)e.NewValue) != Visibility.Visible && ((Visibility)e.OldValue) == Visibility.Visible)
-                    w.PopState();
+                    foreach (MultiControl control in w._controls)
+                    {
+                        control.PopState();
+                    }
                 else if (((Visibility)e.NewValue) == Visibility.Visible && ((Visibility)e.OldValue) != Visibility.Visible)
-                    w.PushState();
+                    foreach (MultiControl control in w._controls)
+                    {
+                        control.PushState();
+                    }
 
             }));
 
@@ -455,7 +520,7 @@ namespace PSMViewer.Visualizations
         /// A unique idenfifier for the object
         /// </summary>
         public Guid Id { get; set; } = Guid.NewGuid();
-
+        
         /// <summary>
         /// The index of this object in the parent windows children
         /// </summary>
@@ -478,28 +543,34 @@ namespace PSMViewer.Visualizations
         /// </summary>
         protected List<PropertyDefinition> Properties { get; set; } = new List<PropertyDefinition>();
         
-        private KeyItemPathList _keys = new KeyItemPathList();
+        private KeyItemPathList _paths = new KeyItemPathList();
         /// <summary>
         /// Holds the key paths.
         /// Used for serialization, need only paths not the whole <typeparamref name="KeyItem"/>
         /// </summary>
-        public KeyItemPathList Keys
+        public KeyItemPathList Paths
         {
             get
             {
-                return _keys;
+                return _paths;
             }
 
             set
             {
-                foreach (string path in value)
+                foreach (KeyItemPath p in value)
                 {
-                    Add(KeyItem.CreateFromPath(path));
+                    
+                    KeyItem key = KeyItem.CreateFromPath(p.Path);
+
+                    if (p.Position.HasValue)
+                        key.Title.Position = p.Position.Value;
+
+                    Add(key);
                 }
             }
         }
 
-        private ObservableCollection<MultiControl> controls = new ObservableCollection<MultiControl>();
+        private ObservableCollection<MultiControl> _controls = new ObservableCollection<MultiControl>();
         /// <summary>
         /// Holds the controls for each key
         /// </summary>
@@ -507,7 +578,7 @@ namespace PSMViewer.Visualizations
         {
             get
             {
-                return controls;
+                return _controls;
             }
         }
         
@@ -602,7 +673,7 @@ namespace PSMViewer.Visualizations
         }
         
         #endregion
-        
+
         /// <summary>
         /// A thumbnail image of the widget
         /// </summary>
@@ -624,6 +695,10 @@ namespace PSMViewer.Visualizations
         /// </summary>
         protected enum CommandType
         {
+            /// <summary>
+            /// Modify the title position
+            /// </summary>
+            MOD_TITLE,
             /// <summary>
             /// Add a key to visualize its data
             /// </summary>
@@ -681,6 +756,16 @@ namespace PSMViewer.Visualizations
             switch (cmd)
             {
 
+                case CommandType.MOD_TITLE:
+
+                    window = new Dialogs.ModDataTitle(this);
+                    window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                    window.Owner = this.Owner;
+
+                    window.ShowDialog();
+
+                    break;
+
                 case CommandType.ADD_KEY:
                 case CommandType.REMOVE_KEY:
 
@@ -720,6 +805,10 @@ namespace PSMViewer.Visualizations
                     Next();
                     return;
 
+                case CommandType.MOD_TITLE:
+
+                    break;
+
                 case CommandType.ADD_KEY:
 
                     if(parameter != null && parameter is KeyItem)
@@ -743,7 +832,7 @@ namespace PSMViewer.Visualizations
 
                     window.Title = String.Format("Remove Key [{0}]", Title);
 
-                    ((TreeViewItem)tree.Items[0]).ItemsSource = Keys.Select(path => { return KeyItem.CreateFromPath(path); });
+                    ((TreeViewItem)tree.Items[0]).ItemsSource = Paths.Select(p => { return KeyItem.CreateFromPath(p.Path); });
 
                     tree.Window.ShowDialog();
 
@@ -753,8 +842,6 @@ namespace PSMViewer.Visualizations
                     break;
 
                 case CommandType.PROPERTIES:
-
-                    PushState();                    
                     
                     window = ((grid = new PropertiesWindow(this, Properties.ToArray())
                     {
@@ -766,7 +853,7 @@ namespace PSMViewer.Visualizations
 
                     }));
                     
-                    grid.PropertyGrids[0].PropertyValueChanged += (s, a) => Refresh();
+                    grid.PropertyGrids.ToArray()[0].PropertyValueChanged += (s, a) => Refresh();
 
                     window.Height = window.Width;
                     window.ShowDialog();
@@ -797,6 +884,7 @@ namespace PSMViewer.Visualizations
             #region Commands
 
             CommandsSource.Add("Add", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD_KEY));
+            CommandsSource.Add("ModifyDataTitle", new RelayCommand(ExecuteCommand, canExecute, CommandType.MOD_TITLE));
             CommandsSource.Add("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_KEY));
             CommandsSource.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             CommandsSource.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREV));
@@ -850,7 +938,9 @@ namespace PSMViewer.Visualizations
             RegisterUserCommand();
             RegisterUserCommand("Remove Data", CommandsSource["Remove"]);
             RegisterUserCommand("Add Data", CommandsSource["Add"]);
-            
+            RegisterUserCommand();
+            RegisterUserCommand("Modify Data Title", CommandsSource["ModifyDataTitle"]);
+
             #endregion
 
             ContextMenu = new ContextMenu();
@@ -965,6 +1055,8 @@ namespace PSMViewer.Visualizations
                 InvalidateMeasure();
                 InvalidateVisual();
             }
+
+            UpdateLayout();
             
         }
 
@@ -973,13 +1065,13 @@ namespace PSMViewer.Visualizations
         /// </summary>
         public virtual void Dispose()
         {
-            foreach(MultiControl m in controls.ToArray())
+            foreach(MultiControl m in _controls.ToArray())
             {
                 Remove(m.Key);
                 m.Dispose();
             }
 
-            controls.Clear();
+            _controls.Clear();
 
             GC.SuppressFinalize(this);
         }
@@ -991,7 +1083,7 @@ namespace PSMViewer.Visualizations
         /// <returns>The <see cref="MultiControl"/> if any</returns>
         protected MultiControl GetControlsFor(KeyItem key)
         {
-            return (from s in controls where s.Key.Path == key.Path select s).ElementAtOrDefault(0);
+            return (from s in _controls where s.Key.Path == key.Path select s).ElementAtOrDefault(0);
         }
 
         /// <summary>
@@ -1054,7 +1146,7 @@ namespace PSMViewer.Visualizations
             try
             {
 
-                if(Owner != null) {
+                if(Owner != null && Owner is VisualizationWindow) {
 
                     variables = ((VisualizationWindow)Owner).VariableDefinitions;
 
@@ -1075,20 +1167,32 @@ namespace PSMViewer.Visualizations
                         }
 
                         if (changed)
-                            key = KeyItem.CreateFromPath(String.Join(".", path));
+                        {
+
+                            KeyItem k = KeyItem.CreateFromPath(String.Join(".", path));
+
+                            k.Title.Position = key.Title.Position;
+                            key = k;
+
+                        }
+                        
 
                     }
 
                 }
-
                 
-
             }
-            catch(Exception) { }
+            catch (Exception e) {
+                Logger.Error(e);
+            }
+
+            key.Title.PropertyChanged += KeyItemTitle_PropertyChanged;
 
             if (key.Type == null)
             {
-                Keys.Add(key.StaticPath);
+
+                foreach(KeyItem k in key.Children)
+                    _paths.Add(new KeyItemPath(k.StaticPath, null));
 
                 key.Children.CollectionChanged += Key_Children_CollectionChanged;
 
@@ -1103,10 +1207,10 @@ namespace PSMViewer.Visualizations
             {
 
                 control = new MultiControl(key, this.OnReload, collection);                
-                controls.Add(control);
+                _controls.Add(control);
 
-                if (key.Parent != null && !_keys.Contains(key.Parent.StaticPath))
-                    _keys.Add(key.StaticPath);
+                if (key.Parent != null && !_paths.Contains(key.Parent.StaticPath))
+                    _paths.Add(new KeyItemPath(key.StaticPath, null));
 
             }
 
@@ -1114,6 +1218,26 @@ namespace PSMViewer.Visualizations
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
             return control;
+
+        }
+
+        /// <summary>
+        /// Called when a <see cref="KeyItem.Titles"/> changes
+        /// </summary>
+        private void KeyItemTitle_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+
+            KeyItemTitle title = (KeyItemTitle)sender;
+
+            foreach(KeyItemPath p in Paths)
+            {
+
+                if (title.Key.Path == p.Path)
+                    p.Position = title.Position;
+
+            }
+
+            Refresh();
 
         }
 
@@ -1132,7 +1256,7 @@ namespace PSMViewer.Visualizations
                 m.Dispose();
             }
 
-            Keys.Remove(key.StaticPath);
+            Paths.Remove(key.StaticPath);
 
             if (RefreshOperation == null)
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
@@ -1148,7 +1272,7 @@ namespace PSMViewer.Visualizations
         protected void Key_Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
 
-            foreach (MultiControl m in (from s in controls select s))
+            foreach (MultiControl m in (from s in _controls select s))
             {
                 if (e.OldItems != null && (from KeyItem k in e.OldItems where k.Path == m.Key.Path select k).ElementAtOrDefault(0) == null)
                     Remove(m.Key);
@@ -1159,7 +1283,7 @@ namespace PSMViewer.Visualizations
             foreach (KeyItem k in e.NewItems)
             {
                 
-                if (k.Type != null && (from s in controls where s.Key.Path == k.Path select s).ElementAtOrDefault(0) == null)
+                if (k.Type != null && (from s in _controls where s.Key.Path == k.Path select s).ElementAtOrDefault(0) == null)
                     Add(k);
 
             }
@@ -1244,7 +1368,7 @@ namespace PSMViewer.Visualizations
 
             }
 
-            foreach (MultiControl m in controls)
+            foreach (MultiControl m in _controls)
             {
 
                 Controls control = m.Get(DataIndexFieldAsEnum, Start, Count);
@@ -1298,7 +1422,7 @@ namespace PSMViewer.Visualizations
         {
             bool yn = false;
 
-            foreach (MultiControl control in controls)
+            foreach (MultiControl control in _controls)
             {
                 yn |= control.Get(DataIndexFieldAsEnum).Next();
             }
@@ -1315,7 +1439,7 @@ namespace PSMViewer.Visualizations
 
             bool yn = false;
 
-            foreach (MultiControl control in controls)
+            foreach (MultiControl control in _controls)
             {
                 yn |= control.Get(DataIndexFieldAsEnum).Previous();
             }
@@ -1336,42 +1460,7 @@ namespace PSMViewer.Visualizations
         public virtual void Down() {
             throw new NotImplementedException();
         }
-
-
-        /// <summary>
-        /// Save state.
-        /// </summary>
-        /// 
-        public virtual void PushState()
-        {
-            
-            foreach (MultiControl control in controls)
-            {
-                control.PushState();
-            }
-
-            UndoExtension.PushState(this);
-        }
-
-        /// <summary>
-        /// Restore state.
-        /// </summary>
-        ///        
-        public virtual void PopState()
-        {
-            
-            foreach (MultiControl control in controls)
-            {
-                control.PopState();
-            }
-
-            UndoExtension.PopState(this, ShouldSerializeProperty);
-
-            if (RefreshOperation == null)
-                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
-
-        }
-
+        
         /// <summary>
         /// Overrides what should be displayed if the object is converted to text.
         /// </summary>

@@ -24,6 +24,8 @@ using PSMViewer.Utilities;
 using System.Threading;
 using PSMonitor.Stores;
 using PSMViewer.Models;
+using PSMViewer.ViewModels;
+using System.Linq;
 
 namespace PSMViewer
 {
@@ -120,18 +122,82 @@ namespace PSMViewer
     /// <summary>
     /// 
     /// </summary>
-    public class VariableDefinition
+    public class VariableDefinition : INotifyPropertyChanged
     {
-        
+
+        private string _name;
         /// <summary>
         /// The variable name
         /// </summary>
-        public string Name { get; set; }
+        public string Name
+        {
 
+            get { return _name; }
+
+            set {
+
+                _name = value;
+                OnPropertyChanged();
+
+            }
+
+        }
+
+        private VariableDefinitionList _list;
+
+        private uint _position;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
+        /// </summary>
+        /// <param name="propertyName"></param>
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+        
         /// <summary>
         /// The variable position
         /// </summary>
-        public uint Position { get; set; }
+        public uint Position
+        {
+
+            get { return _position; }
+
+            set
+            {
+                _position = value;
+
+                while (HasPosition(_position))
+                    _position++;
+
+                OnPropertyChanged();
+            }
+        }
+
+        private bool HasPosition(uint pos) {
+
+            if(_list != null)
+                foreach (VariableDefinition def in _list)
+                    if (def.Position == pos)
+                        return true;
+
+            return false;
+
+        }
+
+        public VariableDefinition()
+        {
+
+        }
+
+        public VariableDefinition(VariableDefinitionList list)
+        {
+            _list = list;
+        }
 
     }
 
@@ -148,7 +214,7 @@ namespace PSMViewer
     /// <summary>
     /// A window that can contain many <see cref="VisualizationControl"/>
     /// </summary>
-    public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IUndo, IPropertyProvider, IDisposable
+    public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IPropertyProvider, IDisposable
     {
         
         
@@ -209,14 +275,29 @@ namespace PSMViewer
                 _children = value;
 
                 _children.CollectionChanged += Children_CollectionChanged;
+
+                OnPropertyChanged("Children");
             }
         }
 
+        private VariableDefinitionList _variable_definitions;
         /// <summary>
         /// The variable definitions in the window
         /// </summary>
-        public VariableDefinitionList VariableDefinitions { get; set; }
+        public VariableDefinitionList VariableDefinitions
+        {
+            get {
+                return _variable_definitions;
+            }
+            set {
 
+                _variable_definitions = value;
+
+                if(_variable_definitions != null)
+                    _variable_definitions.CollectionChanged += Children_CollectionChanged;
+            }
+        }
+        
         private RowDefinitionList _rowdefs = null;
 
         /// <summary>
@@ -397,11 +478,36 @@ namespace PSMViewer
         /// <summary>
         /// Gets the variables
         /// </summary>
-        public ObservableCollection<Models.KeyItem.Variable> Variables
+        public IEnumerable<Models.KeyItem.Variable> Variables
         {
             get {
 
-                return Models.KeyItem.GetGlobalVariables();
+                ObservableCollection<Models.KeyItem.Variable> vars = Models.KeyItem.GetGlobalVariables();
+
+                if (vars == null)
+                    return null;
+
+                return VariableDefinitions.Select((d) => {
+
+                    foreach (Models.KeyItem.Variable v in vars)
+                        if (v.Position == d.Position && v.Name == d.Name)
+                            return v;
+
+                    return null;
+
+                });
+          }
+        }
+
+
+        public StoreOptionsList StoreOptions
+        {
+            get {
+                return _options.StoreOptions;
+            }
+
+            set {
+                _options.StoreOptions = value;
             }
         }
 
@@ -431,7 +537,7 @@ namespace PSMViewer
         public VisualizationWindow() : base()
         {
             
-            _options = new Settings(this);
+            _options = new Settings();
 
             Visibility = Visibility.Visible;
             ShowActivated = true;
@@ -451,10 +557,10 @@ namespace PSMViewer
             InitializeComponent();
             
             DataContext = this;
-            Closing += VisualizationWindow_Closing;                       
+            Closing += VisualizationWindow_Closing;
 
             #region Bindings
-
+            
             SetBinding(ControlsVisibilityProperty, new Binding("Value") {
                 Source = new BindingWrapper<Visibility>(
                     (visibility) =>
@@ -537,7 +643,7 @@ namespace PSMViewer
             Commands.Add("Export", new RelayCommand(ExecuteCommand, canExecute, CommandType.EXPORT));
             Commands.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             Commands.Add("PropertiesW", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES_W));
-            Commands.Add("Refresh", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH));
+            Commands.Add("Refresh", new RelayCommand(ExecuteCommand, canExecute, CommandType.RELOAD));
             Commands.Add("Delete", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
             Commands.Add("ControlsVisibility", new RelayCommand(ExecuteCommand, canExecute, CommandType.CONTROLS));
             Commands.Add("AddChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD));
@@ -609,7 +715,19 @@ namespace PSMViewer
         private void Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
 
-            if (sender == RowDefinitions)
+            if(sender == VariableDefinitions)
+            {
+                
+                if (e.NewItems != null)
+                {
+
+                    foreach(VariableDefinition def in e.NewItems)
+                        def.PropertyChanged += VariableDef_PropertyChanged;
+
+                }
+
+            }
+            else if (sender == RowDefinitions)
             {
 
                 if (e.Action == NotifyCollectionChangedAction.Reset)
@@ -682,12 +800,14 @@ namespace PSMViewer
 
                     }
             }
+            
+            Refresh();
 
-            foreach(VisualizationControl widget in Children)
-            {
-                widget.Refresh();
-            }
+        }
 
+        private void VariableDef_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Refresh();
         }
 
         /// <summary>
@@ -749,7 +869,7 @@ namespace PSMViewer
             /// <summary>
             /// Refresh and reload everything
             /// </summary>
-            REFRESH,
+            RELOAD,
             /// <summary>
             /// Delete this window
             /// </summary>
@@ -784,6 +904,17 @@ namespace PSMViewer
             Window window;
             RelayCommand cmd = (RelayCommand)sender;
             Stream stream;
+
+            switch ((CommandType)cmd.Arguments[0].Value)
+            {
+
+                case CommandType.EXPORT:
+                case CommandType.SAVE:
+
+
+
+                    break;
+            }
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
@@ -898,18 +1029,12 @@ namespace PSMViewer
 
                     break;
 
-                case CommandType.REFRESH:
-
+                case CommandType.RELOAD:
+                    
                     this.OnReload(this);
-
-                    OnPropertyChanged("Variables");
-                    OnPropertyChanged("VariablesVisibility");
-
                     break;
 
                 case CommandType.PROPERTIES:
-
-                    PushState();
                     
                     window = (new PropertiesWindow(this, _options.Store)
                     {
@@ -921,7 +1046,14 @@ namespace PSMViewer
                         WindowStartupLocation = WindowStartupLocation.CenterScreen
                     });
 
-                    window.ShowDialog();
+                    PropertyGrid grid = ((PropertiesWindow)window).PropertyGrids.ToArray()[1];
+                    
+                    grid.SelectedObject = null;
+
+                    window.Show();
+
+                    grid.SelectedObjectChanged += settings_propertyGrid_SelectedObjectChanged;
+                    grid.SelectedObject = _options.Store;
 
                     break;
 
@@ -937,9 +1069,14 @@ namespace PSMViewer
             }
 
         }
-        
+
         #endregion
 
+        private void settings_propertyGrid_SelectedObjectChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            _options.settings_propertyGrid_SelectedObjectChanged(sender, e);
+        }
+        
         /// <summary>
         /// Used to specify that content should not be serialized when serialzing to XAML.
         /// </summary>
@@ -980,15 +1117,50 @@ namespace PSMViewer
             return base.ShouldSerializeProperty(dp);
         }
         
+        public void Refresh()
+        {
+
+            ObservableCollection<KeyItem.Variable> variables = KeyItem.GetGlobalVariables();
+            
+            if(variables != null)
+                variables.Clear();
+
+            foreach (VisualizationControl widget in Children)
+            {
+                MultiControl[] controls = new MultiControl[widget.Controls.Count];
+                widget.Controls.CopyTo(controls, 0);
+
+                foreach (MultiControl control in controls)
+                {
+
+                    widget.Remove(control.Key);
+
+                    KeyItem key = KeyItem.CreateFromPath(control.Key.Path);
+                    key.Title.Position = control.Key.Title.Position;
+
+                    widget.Add(key);
+
+                }
+
+                widget.Refresh();
+            }
+
+            OnPropertyChanged("Variables");
+            OnPropertyChanged("VariablesVisibility");
+
+        }
+
         /// <summary>
         /// Reloads everything in the window.
         /// </summary>
         public void Reload()
         {
-            foreach(IReload chart in Children)
+            
+            foreach (VisualizationControl chart in Children)
             {
                 this.OnReload(chart);
             }
+   
         }
 
         /// <summary>
@@ -1028,38 +1200,6 @@ namespace PSMViewer
             return r;
         }
         
-        /// <summary>
-        /// Pop state from the Undo stack
-        /// </summary>                               
-        public void PopState()
-        {
-
-            VisualizationWindow w = ((VisualizationWindow)UndoExtension.PopState(this, (dp) =>
-            {
-
-                if (dp == ContentProperty)
-                    return false;
-
-                return ShouldSerializeProperty(dp);
-
-            }));
-
-            w.Hide();
-            w.Loaded += (sender, e) =>
-             {
-                 ((VisualizationWindow)sender).Close();
-             };
-
-        }
-               
-        /// <summary>
-        /// Push state onto the Undo stack
-        /// </summary>
-        public void PushState()
-        {
-            UndoExtension.PushState(this);
-        }
-
         /// <summary>
         /// <see cref="IDisposable.Dispose"/>
         /// </summary>

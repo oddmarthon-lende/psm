@@ -22,6 +22,83 @@ namespace PSMViewer.Models
 {
 
     /// <summary>
+    /// The <see cref="KeyItem"/> title property
+    /// </summary>
+    public class KeyItemTitle : INotifyPropertyChanged
+    {
+
+        public KeyItem Key { get; private set; }
+
+        public string Name
+        {
+            get
+            {
+                return GetComponents()[Position];
+            }
+
+        }
+
+        private uint? _position = null;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public uint Position
+        {
+
+            get {
+
+                string[] components = GetComponents();
+                return _position.HasValue ? _position.Value : ((uint)(components.Length - 1));
+            }
+
+            set {
+
+                string[] components = GetComponents();
+                _position = Math.Min(value, ((uint)(components.Length - 1)));
+
+                OnPropertyChanged("Position");
+                OnPropertyChanged("Name");
+            }
+
+        }
+
+        public KeyItemTitle(KeyItem item)
+        {
+            Key = item;
+            item.PropertyChanged += Item_PropertyChanged;
+        }
+
+        private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged("Name");
+        }
+
+        private string[] GetComponents() {
+            return Key.Path.Split('.');
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+
+    }
+
+    public class KeyItemVariableException : Exception
+    {
+        public KeyItemVariableException(string msg) : base(msg)
+        {
+
+        }
+    }
+
+    /// <summary>
     /// The <see cref="Key"/> wrapper class.
     /// </summary>
     public class KeyItem : Key, IReload, INotifyPropertyChanged
@@ -40,9 +117,16 @@ namespace PSMViewer.Models
         }
 
         /// <summary>
+        /// The title shows the current path component at the specified position
+        /// </summary>
+        public KeyItemTitle Title { get; private set; }
+
+        /// <summary>
         /// The local variables for this instance
         /// </summary>
         public IEnumerable<Variable> Variables { get; private set; }
+
+        
 
         /// <summary>
         /// Key path variable
@@ -232,7 +316,7 @@ namespace PSMViewer.Models
                     {
                         if (m1.Success)
                         {
-                            variable.SelectedIndex = Convert.ToInt32(m1.Value);
+                            variable.SelectedIndex = System.Convert.ToInt32(m1.Value);
 
                             foreach(Match m2 in Regex.Matches(name, String.Format(@"(.+?)\:\d+", name)))
                             {
@@ -520,20 +604,20 @@ namespace PSMViewer.Models
         /// <summary>
         /// Constructor
         /// </summary>
-        public KeyItem() : base(null, null) { }
+        public KeyItem() : base(null, null) { Title = new KeyItemTitle(this); }
                
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="key">The <see cref="Key"/> to wrap</param>
-        public KeyItem(Key key) : base(key.Name, key.Type) { }
+        public KeyItem(Key key) : base(key.Name, key.Type) { Title = new KeyItemTitle(this); }
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="key">The key name</param>
         /// <param name="type">The data type for values</param>
-        public KeyItem(string key, Type type) : base(key, type) { }
+        public KeyItem(string key, Type type) : base(key, type) { Title = new KeyItemTitle(this); }
 
         /// <summary>
         /// Creates a new <see cref="KeyItem"/> from a <c>string</c>
@@ -582,11 +666,16 @@ namespace PSMViewer.Models
 
                         if (v_global.Name == v_local.Name && v_global.Position == v_local.Position)
                         {
+                            if ((v_global.Parent == null ? "" : v_global.Parent.StaticPath) != (v_local.Parent == null ? "" : v_local.Parent.StaticPath))
+                            {
+                                throw new KeyItemVariableException("Variables cannot have different parent nodes in the same context.");
+                            }
+
                             vars[i] = v_global;
                         }
                         else if (v_global.Name == v_local.Name)
                         {
-                            throw new Exception("Duplicate variable name");
+                            throw new KeyItemVariableException("Duplicate variable name");
                         }
 
                     }
@@ -604,21 +693,16 @@ namespace PSMViewer.Models
             item._parent = KeyItem.CreateFromPath(p);
             item._path = p.Length > 0 ? p : null;
 
-            if(item._parent != null)
+            foreach (Key k in PSM.Store(ctx).Keys(item._parent != null ? item._parent.Path : ""))
             {
-              
-                foreach (Key k in PSM.Store(ctx).Keys(item._parent.Path))
+                item = new KeyItem(key, k.Type)
                 {
-                    item = new KeyItem(key, k.Type)
-                    {
-                        Context = ctx,
-                        Variables = vars.Count > 0 ? vars : null,
-                        _parent = item._parent
-                    };
+                    Context = ctx,
+                    Variables = vars.Count > 0 ? vars : null,
+                    _parent = item._parent
+                };
 
-                    break;
-                }
-
+                break;
             }
 
             return item;

@@ -5,18 +5,43 @@ using PSMViewer.Visualizations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Threading;
+using Xceed.Wpf.Toolkit.PropertyGrid;
 using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace PSMViewer
 {
 
+    public class StoreOption
+    {
+        public string Key { get; set; }
+
+        public object Value { get; set; }
+
+        public StoreOption(string key, object value)
+        {
+
+            Key = key;
+            Value = value;
+
+        }
+
+        public StoreOption()
+        {
+
+        }
+    }
+
+    public class StoreOptionsList : List<StoreOption> { }
+
     /// <summary>
     /// Mainwindow options
     /// </summary>
     [Serializable]
-    public class Settings : DependencyObject, INotifyPropertyChanged
+    public class Settings : INotifyPropertyChanged
     {
         /// <summary>
         /// <see cref="INotifyPropertyChanged.PropertyChanged"/>
@@ -53,10 +78,27 @@ namespace PSMViewer
             }
         }
 
+        private Window _window;
         /// <summary>
         /// References the main window.
         /// </summary>
-        Window _window;
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Browsable(false)]
+        public Window Window {
+
+            get { return _window; }
+            set {
+
+                _window = value;
+
+                if (_startindex != null)
+                    StartIndex = _startindex;
+
+                if (_endindex != null)
+                    EndIndex = _endindex;
+            }
+        }
+        
 
         /// <summary>
         /// The type of chart to display in the main window.
@@ -64,17 +106,9 @@ namespace PSMViewer
         [Category("Application")]
         [ItemsSource(typeof(ChartTypes))]
         [Description("Gets/Sets the type of chart to display in the main window")]
-        public Type ChartType
-        {
-            get { return (Type)GetValue(ChartTypeProperty); }
-            set { SetValue(ChartTypeProperty, value); }
-        }
-        /// <summary>
-        /// Identifies the <see cref="ChartType"/> dependency property.
-        /// </summary>
-        public static readonly DependencyProperty ChartTypeProperty =
-            DependencyProperty.Register("ChartType", typeof(Type), typeof(Settings), new PropertyMetadata(null));        
+        public Type ChartType { get; set; }
 
+        private string _indexfield;
 
         [Category("Controls")]
         [Editor(typeof(StoreEnumEditor), typeof(StoreEnumEditor))]
@@ -84,19 +118,17 @@ namespace PSMViewer
         {
 
             get {
-
-                string value = (string)GetValue(IndexFieldProperty);
-
+                
                 try {                
                     
-                    Enum.Parse(_index, value);
+                    Enum.Parse(_index, _indexfield);
                 }
                 catch(Exception)
                 {
-                    value = PSMonitor.PSM.Store(Dispatcher).Default.ToString();
+                    _indexfield = PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Default.ToString();
                 }
                                 
-                return value;
+                return _indexfield;
 
             }
 
@@ -107,24 +139,19 @@ namespace PSMViewer
                     Enum.Parse(_index, value);                                        
                 }
                 catch(Exception) {
-                    value = PSMonitor.PSM.Store(Dispatcher).Default.ToString();
+                    value = PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Default.ToString();
                 }
                 finally
                 {
-                    SetValue(IndexFieldProperty, value);
+                    _indexfield = value;
                 }
 
                 OnPropertyChanged();
 
             }
-        }
+        }      
 
-        /// <summary>
-        /// Identifies the <see cref="IndexField"/> dependency property.
-        /// </summary>
-        public static readonly DependencyProperty IndexFieldProperty =
-            DependencyProperty.Register("IndexField", typeof(string), typeof(Settings), new PropertyMetadata(null));        
-
+        private object _startindex;
         [Category("Controls")]
         [PropertyOrder(0)]
         [Description("Gets/Sets the start index")]
@@ -132,15 +159,33 @@ namespace PSMViewer
         {
             get
             {
-                return ((MultiControl)_window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).Start;
+                try
+                {
+                    return ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).Start;
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+                
             }
 
             set
             {
-                ((MultiControl)_window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).Start = value;
-                OnPropertyChanged();
+                try
+                {
+
+                    ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).Start = value;
+                    OnPropertyChanged();
+                }
+                catch (Exception)
+                {
+                    _startindex = value;
+                }
             }
         }
+
+        private object _endindex;
 
         [Category("Controls")]
         [PropertyOrder(1)]
@@ -149,14 +194,77 @@ namespace PSMViewer
         {
             get
             {
-
-                return ((MultiControl)_window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).End;
+                try
+                {
+                    return ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).End;
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+                
             }
 
             set
             {
-                ((MultiControl)_window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).End = value;
-                OnPropertyChanged();
+                try {
+                    ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).End = value;
+                    OnPropertyChanged();
+                }
+                catch(Exception) {
+                    _endindex = value;
+                }
+
+                
+            }
+        }
+
+        [Browsable(false)]
+        public StoreOptionsList StoreOptions
+        {
+
+            get
+            {
+
+                StoreOptionsList list = new StoreOptionsList();
+                IOptions options = Store;
+                PSMonitor.Stores.Properties props = options.Get();
+                
+                foreach(var p in props) {
+
+                    list.Add(new StoreOption(p.Key.DisplayName, options.Get<object>(p.Key.DisplayName)));
+
+                }
+
+                return list;
+
+            }
+
+            set
+            {
+
+                foreach(StoreOption opt in value)
+                {
+
+                    if (opt.Key == "Store") {
+                        PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher, (Type)opt.Value);
+                        break;
+                    }
+                    
+
+                }
+
+                IOptions options = Store;
+
+                foreach (StoreOption opt in value)
+                {
+
+                    options.GetType().GetProperty(opt.Key).SetValue(options, opt.Value);
+
+                }
+
+                OnPropertyChanged("Store");
+
             }
         }
 
@@ -167,8 +275,9 @@ namespace PSMViewer
         {
             get
             {
-                return PSMonitor.PSM.Store(_window.Dispatcher).Options;
+                return PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Options;
             }
+            
         }
 
         /// <summary>
@@ -178,18 +287,119 @@ namespace PSMViewer
         {
             get
             {
-                return PSMonitor.PSM.Store(_window.Dispatcher).Index;
+                return PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Index;
             }
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="window">The <see cref="MainWindow"/></param>
-        public Settings(Window window)
-        {            
-            _window = window;
-            IndexField = PSMonitor.PSM.Store(_window.Dispatcher).Default.ToString();
+        public Settings()
+        {
+            IndexField = PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Default.ToString();
+        }
+
+        /// <summary>
+        /// Changes the editor for properties that has value range data.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void settings_propertyGrid_SelectedObjectChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+
+            PropertyGrid grid = (PropertyGrid)sender;
+            Dictionary<PropertyDescriptor, PropertyItem> items = new Dictionary<PropertyDescriptor, PropertyItem>();
+            IOptions settings = Store;
+
+            PropertyGrid[] grids = grid.Parent.Find<PropertyGrid>(grid.Parent);
+
+            foreach (PropertyItem item in grid.Properties)
+            {
+                items.Add(item.PropertyDescriptor, item);
+            }
+
+            foreach (var p in settings.Get())
+            {
+
+                PropertyDescriptor descriptor = p.Key;
+
+                PropertyItem item = items[descriptor];
+
+                descriptor.RemoveValueChanged(grid, settings_propertyGrid_PropertyDescriptorValueChanged);
+
+                if (descriptor.Name == "Store")
+                {
+                    descriptor.AddValueChanged(settings, delegate {
+
+
+                        Type t = settings.Get<Type>("Store");
+                        IStore store = PSMonitor.PSM.Store(System.Windows.Threading.Dispatcher.CurrentDispatcher, t);
+
+                        store.Options.GetType().GetProperty("Store").SetValue(store.Options, t);
+
+                        grid.SelectedObject = store.Options;
+
+                        if(Window is MainWindow)
+                        {
+                            grids[0].SelectedObject = null;
+                            grids[0].SelectedObject = this;
+                        }
+
+
+                    });
+                }
+                else
+                    descriptor.AddValueChanged(grid, settings_propertyGrid_PropertyDescriptorValueChanged);
+
+                if (p.Value.Count > 0)
+                {
+                    StoreOptionEditor editor = new StoreOptionEditor(descriptor);
+                    item.Editor = editor.ResolveEditor(item);
+                }
+
+
+            }
+
+            grid.Update();
+        }
+
+        /// <summary>
+        /// Refreshes the  editors.
+        /// </summary>
+        public void settings_propertyGrid_PropertyDescriptorValueChanged(object sender, EventArgs e)
+        {
+            PropertyGrid grid = (PropertyGrid)sender;
+            PropertyGrid[] grids = grid.Parent.Find<PropertyGrid>(grid.Parent);
+
+            settings_propertyGrid_SelectedObjectChanged(grids[1], null);
+        }
+
+        public void settings_propertyGrid_PropertyValueChanged(object sender, PropertyValueChangedEventArgs e)
+        {
+
+            PropertyItem item = (PropertyItem)e.OriginalSource;
+            PropertyGrid grid = (PropertyGrid)sender;
+
+            if (item.DisplayName == "IndexField")
+            {
+                foreach (PropertyItem p in grid.Properties)
+                {
+                    if (p.DisplayName == "StartIndex" || p.DisplayName == "EndIndex")
+                    {
+                        if (p.Value is DateTime)
+                        {
+                            p.Editor = new Xceed.Wpf.Toolkit.PropertyGrid.Editors.DateTimeUpDownEditor().ResolveEditor(p);
+                        }
+                        else
+                        {
+                            p.Editor = new Xceed.Wpf.Toolkit.PropertyGrid.Editors.LongUpDownEditor().ResolveEditor(p);
+                        }
+                    }
+                }
+
+                ((PropertyGrid)sender).Update();
+
+            }
         }
 
     }

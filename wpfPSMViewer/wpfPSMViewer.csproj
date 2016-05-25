@@ -86,6 +86,9 @@
     <Compile Include="Converters\reloadstatustoboolean.cs" />
     <Compile Include="Converters\reloadstatustocursor.cs" />
     <Compile Include="Converters\tree_icon_converter.cs" />
+    <Compile Include="Dialogs\modify_data_title.xaml.cs">
+      <DependentUpon>modify_data_title.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\properties.cs" />
     <Compile Include="Editors\store_enum_editor.cs" />
     <Compile Include="Editors\store_option_editor.cs" />
@@ -100,16 +103,16 @@
     <None Include="Visualizations\gauge.cs" />
     <Compile Include="Visualizations\replicator.cs" />
     <Compile Include="Utilities\tracker.cs" />
-    <Compile Include="tree.xaml.cs">
+    <Compile Include="Dialogs\tree.xaml.cs">
       <DependentUpon>tree.xaml</DependentUpon>
     </Compile>
     <Compile Include="ireload.cs" />
     <EmbeddedResource Include="Shaders\gauge.fs" />
     <EmbeddedResource Include="Shaders\gauge.vs" />
     <Compile Include="Visualizations\barBase.cs" />
-    <None Include="Visualizations\bar.xaml.cs">
+    <Compile Include="Visualizations\bar.xaml.cs">
       <DependentUpon>bar.xaml</DependentUpon>
-    </None>
+    </Compile>
     <None Include="Visualizations\vtkBase.cs" />
     <None Include="Visualizations\vtkChartBase.cs" />
     <None Include="Visualizations\vtkBar.xaml.cs">
@@ -124,12 +127,12 @@
     <None Include="Visualizations\vtkLine.xaml.cs">
       <DependentUpon>vtkLine.xaml</DependentUpon>
     </None>
-    <None Include="Visualizations\pie.xaml.cs">
+    <Compile Include="Visualizations\pie.xaml.cs">
       <DependentUpon>pie.xaml</DependentUpon>
-    </None>
-    <None Include="Visualizations\column.xaml.cs">
+    </Compile>
+    <Compile Include="Visualizations\column.xaml.cs">
       <DependentUpon>column.xaml</DependentUpon>
-    </None>
+    </Compile>
     <None Include="Visualizations\area.xaml.cs">
       <DependentUpon>area.xaml</DependentUpon>
     </None>
@@ -160,17 +163,21 @@
     <Compile Include="Models\keyitem.cs" />
     <Compile Include="commands.cs" />
     <Compile Include="controls.cs" />
+    <Page Include="Dialogs\modify_data_title.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="styles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="tree.xaml">
+    <Page Include="Dialogs\tree.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <None Include="Visualizations\bar.xaml">
+    <Page Include="Visualizations\bar.xaml">
       <Generator>MSBuild:Compile</Generator>
-    </None>
+    </Page>
     <None Include="Visualizations\vtkBar.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -187,13 +194,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <None Include="Visualizations\pie.xaml">
+    <Page Include="Visualizations\pie.xaml">
       <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Include="Visualizations\column.xaml">
+    </Page>
+    <Page Include="Visualizations\column.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </None>
+    </Page>
     <None Include="Visualizations\area.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -455,7 +462,7 @@
     <Resource Include="Icons\bullet_feed.png" />
     <Resource Include="Icons\bullet_go.png" />
     <Resource Include="Icons\bullet_green.png" />
-    <Resource Include="Icons\bullet_key.png" />
+    <EmbeddedResource Include="Icons\bullet_key.png" />
     <Resource Include="Icons\bullet_orange.png" />
     <Resource Include="Icons\bullet_picture.png" />
     <Resource Include="Icons\bullet_pink.png" />
@@ -741,7 +748,7 @@
     <Resource Include="Icons\folder_brick.png" />
     <Resource Include="Icons\folder_bug.png" />
     <Resource Include="Icons\folder_camera.png" />
-    <Resource Include="Icons\folder_database.png" />
+    <EmbeddedResource Include="Icons\folder_database.png" />
     <Resource Include="Icons\folder_delete.png" />
     <Resource Include="Icons\folder_edit.png" />
     <EmbeddedResource Include="Icons\folder_error.png" />
@@ -1325,6 +1332,9 @@
     <Resource Include="Icons\chart_column.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /i /Y "$(SolutionDir)$(ProjectName)\$(OutDir)*" "$(SolutionDir)build\Program Files\$(SolutionName)\bin\"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -275,6 +275,11 @@ namespace PSMViewer.Visualizations
 
             Model.InvalidatePlot(true);
 
+            foreach (KeyValuePair<KeyItem, T> s in Series)
+            {
+                ((Series)(object)s.Value).Title = s.Key.Title.ToString();
+            }
+
             base.Refresh();
         }
 
@@ -431,6 +436,13 @@ namespace PSMViewer.Visualizations
             DependencyProperty.Register("LegendBorderThickness", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(0D, FrameworkPropertyMetadataOptions.AffectsRender));
 
 
+        public bool IsLegendVisible
+        {
+            get { return Model.IsLegendVisible; }
+            set { Model.IsLegendVisible = value; Model.InvalidatePlot(true); }
+
+        }
+        
 
         public LegendOrientation LegendOrientation
         {
@@ -594,6 +606,7 @@ namespace PSMViewer.Visualizations
             ToolTipForeground  = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MajorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MinorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+            IsLegendVisible = false;
 
             Colors = new OxySolidColorBrushList(Model.DefaultColors);
 
@@ -970,7 +983,7 @@ namespace PSMViewer.Visualizations
                     "Colors", "ToolTipBackground", "ToolTipForeground",
                     "MinorGridlineStyle", "MinorGridLineColor", "MinorGridlineThickness", "MinorStep", "MinorTickSize",
                     "MajorGridlineStyle", "MajorGridLineColor", "MajorGridlineThickness", "MajorStep", "MajorTickSize",
-                    "LegendBackground", "LegendBorderThickness", "LegendOrientation", "LegendPlacement", "LegendPosition"
+                    "IsLegendVisible", "LegendBackground", "LegendBorderThickness", "LegendOrientation", "LegendPlacement", "LegendPosition"
                 })
             });
 
@@ -1089,7 +1102,7 @@ namespace PSMViewer.Visualizations
                             ((DataPointSeries)series).Mapping = (obj) => {
 
                                 EntryItem entry = (EntryItem)obj;
-                                return new DataPoint(DateTimeAxis.ToDouble(entry.Index), m.Key.Units.Convert<double>((Entry)entry));
+                                return new DataPoint(DateTimeAxis.ToDouble(entry.Index), m.Key.Convert<double>((Entry)entry));
                             };
 
                         this.Series.Add(new KeyValuePair<KeyItem, T>(m.Key, (T)(object)series));
@@ -1106,11 +1119,6 @@ namespace PSMViewer.Visualizations
 
         public override void Reload()
         {
-            foreach(KeyValuePair<KeyItem, T> s in Series)
-            {
-                ((Series)(object)s.Value).Title = s.Key.Name;
-            }
-
             base.Reload();
         }
 

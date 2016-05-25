@@ -213,20 +213,7 @@ namespace PSMViewer.Visualizations
         }
         public static readonly DependencyProperty ShowKeyProperty =
             DependencyProperty.Register("ShowKey", typeof(Visibility), typeof(Text), new PropertyMetadata(Visibility.Collapsed));
-
-
-        /// <summary>
-        /// Visibility of the parents path at the side of each column
-        /// </summary>
-        public Visibility ShowPath
-        {
-            get { return (Visibility)GetValue(ShowPathProperty); }
-            set { SetValue(ShowPathProperty, value); }
-        }
-        public static readonly DependencyProperty ShowPathProperty =
-            DependencyProperty.Register("ShowPath", typeof(Visibility), typeof(Text), new PropertyMetadata(Visibility.Collapsed));
-
-
+        
         private AggregatedEntryItem _item = null;
         /// <summary>
         /// It is used to display the parents path and key name when the data is aggregated into 1 column. The value will be set to what is under the mouse.
@@ -353,7 +340,7 @@ namespace PSMViewer.Visualizations
             Properties.Add(new PropertyDefinition()
             {
                 Category = "Text.Layout",
-                TargetProperties = new List<object>(new string[] { "Orientation", "ShowKey", "ShowPath" })
+                TargetProperties = new List<object>(new string[] { "Orientation", "ShowKey" })
             });
 
             Properties.Add(new PropertyDefinition()
@@ -390,6 +377,9 @@ namespace PSMViewer.Visualizations
         public override void Refresh()
         {
             base.Refresh();
+
+            OnPropertyChanged("MaxColumnWidth");
+            OnPropertyChanged("MaxColumnHeight");
         }
 
         private new enum CommandType
@@ -424,20 +414,7 @@ namespace PSMViewer.Visualizations
 
             return base.ShouldSerializeProperty(dp);
         }
-
-        private void scroller_ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-
-            ScrollViewer viewer = (ScrollViewer)sender;
-
-            Button down = (Button)LogicalTreeHelper.FindLogicalNode(viewer.Parent, "down");
-            Button up = (Button)LogicalTreeHelper.FindLogicalNode(viewer.Parent, "up");
-
-            down.Visibility = viewer.ExtentHeight > viewer.ActualHeight && (viewer.ExtentHeight - viewer.VerticalOffset) > viewer.ActualHeight ? Visibility.Visible : Visibility.Collapsed;
-            up.Visibility = viewer.VerticalOffset > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-        }
-
+        
         private void TextBlock_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             TextBlock text = (TextBlock)sender;

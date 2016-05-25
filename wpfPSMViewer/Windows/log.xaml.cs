@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Diagnostics;
 using System;
+using System.Windows.Threading;
 
 namespace PSMViewer
 {
@@ -61,7 +62,9 @@ namespace PSMViewer
 
             InitializeComponent();
 
-            PSMonitor.Logger.OnLog += (msg, eventType) => Dispatcher.Invoke(delegate { Events.Add(new Event(msg, eventType)); });
+            Dispatcher d = System.Windows.Threading.Dispatcher.CurrentDispatcher;
+
+            PSMonitor.Logger.OnLog += (msg, eventType) => d.Invoke(delegate { Events.Add(new Event(msg, eventType)); });
            
         }
 

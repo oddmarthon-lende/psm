@@ -87,7 +87,7 @@ namespace PSMViewer.Visualizations
 
                 case 1:
 
-                    Update(ctrl.Key.Units.Convert<double>((Entry)data[0]));
+                    Update(ctrl.Key.Convert<double>((Entry)data[0]));
                     break;
 
                 case 0:
@@ -97,7 +97,7 @@ namespace PSMViewer.Visualizations
                 default:
 
                     Update(data.Average((e) => {
-                        return ctrl.Key.Units.Convert<double>((Entry)e);
+                        return ctrl.Key.Convert<double>((Entry)e);
                     }));
                     break;
             }

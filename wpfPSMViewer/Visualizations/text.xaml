@@ -21,15 +21,7 @@
                     <ColumnDefinition Width="100*"  />
                 </Grid.ColumnDefinitions>
 
-                <Border BorderThickness="0,0,1,0" BorderBrush="{Binding LineColor}" Visibility="{Binding ShowPath}">
-                    <TextBlock Text="{Binding CurrentItem.Key.Parent.Name}" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize}">
-                        <TextBlock.LayoutTransform>
-                            <TransformGroup>
-                                <RotateTransform Angle="-90" />
-                            </TransformGroup>
-                        </TextBlock.LayoutTransform>
-                    </TextBlock>
-                </Border>
+                <Border BorderThickness="0,0,1,0" BorderBrush="{Binding LineColor}" />
 
                 <Grid Margin="0,0,10,0" Grid.Column="1">
 
@@ -42,27 +34,13 @@
 
                         <Grid>
 
-                            <Grid.Resources>
-
-                                <ControlTemplate x:Key="UpDownButtonControlTemplate" TargetType="{x:Type Button}">
-                                    <ContentPresenter />
-                                </ControlTemplate>
-
-                                <Style TargetType="{x:Type Button}">
-                                    <Setter Property="Template" Value="{StaticResource UpDownButtonControlTemplate}" />
-                                    <Setter Property="Margin" Value="2.5" />
-                                </Style>
-
-
-                            </Grid.Resources>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100*" />
                                 <ColumnDefinition Width="auto" />
                                 <ColumnDefinition Width="auto" />
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0" Text="{Binding CurrentItem.Key.Name}" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding KeyFontSize}" >
+                            <TextBlock Grid.Column="0" Text="{Binding CurrentItem.Key.Title.Name, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding KeyFontSize}" >
                                 <TextBlock.RenderTransform>
                                     <TransformGroup>
                                         <RotateTransform Angle="0" />
@@ -70,19 +48,11 @@
                                 </TextBlock.RenderTransform>
                             </TextBlock>
 
-                            <Button x:Name="up" Grid.Column="1" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="Collapsed" >
-                                <Image Source="../images/up.png" Height="10" Width="19" />
-                            </Button>
-
-                            <Button x:Name="down" Grid.Column="2" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed" >
-                                <Image Source="../images/down.png" Height="10" Width="19" />
-                            </Button>
-
                         </Grid>
 
                     </Border>
 
-                    <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" x:Name="scroller" ScrollChanged="scroller_ScrollChanged" >
+                    <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden"  >
 
                         <ItemsControl ItemsSource="{Binding Entries}" Margin="0, 10" ScrollViewer.CanContentScroll="True" ScrollViewer.IsDeferredScrollingEnabled="True">
 
@@ -109,24 +79,16 @@
 
             <DataTemplate x:Key="HorizontalTemplate">
 
-                <Grid MaxWidth="{Binding MaxColumnWidth, ElementName=widget}"
-                         Width="{Binding MaxWidth, RelativeSource={RelativeSource Self}}">
+                <Grid MaxWidth="{Binding MaxColumnWidth, ElementName=widget, UpdateSourceTrigger=PropertyChanged}"
+                         Width="{Binding MaxWidth, RelativeSource={RelativeSource Self}, UpdateSourceTrigger=PropertyChanged}">
 
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="auto" />
                         <ColumnDefinition Width="100*"  />
                     </Grid.ColumnDefinitions>
 
-                    <Border BorderThickness="0,0,1,0" BorderBrush="{Binding LineColor, ElementName=widget}" Visibility="{Binding ShowPath, ElementName=widget}">
-                        <TextBlock Text="{Binding Key.Parent.Name}" ToolTip="{Binding Key.Parent.Name}" HorizontalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize, ElementName=widget}">
-                            <TextBlock.LayoutTransform>
-                                <TransformGroup>
-                                    <RotateTransform Angle="-90" />
-                                </TransformGroup>
-                            </TextBlock.LayoutTransform>
-                        </TextBlock>
-                    </Border>
-
+                    <Border BorderThickness="0,0,1,0" BorderBrush="{Binding LineColor, ElementName=widget}" />
+                    
                     <Grid Margin="0,0,10,0" Grid.Column="1">
 
                         <Grid.RowDefinitions>
@@ -138,27 +100,14 @@
 
                             <Grid>
 
-                                <Grid.Resources>
-
-                                    <ControlTemplate x:Key="UpDownButtonControlTemplate" TargetType="{x:Type Button}">
-                                        <ContentPresenter />
-                                    </ControlTemplate>
-
-                                    <Style TargetType="{x:Type Button}">
-                                        <Setter Property="Template" Value="{StaticResource UpDownButtonControlTemplate}" />
-                                        <Setter Property="Margin" Value="2.5" />
-                                    </Style>
-
-
-                                </Grid.Resources>
-
+                                
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="100*" />
                                     <ColumnDefinition Width="auto" />
                                     <ColumnDefinition Width="auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0" Text="{Binding Key.Name}" ToolTip="{Binding Key.Name}" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding KeyFontSize, ElementName=widget}" >
+                                <TextBlock Grid.Column="0" Text="{Binding Key.Title.Name, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding Key.Title.Name, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding KeyFontSize, ElementName=widget}" >
                                     <TextBlock.RenderTransform>
                                         <TransformGroup>
                                             <RotateTransform Angle="0" />
@@ -166,19 +115,11 @@
                                     </TextBlock.RenderTransform>
                                 </TextBlock>
 
-                                <Button x:Name="up" Grid.Column="1" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="Collapsed" >
-                                    <Image Source="../images/up.png" Height="10" Width="19" />
-                                </Button>
-
-                                <Button x:Name="down" Grid.Column="2" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed" >
-                                    <Image Source="../images/down.png" Height="10" Width="19" />
-                                </Button>
-
                             </Grid>
 
                         </Border>
 
-                        <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" x:Name="scroller" ScrollChanged="scroller_ScrollChanged" >
+                        <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" >
 
                             <ItemsControl ItemsSource="{Binding Entries}" Margin="0, 10" ScrollViewer.CanContentScroll="True" ScrollViewer.IsDeferredScrollingEnabled="True">
 
@@ -192,7 +133,7 @@
                                                     <TextBlock Text="{Binding Timestamp}" />
                                                 </StackPanel>
                                             </TextBlock.ToolTip>
-                                                </TextBlock>
+                                        </TextBlock>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -206,8 +147,8 @@
 
             <DataTemplate x:Key="VerticalTemplate">
 
-                <Grid MaxHeight="{Binding MaxColumnHeight, ElementName=widget}"
-                      Height="{Binding MaxHeight, RelativeSource={RelativeSource Self}}">
+                <Grid MaxHeight="{Binding MaxColumnHeight, ElementName=widget, UpdateSourceTrigger=PropertyChanged}"
+                      Height="{Binding MaxHeight, RelativeSource={RelativeSource Self}, UpdateSourceTrigger=PropertyChanged}">
 
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="auto" />
@@ -217,7 +158,7 @@
 
                     <Border BorderThickness="0,0,1,0" BorderBrush="{Binding LineColor, ElementName=widget}" Grid.Column="0" Visibility="{Binding ShowKey, ElementName=widget}">
 
-                        <TextBlock Text="{Binding Key.Name}" ToolTip="{Binding Key.Name}" VerticalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding KeyFontSize, ElementName=widget}" >
+                        <TextBlock Text="{Binding Key.Title.Name, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding Key.Title.Name, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding KeyFontSize, ElementName=widget}" >
                             <TextBlock.LayoutTransform>
                                 <TransformGroup>
                                     <RotateTransform Angle="-90" />
@@ -226,14 +167,6 @@
                         </TextBlock>
 
                     </Border>
-
-                    <TextBlock Text="{Binding Key.Parent.Name}" ToolTip="{Binding Key.Parent.Name}" VerticalAlignment="Center" Margin="5" FontWeight="Bold" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" FontSize="{Binding PathFontSize, ElementName=widget}" Grid.Column="1" Visibility="{Binding ShowPath, ElementName=widget}" >
-                        <TextBlock.LayoutTransform>
-                            <TransformGroup>
-                                <RotateTransform Angle="-90" />
-                            </TransformGroup>
-                        </TextBlock.LayoutTransform>
-                    </TextBlock>
 
                     <ScrollViewer Margin="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Grid.Row="1" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden" >
 
@@ -249,7 +182,7 @@
                                                 <TextBlock Text="{Binding Timestamp}" />
                                             </StackPanel>
                                         </TextBlock.ToolTip>
-                                                </TextBlock>
+                                    </TextBlock>
 
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

@@ -9,11 +9,13 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using PSMonitor;
+using PSMViewer.Dialogs;
 using PSMViewer.Models;
 using PSMViewer.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using System.Windows.Data;
 
 namespace PSMViewer.Visualizations
@@ -21,18 +23,55 @@ namespace PSMViewer.Visualizations
     public class BarBase<T, TItem> : OxyBase<T>
     {
 
-        protected CategoryAxis CategoryAxis;
+        public KeyItemPathList Groups { get; set; } = new KeyItemPathList();
+
+        protected CategoryAxis CategoryAxis = new CategoryAxis() { Position = AxisPosition.Bottom, Angle = 45 };
 
         public BarBase()
         {
-
-            Model.Axes[0] = CategoryAxis = new CategoryAxis() { Position = AxisPosition.Bottom, Angle = 45 };
-
+            
             CategoryAxis.LabelField = "Name";
             CategoryAxis.ItemsSource = Controls.Select(p =>
             {
-                return p.Key;
+                return p.Key.Title;
             });
+
+            RegisterUserCommand("Modify Group Title", new RelayCommand(delegate
+            {
+
+                List<ModDataTitle.Item> items = new List<ModDataTitle.Item>();
+                List<KeyItem> parents = new List<KeyItem>();
+
+                foreach (dynamic s in _series)
+                {
+
+                    KeyItem parent = KeyItem.CreateFromPath(s.Key);
+                    parents.Add(parent);
+
+                    if (!Groups.Contains(s.Key))
+                        Groups.Add(new KeyItemPath(s.Key, null));
+                    else
+                        parent.Title.Position = Groups.Get(s.Key).Position ?? parent.Title.Position;
+
+                    parent.Title.PropertyChanged += (a, b) => Refresh();
+                }
+            
+
+                foreach (KeyItem k in parents)
+                {
+                    items.Add(new ModDataTitle.Item(k));
+                }
+
+                ModDataTitle window = new ModDataTitle(items.ToArray());
+                window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                window.Owner = this.Owner;
+
+                window.ShowDialog();
+
+            }, delegate
+            {
+                return true;
+            }));
 
             #region Bindings
 
@@ -66,14 +105,50 @@ namespace PSMViewer.Visualizations
 
         }
 
-        protected List<string> Categories = null;
+        protected List<string> Categories = new List<string>();
 
         public override void Refresh()
         {
+
             base.Refresh();
-            Categories = ((IEnumerable<KeyItem>)CategoryAxis.ItemsSource).Select(k => { return k.Name.ToLower(); }).ToArray().ToList();
+
+            foreach (KeyValuePair<KeyItem, T> s in Series)
+            {
+                ((Series)(object)s.Value).Title = (s.Key.Parent == null ? "*" : s.Key.Parent.Name);
+            }
+
+            foreach(dynamic s in _series)
+            {
+
+                s.Value.Title = (s.Key == "*" ? s.Key : KeyItem.CreateFromPath(s.Key).Title.Name);
+
+                if (Groups.Contains(s.Key))
+                    s.Value.Title.Position = Groups.Get(s.Key).Position ?? s.Value.Title.Position;
+
+            }
+
+            Categories.Clear();
+
+            foreach (KeyItemTitle t in CategoryAxis.ItemsSource)
+            {
+                Categories.Add(t.Name.ToLower());
+            }
+
+            
+            Model.InvalidatePlot(false);
+
         }
 
+        protected override void SetAxis(AxisPosition pos, Type type = null)
+        {
+            if(pos == AxisPosition.Bottom)
+            {
+                if (GetAxis(pos) == null)
+                    Model.Axes.Add(CategoryAxis);
+            }
+            else
+                base.SetAxis(pos, type);
+        }
         protected Dictionary<string, T> _series = new Dictionary<string, T>();
 
         public override void Remove(KeyItem key)
@@ -98,7 +173,7 @@ namespace PSMViewer.Visualizations
         {
             
 
-            string path = (control.Key.Parent == null ? "" : control.Key.Parent.Path).ToLower();
+            string path = (control.Key.Parent == null ? "" : control.Key.Parent.StaticPath).ToLower();
             T s;
 
             if (!_series.TryGetValue(path, out s))
@@ -108,11 +183,11 @@ namespace PSMViewer.Visualizations
 
                 BarSeriesBase bar = ((BarSeriesBase)(object)s);
 
-                bar.Title = (control.Key.Parent == null ? "*" : control.Key.Parent.Name);
+                bar.Title = (control.Key.Parent == null ? "*" : control.Key.Parent.Title.Name);
                 bar.Background = OxyColor.FromArgb(0, 0, 0, 0);
 
                 bar.ItemsSource = Controls.Where(c => {
-                    return (c.Key.Parent == null ? "" : c.Key.Parent.Path).ToLower() == path;
+                    return (c.Key.Parent == null ? "" : c.Key.Parent.StaticPath).ToLower() == path;
                 }).SelectMany(m =>
                 {
                     
@@ -122,7 +197,7 @@ namespace PSMViewer.Visualizations
                         dynamic item = Activator.CreateInstance(typeof(TItem));
 
                         item.CategoryIndex = Categories.IndexOf(m.Key.Name.ToLower());
-                        item.Value = m.Key.Units.Convert<double>((Entry)entry);
+                        item.Value = m.Key.Convert<double>((Entry)entry);
 
                         return (TItem)item;
                     });

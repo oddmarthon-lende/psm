@@ -36,11 +36,11 @@
             <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
 
-        <DockPanel Visibility="{Binding ControlsVisibility}">
+        <DockPanel Visibility="{Binding ControlsVisibility}" Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}">
 
-            <ToolBarTray DockPanel.Dock="Top">
+            <ToolBarTray DockPanel.Dock="Top" Background="{x:Null}">
 
-                <ToolBar>
+                <ToolBar Background="{x:Null}">
         
                     <Menu Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" >
 
@@ -64,7 +64,7 @@
 
                             <MenuItem.Resources>
 
-                                <CollectionViewSource Source="{Binding Children, ElementName=window}" x:Key="ChildrenViewSource" />
+                                <CollectionViewSource Source="{Binding Children, ElementName=window, UpdateSourceTrigger=PropertyChanged}" x:Key="ChildrenViewSource" />
 
                                 <Style TargetType="{x:Type MenuItem}">
                                     <Setter Property="Header" Value="{Binding Title}" />
@@ -76,8 +76,7 @@
                 
                             <MenuItem.ItemsSource>
                                 <CompositeCollection>
-                                    <MenuItem Header="Undo" InputGestureText="Ctrl+Z" Command="{Binding Commands[Undo]}" />
-                                    <Separator />
+                                    
                                     <CollectionContainer Collection="{Binding Source={StaticResource ChildrenViewSource}}" />
                                 </CompositeCollection>
                             </MenuItem.ItemsSource>
@@ -99,9 +98,9 @@
 
                 </ToolBar>
 
-                <ToolBar Visibility="{Binding VariablesVisibility}" Width="Auto" x:Name="variableToolbar">
+                <ToolBar Visibility="{Binding VariablesVisibility}" Width="Auto" x:Name="variableToolbar" Background="{x:Null}">
 
-                    <ItemsControl ItemsSource="{Binding Variables}" >
+                    <ItemsControl ItemsSource="{Binding Variables, UpdateSourceTrigger=PropertyChanged}" >
 
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>

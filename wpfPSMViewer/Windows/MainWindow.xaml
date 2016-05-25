@@ -76,7 +76,7 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="0" Grid.RowSpan="1">
+        <DockPanel Grid.Row="0" Grid.RowSpan="1" Background="{DynamicResource {x:Static SystemColors.MenuBarBrushKey}}">
 
             <ToolBarTray DockPanel.Dock="Top" IsHitTestVisible="True" Background="{x:Null}">
 
@@ -85,13 +85,13 @@
                     <Menu>
 
                         <MenuItem Header="File" >
-                            <!--
+                            
                             <MenuItem Header="New" InputGestureText="Ctrl+N" Command="{Binding Commands[NewWindow], ElementName=window}" />
-                            -->
+                            
                             <MenuItem Header="Save" InputGestureText="Ctrl+S" Command="{Binding Commands[Save], ElementName=window}" />
-                            <!--
+                            
                             <MenuItem Header="Import" InputGestureText="Ctrl+I" Command="{Binding Commands[Import], ElementName=window}" />
-                            -->
+                            
                             <MenuItem Header="Exit" InputGestureText="Alt+F4" Command="{Binding Commands[Exit], ElementName=window}" />
 
                         </MenuItem>
@@ -107,8 +107,8 @@
                             <Separator />
                             <MenuItem Header="Visualization Properties" Command="{Binding Commands[OpenChartProperties], ElementName=window}" />
                         </MenuItem>
-                        
-                        <!--
+
+
                         <MenuItem Header="Windows" ItemsSource="{Binding Windows, ElementName=window}">
 
                             <MenuItem.ItemContainerStyle>
@@ -125,7 +125,7 @@
                             </MenuItem.ItemContainerStyle>
 
                         </MenuItem>
-                        -->
+                        
                         <MenuItem Header="Help">
                             <MenuItem Header="About" Command="{Binding Commands[About], ElementName=window}" />
                         </MenuItem>
@@ -134,24 +134,24 @@
 
                 <ToolBar Background="{x:Null}">
                     
-                    <!--
+                    
                     <Button ToolTip="New Window" Command="{Binding Commands[NewWindow], ElementName=window}">
                         <Image Source="..\icons\application_add.png" />
                     </Button>
                     
-                    -->
+                    
                     
                     <Button ToolTip="Save" Command="{Binding Commands[Save], ElementName=window}">
                         <Image Source="..\icons\database_save.png" />
                     </Button>
                     
-                    <!--
+                    
                     
                     <Button ToolTip="Import" Command="{Binding Commands[Import], ElementName=window}">
                         <Image Source="..\icons\application_get.png" />
                     </Button>
 
-                    -->
+                    
                     <Button ToolTip="Visualization Properties" Command="{Binding Commands[OpenChartProperties], ElementName=window}">
                         <Image Source="..\icons\application_view_gallery.png" x:Name="chartPropertiesButtonImage" />
                     </Button>
@@ -186,7 +186,7 @@
 
                 <xcad:LayoutPanel Orientation="Horizontal">
 
-                    <xcad:LayoutAnchorablePane DockWidth="20*">
+                    <xcad:LayoutAnchorablePane DockWidth="*">
 
                         <xcad:LayoutAnchorable ContentId="navigation" Title="Tree" CanHide="False" CanClose="False" AutoHideWidth="240" >
 
@@ -203,9 +203,9 @@
                                     <RowDefinition Height="auto" />
                                 </Grid.RowDefinitions>
 
-                                <toolkit:PropertyGrid Grid.Row="0" ShowDescriptionByTooltip="True" PropertyValueChanged="settings_propertyGrid_PropertyValueChanged" ShowSearchBox="False"  ShowSortOptions="False" ShowPreview="False" ShowSummary="False" ShowTitle="False" ShowAdvancedOptions="False" SelectedObject="{Binding Options, ElementName=window, Mode=TwoWay}"/>
+                                <toolkit:PropertyGrid x:Name="propertyGrid_top" Grid.Row="0" ShowDescriptionByTooltip="True" PropertyValueChanged="settings_propertyGrid_PropertyValueChanged" ShowSearchBox="False"  ShowSortOptions="False" ShowPreview="False" ShowSummary="False" ShowTitle="False" ShowAdvancedOptions="False" />
 
-                                <toolkit:PropertyGrid Grid.Row="1" ShowDescriptionByTooltip="True" SelectedObjectChanged="settings_propertyGrid_SelectedObjectChanged" x:Name="settings_propertyGrid" ShowSearchBox="False"  ShowSortOptions="False" ShowPreview="False" ShowSummary="False" ShowTitle="False" ShowAdvancedOptions="False" SelectedObject="{Binding Options.Store, ElementName=window, Mode=OneTime}"/>
+                                <toolkit:PropertyGrid x:Name="propertyGrid_bottom" Grid.Row="1" ShowDescriptionByTooltip="True" SelectedObjectChanged="settings_propertyGrid_SelectedObjectChanged" ShowSearchBox="False"  ShowSortOptions="False" ShowPreview="False" ShowSummary="False" ShowTitle="False" ShowAdvancedOptions="False" />
                            
                             </Grid>
 
@@ -213,19 +213,19 @@
 
                     </xcad:LayoutAnchorablePane>
 
-                    <xcad:LayoutPanel Orientation="Vertical" DockWidth="80*" >
+                    <xcad:LayoutPanel Orientation="Vertical" DockWidth="*" >
 
                         <xcad:LayoutAnchorablePane >
 
                             <xcad:LayoutAnchorable ContentId="datagrid" Title="Log"  CanHide="False" CanClose="False" >
 
-                                <dg:DataGridControl x:Name="dataGrid" ItemsSource="{Binding Source={StaticResource viewSource}}" Grid.RowSpan="1" Grid.Row="1" BorderBrush="{x:Null}" Background="{x:Null}" BorderThickness="0" AllowDrag="True" AutoCreateColumns="False">
+                                <dg:DataGridControl x:Name="dataGrid" ItemsSource="{Binding Source={StaticResource viewSource}}" Grid.RowSpan="1" Grid.Row="1" AllowDrag="True" AutoCreateColumns="False" Background="{x:Null}">
 
                                     <dg:DataGridControl.View>
                                         <dg:TableflowView UseDefaultHeadersFooters="False">
                                             <dg:TableflowView.FixedHeaders>
                                                 <DataTemplate>
-                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" Background="{x:Null}" BorderThickness="0" BorderBrush="{x:Null}" />
+                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" />
                                                 </DataTemplate>
                                             </dg:TableflowView.FixedHeaders>
                                         </dg:TableflowView>
@@ -243,13 +243,13 @@
 
                             <xcad:LayoutAnchorable ContentId="metaDataGrid" Title="Meta" CanHide="False" CanClose="False"  >
 
-                                <dg:DataGridControl x:Name="metaDataGrid" Background="{x:Null}" BorderThickness="0" BorderBrush="{x:Null}" AllowDrag="False" AutoCreateColumns="False">
+                                <dg:DataGridControl x:Name="metaDataGrid" AllowDrag="False" AutoCreateColumns="False" Background="{x:Null}">
 
                                     <dg:DataGridControl.View>
                                         <dg:TableView FixedColumnCount="2" UseDefaultHeadersFooters="False">
                                             <dg:TableView.FixedHeaders>                                               
                                                 <DataTemplate>
-                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" Background="{x:Null}" BorderThickness="0" BorderBrush="{x:Null}" />
+                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" />
                                                 </DataTemplate>
                                             </dg:TableView.FixedHeaders>
                                         </dg:TableView>
@@ -269,7 +269,7 @@
                         <xcad:LayoutAnchorablePane >
 
                             <xcad:LayoutAnchorable ContentId="chart" Title="Visualizer" CanHide="False" CanClose="False">
-                                <Grid Grid.Row="2" Grid.RowSpan="1" x:Name="visualizationGrid" Margin="10,10,10,10"/>
+                                <Grid Grid.Row="2" Grid.RowSpan="1" x:Name="visualizationGrid" Margin="1"/>
                             </xcad:LayoutAnchorable>
 
                         </xcad:LayoutAnchorablePane>

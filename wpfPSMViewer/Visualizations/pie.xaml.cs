@@ -34,11 +34,19 @@ namespace PSMViewer.Visualizations
                 }
             }
 
+            public KeyItemTitle Title
+            {
+                get
+                {
+                    return _key.Title;
+                }
+            }
+
             public double ConvertedValue
             {
                 get
                 {
-                    return _key.Units.Convert<double>(entry);
+                    return _key.Convert<double>(entry);
                 }
             }
 
@@ -71,7 +79,7 @@ namespace PSMViewer.Visualizations
                 });
             });
 
-            s.LabelField = "Key";
+            s.LabelField = "Title";
             s.ValueField = "ConvertedValue";
         }
 
@@ -101,6 +109,11 @@ namespace PSMViewer.Visualizations
             base.Dispose();
         }
 
-        
+        protected override void SetAxis(AxisPosition pos, Type type = null)
+        {
+         
+        }
+
+
     }
 }
