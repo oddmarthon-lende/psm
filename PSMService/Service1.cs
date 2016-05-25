@@ -7,7 +7,7 @@ namespace PSMonitor
 {
     public partial class Service1 : ServiceBase
     {
-        private static PSM master = new PSM();
+        private static Powershell.Powershell ps = new Powershell.Powershell();
         
         private Log LogToStore = (message, type) =>
         {
@@ -43,7 +43,7 @@ namespace PSMonitor
 
             InitializeComponent();
 
-            watcher = new FileSystemWatcher(Setup.Master.Directory);
+            watcher = new FileSystemWatcher(Setup.Powershell.Directory);
 
             watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.CreationTime;
             watcher.Filter       = "*.ps1";
@@ -64,9 +64,9 @@ namespace PSMonitor
         protected override void OnStart(string[] args)
         {
 
-            if (Directory.Exists(Setup.Master.Directory))
+            if (Directory.Exists(Setup.Powershell.Directory))
             {
-                master.Reload();
+                ps.Reload();
                 watcher.EnableRaisingEvents = true;
             }
             else
@@ -80,18 +80,18 @@ namespace PSMonitor
 
             watcher.EnableRaisingEvents = false;
             watcher.Dispose();
-            master.Dispose();
+            ps.Dispose();
 
         }
 
         private void OnChanged(object src, FileSystemEventArgs e)
         {
-            master.Reload();
+            ps.Reload();
         }
 
         private void OnRenamed(object src, FileSystemEventArgs e)
         {
-            master.Reload();
+            ps.Reload();
         }
     }
 }

@@ -3,44 +3,32 @@ using System.Threading;
 using System.Diagnostics;
 using PSMonitor;
 using System.Management.Instrumentation;
+using PSMonitor.Powershell;
+
 namespace PSMCmd
 {
     class Program : TraceListener
     {
-        private static PSM master = new PSM();
+        private static Powershell ps = new Powershell();
 
         static void Main(string[] args)
         {
             
             Debug.Listeners.Add(new Program());
-            Thread print = new Thread(Print);
             
-            master.Reload();
+            ps.Reload();
             
-            Console.WriteLine("Press Enter key to exit...");
+            Console.WriteLine("Press a key to exit...");
+            
+            Console.ReadKey();
 
-            print.Start();
-
-            Console.ReadLine();
-
-            print.Abort();
-            master.Dispose();
+            ps.Dispose();
 
             Console.WriteLine("[Done]");
             Console.ReadKey();
             
         }
         
-        static void Print()
-        {
-            
-           foreach (Envelope data in master)
-            {
-               Console.WriteLine(data);
-            }
-
-        }
-
         public override void Write(string message)
         {
             Console.WriteLine(message);
