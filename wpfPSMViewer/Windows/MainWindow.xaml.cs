@@ -29,6 +29,7 @@ using Xceed.Wpf.Toolkit.PropertyGrid;
 using PSMonitor.Stores;
 using PSMViewer.Editors;
 using System.Windows.Media.Imaging;
+using PSMonitor;
 
 namespace PSMViewer
 {
@@ -278,7 +279,6 @@ namespace PSMViewer
 
                             ctrl.Entries.Clear();
 
-                            metaDataGrid.ItemsSource = PSMonitor.PSM.Store(Dispatcher).Meta(key.Path);
                             Title = key.ToString();
 
                             if (key.Type == null)
@@ -287,6 +287,7 @@ namespace PSMViewer
                             ctrl.Key = key;
                             
                             Visualize(key);
+                            
                             this.OnReload(ctrl);
 
                         }                        
@@ -577,7 +578,8 @@ namespace PSMViewer
                 case CommandType.EXIT:
 
                     App.Current.Shutdown();
-                    //Environment.Exit(0);
+                    Environment.Exit(0);
+
                     break;
                     
             }
@@ -853,11 +855,13 @@ namespace PSMViewer
 
                     _graph.Add(key, context.Entries);
                     
-                    string icon = (string)_graph.GetType().GetTypeInfo().GetCustomAttribute<IconAttribute>();                    
-                    using (Stream stream = Application.GetResourceStream(new Uri(icon, UriKind.Relative)).Stream)
-                    {
-                        chartPropertiesButtonImage.Source = BitmapFrame.Create(stream);
-                    }
+                    string icon = (string)_graph.GetType().GetTypeInfo().GetCustomAttribute<IconAttribute>();
+                    
+                    if(icon != null || icon.Length >= 0)                    
+                        using (Stream stream = Application.GetResourceStream(new Uri(icon, UriKind.Relative)).Stream)
+                        {
+                            chartPropertiesButtonImage.Source = BitmapFrame.Create(stream);
+                        }
 
                 }
             }
@@ -1009,14 +1013,14 @@ namespace PSMViewer
             if (_graph != null)
             {
 
-                MultiControl context = (MultiControl)DataContext;
+                MultiControl ctrl = (MultiControl)DataContext;
 
                 foreach (MultiControl c in _graph.Controls)
                 {
-                    if (c.Entries == context.Entries)
+                    if (c.Entries == ctrl.Entries)
                         continue;
 
-                    c.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField), Options.StartIndex, context.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField)).Count).Reload();
+                    c.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField), Options.StartIndex, ctrl.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField)).Count).Reload();
 
                 }
 

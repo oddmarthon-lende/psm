@@ -5,7 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:PSMViewer.Visualizations"
-             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:oxy="http://oxyplot.org/sharpdx/wpf"
              xmlns:o="clr-namespace:OxyPlot.Series;assembly=OxyPlot"
              mc:Ignorable="d">
     

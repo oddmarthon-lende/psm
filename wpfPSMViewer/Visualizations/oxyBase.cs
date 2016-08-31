@@ -259,14 +259,14 @@ namespace PSMViewer.Visualizations
             if (Parent != null)
             {
 
-                Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.Wpf.TrackerControl) };
+                Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.SharpDX.Wpf.TrackerControl) };
 
                 Parent.Resources.Remove(TrackerControlStyle.TargetType);
 
-                Setter setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
+                Setter setter = new Setter() { Property = OxyPlot.SharpDX.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
                 TrackerControlStyle.Setters.Add(setter);
 
-                setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
+                setter = new Setter() { Property = OxyPlot.SharpDX.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
                 TrackerControlStyle.Setters.Add(setter);
 
                 Parent.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
@@ -1127,7 +1127,7 @@ namespace PSMViewer.Visualizations
 
             XYAxisSeries s = (XYAxisSeries)Activator.CreateInstance(typeof(T));
             
-            s.Title = control.Key.Name;
+            s.Title = control.Key.Title.ToString();
             s.ItemsSource = control.Entries;
             s.Background = OxyColor.FromArgb(0, 0, 0, 0);
 

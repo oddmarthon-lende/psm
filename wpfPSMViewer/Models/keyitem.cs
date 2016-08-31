@@ -29,13 +29,18 @@ namespace PSMViewer.Models
 
         public KeyItem Key { get; private set; }
 
-        public string Name
+        public string Value
         {
             get
             {
-                return GetComponents()[Position];
+                return Alias ?? GetComponents()[Position];
             }
 
+        }
+
+        public string Alias
+        {
+            get; set;
         }
 
         private uint? _position = null;
@@ -85,7 +90,7 @@ namespace PSMViewer.Models
 
         public override string ToString()
         {
-            return Name;
+            return Value;
         }
 
     }

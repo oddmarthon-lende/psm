@@ -216,7 +216,7 @@ namespace PSMViewer
 
                 return null;
 
-            });
+            }, DispatcherPriority.Normal);
 
         }
 

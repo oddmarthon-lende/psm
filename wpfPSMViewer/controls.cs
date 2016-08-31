@@ -249,7 +249,6 @@ namespace PSMViewer.ViewModels
             }
             set
             {
-                PSM.Store(Dispatcher).Unregister(this);
                 SetField<KeyItem>(ref _selected, value);
             }
         }
@@ -321,7 +320,9 @@ namespace PSMViewer.ViewModels
         /// <returns></returns>
         public abstract bool Previous();
 
-        public virtual void Stop()
+        public abstract void Register();
+
+        public virtual void Unregister()
         {
             PSM.Store(Dispatcher).Unregister(this);
         }
@@ -403,9 +404,7 @@ namespace PSMViewer.ViewModels
 
         private object _start = null;
 
-        private object _count = default(TCount);
-
-        private object _startIndex = null;
+        private object _count = default(TCount);        
 
         /// <summary>
         /// <see cref="Controls.Start"/>
@@ -599,7 +598,7 @@ namespace PSMViewer.ViewModels
 
             if (key != null)
             {
-                enumerable = (PSM.Store(Dispatcher).Get(key.Path, Start, End, key.IndexIdentifier));
+                enumerable = (PSM.Store(Dispatcher).Read(key.Path, Start, End, key.IndexIdentifier));
             }
 
             return enumerable == null ? null : enumerable.Select(entry => {
@@ -646,12 +645,12 @@ namespace PSMViewer.ViewModels
         /// <summary>
         /// <see cref="Controls.Reload"/>
         /// </summary>
-        public override async void Reload()
+        public override void Reload()
         {
             
             IEnumerable<EntryItem> data = null;
 
-            PSM.Store(Dispatcher).Unregister(this);
+            Unregister();
 
             if (ReloadTask != null)
             {
@@ -707,14 +706,16 @@ namespace PSMViewer.ViewModels
 
                 }, CancellationTokenSource.Token);
 
-                await Dispatcher.InvokeAsync(delegate
+                Dispatcher.Invoke(delegate
                 {
                     SetField(ref _status, ReloadStatus.Loading, "Status");
                 });
 
                 if(ReloadTask == null) return;
 
-                data = await ReloadTask;
+                ReloadTask.Wait();
+
+                data = ReloadTask.Result;
 
                 if (data == null) return;
 
@@ -735,27 +736,34 @@ namespace PSMViewer.ViewModels
                 Entries.Add(entry);
             }
 
-            SetField(ref _status, ReloadStatus.Idle, "Status");
+            SetField(ref _status, ReloadStatus.Idle, "Status");            
 
-            if ( Entries.Count > 0 && (_startIndex == null || _start == null) )
-                _startIndex = _start is DateTime ? DateTime.Now : Entries.Max(entry => { return ((Entry)entry).Index; });
+        }
 
-            if (_start != null && !Convert.ToBoolean(_start) && _startIndex != null)
+        public override void Register()
+        {
+
+            object startIndex = null;
+
+            if (Selected == null)
+                return;
+
+            if (Entries.Count > 0)
+                startIndex = Entries.Max(entry => { return ((Entry)entry).Index; });
+            else
             {
-                
-                Dispatcher.InvokeAsync(delegate
-                {
 
-                    if (Selected == null)
-                        return;
+                startIndex = default(T);
 
-                    Debug.WriteLine("Registering... {0}", Selected);
-                    PSM.Store(Dispatcher).Register(this, Selected.ToString(), _startIndex, Selected.IndexIdentifier, Received);
+                if (startIndex is DateTime)
+                    startIndex = DateTime.Now;
 
-                }, DispatcherPriority.ContextIdle);
+            }            
 
+            Debug.WriteLine("Registering... {0}", Selected);
 
-            }
+            PSM.Store(Dispatcher).Register(this, Selected.ToString(), startIndex, Selected.IndexIdentifier, Received);
+
         }
 
         /// <summary>
@@ -765,6 +773,8 @@ namespace PSMViewer.ViewModels
         /// <return>The highest timestamp in the dataset.</return>
         private object Received(Envelope data)
         {
+
+            object startIndex = null;
 
             if (IsActive)
             {
@@ -786,9 +796,9 @@ namespace PSMViewer.ViewModels
 
             }
 
-            _startIndex = data.Entries.Max(entry => { return entry.Index; });
+            startIndex = data.Entries.Max(entry => { return entry.Index; });
 
-            return _startIndex;
+            return startIndex;
         }        
 
         /// <summary>

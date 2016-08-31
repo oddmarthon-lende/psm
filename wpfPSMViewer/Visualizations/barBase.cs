@@ -30,7 +30,7 @@ namespace PSMViewer.Visualizations
         public BarBase()
         {
             
-            CategoryAxis.LabelField = "Name";
+            CategoryAxis.LabelField = "Value";
             CategoryAxis.ItemsSource = Controls.Select(p =>
             {
                 return p.Key.Title;
@@ -120,7 +120,7 @@ namespace PSMViewer.Visualizations
             foreach(dynamic s in _series)
             {
 
-                s.Value.Title = (s.Key == "*" ? s.Key : KeyItem.CreateFromPath(s.Key).Title.Name);
+                s.Value.Title = (s.Key == "*" ? s.Key : KeyItem.CreateFromPath(s.Key).Title.Value);
 
                 if (Groups.Contains(s.Key))
                     s.Value.Title.Position = Groups.Get(s.Key).Position ?? s.Value.Title.Position;
@@ -131,7 +131,7 @@ namespace PSMViewer.Visualizations
 
             foreach (KeyItemTitle t in CategoryAxis.ItemsSource)
             {
-                Categories.Add(t.Name.ToLower());
+                Categories.Add(t.Value.ToLower());
             }
 
             
@@ -183,7 +183,7 @@ namespace PSMViewer.Visualizations
 
                 BarSeriesBase bar = ((BarSeriesBase)(object)s);
 
-                bar.Title = (control.Key.Parent == null ? "*" : control.Key.Parent.Title.Name);
+                bar.Title = (control.Key.Parent == null ? "*" : control.Key.Parent.Title.Value);
                 bar.Background = OxyColor.FromArgb(0, 0, 0, 0);
 
                 bar.ItemsSource = Controls.Where(c => {

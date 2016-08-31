@@ -853,7 +853,7 @@ namespace PSMViewer.Visualizations
 
                     }));
                     
-                    grid.PropertyGrids.ToArray()[0].PropertyValueChanged += (s, a) => Refresh();
+                    //grid.PropertyGrids.ToArray()[0].PropertyValueChanged += (s, a) => Refresh();
 
                     window.Height = window.Width;
                     window.ShowDialog();
@@ -1210,7 +1210,7 @@ namespace PSMViewer.Visualizations
                 _controls.Add(control);
 
                 if (key.Parent != null && !_paths.Contains(key.Parent.StaticPath))
-                    _paths.Add(new KeyItemPath(key.StaticPath, null));
+                    _paths.Add(new KeyItemPath(key.StaticPath, key.Title.Position));
 
             }
 
@@ -1232,7 +1232,7 @@ namespace PSMViewer.Visualizations
             foreach(KeyItemPath p in Paths)
             {
 
-                if (title.Key.Path == p.Path)
+                if (title.Key.StaticPath == p.Path)
                     p.Position = title.Position;
 
             }
@@ -1378,8 +1378,10 @@ namespace PSMViewer.Visualizations
 
                 KeyItem key = m.Key;
 
-                this.OnReload(key);
-                this.OnReload(control);
+                m.Reload();
+                m.Register();
+
+                key.Reload();
 
             }
 

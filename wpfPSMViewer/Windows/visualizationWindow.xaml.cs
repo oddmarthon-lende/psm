@@ -789,7 +789,7 @@ namespace PSMViewer
 
                         widget.RegisterUserCommand();
                         widget.RegisterUserCommand("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_WIDGET, widget));
-                        widget.RegisterUserCommand("Move To New Window", new RelayCommand(ExecuteCommand, canExecute, CommandType.TO_NEW, widget));
+                        widget.RegisterUserCommand("Copy To New Window", new RelayCommand(ExecuteCommand, canExecute, CommandType.TO_NEW, widget));
 
                         widget.MouseDoubleClick += Widget_MouseDblClick;
 
@@ -926,7 +926,6 @@ namespace PSMViewer
                     stream = new MemoryStream();
 
                     w.Export(stream);
-                    Children.Remove(w);
                     w.Dispose();                        
 
                     App.Current.Dispatcher.Invoke(delegate

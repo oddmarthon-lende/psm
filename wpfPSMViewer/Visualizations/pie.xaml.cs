@@ -18,9 +18,7 @@ namespace PSMViewer.Visualizations
     public sealed partial class Pie : OxyBase<PieSeries>
     {
 
-        public static string DisplayName { get { return typeof(Pie).Name; } }
-        public static string Icon { get; private set; } = "../icons/chart_pie.png";
-
+        
         public class PieSliceItem : EntryItem
         {
             private Pie _pie;

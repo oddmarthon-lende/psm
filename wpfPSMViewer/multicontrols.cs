@@ -231,19 +231,46 @@ namespace PSMViewer.ViewModels
             }
         }
 
+        public void Register()
+        {
+            Controls ctrl = Get();
+
+            Unregister();
+
+            if (ctrl != null)
+                ctrl.Register();
+        }
+
+        public void Unregister()
+        {
+            foreach (var pair in Controls)
+            {
+                pair.Value.Unregister();
+            }
+        }
+
         public void Reload()
         {
-            Get().Reload();
+            Controls ctrl = Get();
+
+            if(ctrl != null)
+                ctrl.Reload();
         }
 
         public bool Next()
         {
-            return Get().Next();
+            Controls ctrl = Get();
+            if(ctrl != null)
+                return ctrl.Next();
+            return false;
         }
 
         public bool Previous()
         {
-            return Get().Previous();
+            Controls ctrl = Get();
+            if (ctrl != null)
+                return ctrl.Previous();
+            return false;
         }
     }
 }

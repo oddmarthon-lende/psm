@@ -241,29 +241,6 @@
 
                             </xcad:LayoutAnchorable>
 
-                            <xcad:LayoutAnchorable ContentId="metaDataGrid" Title="Meta" CanHide="False" CanClose="False"  >
-
-                                <dg:DataGridControl x:Name="metaDataGrid" AllowDrag="False" AutoCreateColumns="False" Background="{x:Null}">
-
-                                    <dg:DataGridControl.View>
-                                        <dg:TableView FixedColumnCount="2" UseDefaultHeadersFooters="False">
-                                            <dg:TableView.FixedHeaders>                                               
-                                                <DataTemplate>
-                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" />
-                                                </DataTemplate>
-                                            </dg:TableView.FixedHeaders>
-                                        </dg:TableView>
-                                    </dg:DataGridControl.View>
-
-                                    <dg:DataGridControl.Columns>
-                                        <dg:Column FieldName="Key" Title="Name" Width="50*" IsMainColumn="True" />
-                                        <dg:Column FieldName="Value" Title="Value" Width="50*" />
-                                    </dg:DataGridControl.Columns>
-
-                                </dg:DataGridControl>
-
-                            </xcad:LayoutAnchorable>
-
                         </xcad:LayoutAnchorablePane>
 
                         <xcad:LayoutAnchorablePane >
