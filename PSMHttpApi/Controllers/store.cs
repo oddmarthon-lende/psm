@@ -179,7 +179,15 @@ namespace PSMonitor.Controllers
         /// <returns>The connection id</returns>
         private static string GetConnectionId(HttpActionContext context)
         {
-            return context.Request.Headers.GetValues("ConnectionId").First();
+            try
+            {
+                return context.Request.Headers.GetValues("ConnectionId").First();
+            }
+            catch(Exception)
+            {
+                return "";
+            }
+            
         }
 
         /// <summary>
@@ -206,46 +214,26 @@ namespace PSMonitor.Controllers
         {
             return PSM.Store().Delete(path, start, end, index);
         }
-
+        
         /// <summary>
-        /// <see cref="IStore.Get(string)"/>
-        /// </summary>
-        /// <param name="path">The data path</param>
-        /// <param name="context">The currently executing HTTP action context</param>
-        /// <returns><see cref="IStore.Get(string)"/></returns>
-        public static Entry Get(string path, Enum indexIdentifier, HttpActionContext context)
-        {
-
-            Entry entry = PSM.Store().Get(path);
-            Receiver receiver = new Receiver(context, path, entry.Timestamp);
-
-            if (!_receivers.Contains(receiver))
-            {                
-                Register(receiver, path, receiver.Index, indexIdentifier, receiver.Handler);
-            }                     
-
-            return entry;
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string, object, object, Enum)"/>
+        /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
         /// <param name="path">The data path</param>
         /// <param name="start">The start index</param>
         /// <param name="end">The end index</param>
         /// <param name="context">The currently executing HTTP action context</param>
         /// <returns><see cref="IStore.Get(string, long, long)"/></returns>
-        public static IEnumerable<Entry> Get(string path, object start, object end, Enum indexIdentifier, HttpActionContext context)
+        public static IEnumerable<Entry> Read(string path, object start, object end, Enum indexIdentifier, HttpActionContext context)
         {
                         
-            Receiver receiver = new Receiver(context, path, PSM.Store().Get(path).Timestamp);
+            Receiver receiver = new Receiver(context, path, DateTime.Now);
             
             if (!_receivers.Contains(receiver))
             {                
                 Register(receiver, path, receiver.Index, indexIdentifier, receiver.Handler);
             }
             
-            return PSM.Store().Get(path, start, end, indexIdentifier);
+            return PSM.Store().Read(path, start, end, indexIdentifier);
 
         }
         
@@ -260,12 +248,12 @@ namespace PSMonitor.Controllers
         }
 
         /// <summary>
-        /// <see cref="IStore.Put(Envelope)"/>
+        /// <see cref="IStore.Write(Envelope)"/>
         /// </summary>
         /// <param name="envelope">The data</param>
         public static void Put(Envelope envelope)
         {
-            PSM.Store().Put(envelope);
+            PSM.Store().Write(envelope);
         }
 
         /// <summary>

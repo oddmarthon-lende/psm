@@ -19,6 +19,7 @@ namespace PSMonitor.Controllers
     /// </summary>
     public class dataController : ApiController
     {
+
         /// <summary>
         /// Empty
         /// </summary>
@@ -30,35 +31,7 @@ namespace PSMonitor.Controllers
         }
 
         /// <summary>
-        /// <see cref="IStore.Get(string)"/>
-        /// </summary>
-        [HttpGet]
-        public IHttpActionResult Get(string path)
-        {
-
-            Entry entry;
-
-            try {
-                
-                entry = Store.Get(path, PSM.Store().Default, ActionContext);               
-
-            }
-            catch(KeyNotFoundException)
-            {
-                return NotFound();
-            }
-            catch (Exception error)
-            {
-                return InternalServerError(error);
-            }
-
-            return Json<Entry[]>(new Entry[1] { entry });
-
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string, long, long)"/>
-        /// <see cref="IStore.Get(string, DateTime, DateTime)"/>
+        /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// The <paramref name="index"/> parameter determines which of the methods above the call corresponds to
         /// </summary>
         /// <param name="path">The data path</param>
@@ -69,7 +42,7 @@ namespace PSMonitor.Controllers
         [HttpGet]
         public IHttpActionResult Get(string path, long start, long end, string index)
         {
-  
+            //string index = "Index";
             HttpResponseMessage response  = new HttpResponseMessage(HttpStatusCode.OK);
             Enum idx = (Enum)Enum.Parse(PSM.Store().Index, index);
 
@@ -77,7 +50,7 @@ namespace PSMonitor.Controllers
 
                 response.Content = new StreamContent(
                            new EntryJSONStream(
-                               Store.Get(
+                               Store.Read(
                                    path,
                                    start,
                                    end,
@@ -136,7 +109,7 @@ namespace PSMonitor.Controllers
         /// <param name="end">The end index as a unix timestamp or null</param>
         /// <returns>Success/Error http result</returns>
         [HttpDelete]
-        public IHttpActionResult Delete(string path, long? start, long? end, string index)
+        public IHttpActionResult Delete(string path, long start, long end, string index)
         {
 
             long count = 0;
@@ -145,10 +118,7 @@ namespace PSMonitor.Controllers
 
             try {
 
-                if(start == null || end == null)
-                    count = Store.Delete(path, ActionContext);
-                else
-                    count = Store.Delete(path, start.Value, end.Value, idx, ActionContext);
+                count = Store.Delete(path, start, end, idx, ActionContext);
             }
             catch(Exception error)
             {
