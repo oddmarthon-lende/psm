@@ -86,23 +86,16 @@
     <Folder Include="Tables" />
     <Folder Include="Stored Procedures" />
     <Folder Include="Views" />
+    <Folder Include="Triggers" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Tables\keys.sql" />
     <Build Include="Tables\namespaces.sql" />
-    <None Include="Tables\values.sql" />
     <Build Include="Stored Procedures\usp_insert.sql" />
-    <None Include="Views\dataview.sql" />
-    <Build Include="Stored Procedures\usp_get_one.sql" />
     <Build Include="Stored Procedures\usp_get_many.sql" />
-    <Build Include="Stored Procedures\usp_delete.sql" />
+    <None Include="Stored Procedures\usp_delete.sql" />
     <Build Include="Stored Procedures\usp_clean.sql" />
-    <Build Include="Tables\meta.sql" />
-    <Build Include="Stored Procedures\usp_insert_meta.sql" />
-    <Build Include="Stored Procedures\usp_get_meta.sql" />
-    <Build Include="Views\metaview.sql" />
     <Build Include="Stored Procedures\usp_create_table.sql" />
-    <Build Include="Stored Procedures\usp_create_view.sql" />
   </ItemGroup>
   <ItemGroup>
     <RefactorLog Include="PSMdb.refactorlog" />

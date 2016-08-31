@@ -10,7 +10,6 @@ AS
 		set @q = N'CREATE TABLE [dbo].[tbl_'+@basetype+']
 				(
 					[Id] BIGINT IDENTITY(1,1) NOT NULL,
-					[NamespaceId] BIGINT NOT NULL,
 					[KeyId] BIGINT NOT NULL,
 					[Value] ' + @basetype + (case when @basetype like '%var%' then '(max)' else '' end) + ' NOT NULL,
 					[Timestamp] DATETIME NOT NULL,
@@ -20,18 +19,11 @@ AS
 					) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON, FILLFACTOR = 1) ON [PRIMARY]
 
 				) ON [PRIMARY];
-
-				ALTER TABLE [dbo].[tbl_'+@basetype+']  WITH CHECK ADD  CONSTRAINT [FK_'+@basetype+'_namespaces] FOREIGN KEY([NamespaceId])
-				REFERENCES [dbo].[namespaces] ([Id]);
-				
+								
 				ALTER TABLE [dbo].[tbl_'+@basetype+']  WITH CHECK ADD  CONSTRAINT [FK_'+@basetype+'_keys] FOREIGN KEY([KeyId])
 				REFERENCES [dbo].[keys] ([Id]);
-				
-				ALTER TABLE [dbo].[tbl_'+@basetype+'] CHECK CONSTRAINT [FK_'+@basetype+'_namespaces];
-				
+												
 				ALTER TABLE [dbo].[tbl_'+@basetype+'] CHECK CONSTRAINT [FK_'+@basetype+'_keys];
-				
-				CREATE NONCLUSTERED INDEX IX_'+@basetype+'_NamespaceId ON [dbo].[tbl_'+@basetype+'] ([NamespaceId]);
 				
 				CREATE NONCLUSTERED INDEX IX_'+@basetype+'_KeyId ON [dbo].[tbl_'+@basetype+'] ([KeyId]);
 

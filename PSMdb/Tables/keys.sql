@@ -3,8 +3,7 @@
     [Id] BIGINT IDENTITY(1,1) NOT NULL,
 	[Name] VARCHAR(100) NOT NULL,
 	[Type] VARCHAR(100) NULL,
-	[NamespaceId] BIGINT NOT NULL,
-	[Visible] BIT DEFAULT(1),
+	[NamespaceId] BIGINT NOT NULL
 	CONSTRAINT [PK_KEYS] PRIMARY KEY CLUSTERED
 	(
 		[Id] DESC
@@ -26,5 +25,5 @@ GO
 CREATE INDEX IX_keys_Name ON [dbo].[keys] ([Name]);
 GO
 
-CREATE INDEX IX_keys_NSid ON [dbo].[keys] ([NamespaceId]);
+CREATE INDEX IX_keys_NsId ON [dbo].[keys] ([NamespaceId]);
 GO

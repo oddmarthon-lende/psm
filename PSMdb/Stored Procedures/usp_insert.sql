@@ -30,7 +30,7 @@ AS
 			if(@basetype is null)
 			begin
 				select @basetype = cast(SQL_VARIANT_PROPERTY(@Value,'BaseType') as varchar(100));
-				update [keys] set [Type] = @basetype, [Visible] = 1;
+				update [keys] set [Type] = @basetype;
 			end
 			else
 			begin
@@ -42,11 +42,11 @@ AS
 
 	exec usp_create_table @basetype;
 
-	set @q = N'insert into [tbl_'+@basetype+'] ([NamespaceId], [KeyId], [Value], [Timestamp]) values (@nsid, @keyid, convert('+@basetype+', @Value), coalesce(@Timestamp, GETDATE()));';
+	set @q = N'insert into [tbl_'+@basetype+'] ([KeyId], [Value], [Timestamp]) values (@keyid, convert('+@basetype+', @Value), coalesce(@Timestamp, GETDATE()));';
 
 	exec sp_executesql
 		@q,
-		N'@nsid bigint, @keyid bigint, @Value sql_variant, @Timestamp datetime',
-		@nsid = @nsid, @keyid = @keyid, @Value = @Value, @Timestamp = @Timestamp;
+		N'@keyid bigint, @Value sql_variant, @Timestamp datetime',
+		@keyid = @keyid, @Value = @Value, @Timestamp = @Timestamp;
 
 RETURN 0

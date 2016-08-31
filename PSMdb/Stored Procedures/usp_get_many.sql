@@ -1,4 +1,5 @@
-﻿CREATE PROCEDURE [dbo].[usp_get_many]
+﻿
+CREATE PROCEDURE [dbo].[usp_get_many]
 	@Namespace VARCHAR(MAX),
 	@Key VARCHAR(MAX),
 	@Start SQL_VARIANT = null,
@@ -6,9 +7,9 @@
 	@IndexColumn VARCHAR(100) = 'Index'
 AS
 	
-	declare @q NVARCHAR(MAX), @basetype NVARCHAR(100);
+	declare @q NVARCHAR(MAX), @basetype NVARCHAR(100), @keyid bigint;
 
-	select @basetype = [Type] from [keys] where [Name] = @Key and [NamespaceId] = (select [Id] from [namespaces] where [Namespace] = @Namespace);
+	select @basetype = [Type], @keyid = [Id] from [keys] where [Name] = @Key and [NamespaceId] = (select [Id] from [namespaces] where [Namespace] = @Namespace);
 
 	if(@basetype is null)
 	begin
@@ -18,7 +19,7 @@ AS
 	begin
 		
 		set @q = 'select  ([RowNumber_Reverse] - 1) as [Index], [Value], [Timestamp] from (select ROW_NUMBER() over (order by [Timestamp] desc) as RowNumber, ROW_NUMBER() over (order by [Timestamp] asc) as [RowNumber_Reverse], *
-			from ' + @basetype + '_data where [Namespace] = @Namespace and [Key] = @Key) as Result
+			from [tbl_' + @basetype + '] where [KeyId] = @keyid) as Result
 			where ';
 
 		if(@End is null)
@@ -46,11 +47,15 @@ AS
 
 		set @q = @q + ' order by RowNumber';
 
+		
+
 	end
 	else
 	begin
 
-		set @q = 'select (Id - 1) as [Index], [Value], [Timestamp], [' + @IndexColumn + '] as [Index] from ' + @basetype + '_data where [Namespace] = @Namespace and [Key] = @Key and ([' + @IndexColumn + '] ';
+		set @q = 'select [' + @IndexColumn + '] as [Index], [Value], [Timestamp] from [tbl_' + @basetype + '] where [KeyId] = @keyid and ([' + @IndexColumn + '] ';
+		
+		set @q = @q + ' >';
 
 		if(@End is not null)
 		begin
@@ -58,6 +63,11 @@ AS
 		end
 
 		set @q = @q + ' @Start';
+
+		if(@End is null)
+		begin
+			set @q = @q + ')';
+		end
 
 		if(@End is not null)
 		begin
@@ -67,14 +77,10 @@ AS
 		end
 
 		set @q = @q + ' order by [' + @IndexColumn + '] desc';
-
+		print @q;
 	end
 
-	exec usp_create_view @basetype;
-
-	exec sp_executesql @q, N'@Namespace varchar(max), @Key varchar(max), @Start sql_variant, @End sql_variant', @Namespace = @Namespace, @Key = @Key, @Start = @Start, @End = @End;
+	exec sp_executesql @q, N'@keyid bigint, @Start sql_variant, @End sql_variant', @keyid = @keyid, @Start = @Start, @End = @End;
 
 RETURN 0
-
 GO
-
