@@ -40,7 +40,7 @@ namespace PSMonitor.Stores
         T Get<T>(string PropertyName);
 
     }
-        
+    
     /// <summary>
     /// Defines the interface that is used when accessing the data store.
     /// <typeparam name="T">The type </typeparam>
@@ -62,14 +62,7 @@ namespace PSMonitor.Stores
         /// Gets an object that contains properties that can be used to configure the store and be exposed to the user.
         /// </summary>
         IOptions Options { get; }
-
-        /// <summary>
-        /// Get the current\last <see cref="Entry"/>
-        /// </summary>
-        /// <param name="path">The key path</param>
-        /// <returns>The last data <see cref="Entry"/> that was written to the provided <paramref name="path"/></returns>
-        Entry Get(string path);
-
+        
         /// <summary>
         /// Get data
         /// </summary>
@@ -78,13 +71,13 @@ namespace PSMonitor.Stores
         /// <param name="end">The end index</param>
         /// <param name="index">The index identifier</param>
         /// <returns>An <see cref="IEnumerable{Entry}"/> of the data</returns>
-        IEnumerable<Entry> Get(string path, object start, object end, Enum index);
-
+        IEnumerable<Entry> Read(string path, object start, object end, Enum index);
+        
         /// <summary>
         /// Add data to the store
         /// </summary>
         /// <param name="envelope">The data <see cref="Envelope"/> that will be added. </param>
-        void Put(Envelope envelope);
+        void Write(Envelope envelope);
 
         /// <summary>
         /// Delete the key and all data.
@@ -110,21 +103,6 @@ namespace PSMonitor.Stores
         /// <returns>An array that contains the <see cref="Key"/>'s</returns>
         Key[] Keys(string ns);
         
-        /// <summary>
-        /// Sets metadata for a path
-        /// </summary>
-        /// <param name="path">The path</param>
-        /// <param name="key">The key</param>
-        /// <param name="value">The value</param>
-        void Meta(string path, string key, object value);
-
-        /// <summary>
-        /// Gets the metadata for a path
-        /// </summary>
-        /// <param name="path">The path</param>
-        /// <returns>A dictionary with the metadata for the specified <paramref name="path"/></returns>
-        Dictionary<string, object> Meta(string path);
-
         /// <summary>
         /// Register for retrieval of realtime data.
         /// </summary>

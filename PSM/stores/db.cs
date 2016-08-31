@@ -455,44 +455,11 @@ namespace PSMonitor.Stores
             base.Dispose();
 
         }
-
+        
         /// <summary>
-        /// <see cref="IStore.Get(string)"/>
+        /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
-        public override Entry Get(string path)
-        {
-
-            using (SqlConnection connection = CreateConnection())
-            {
-
-                VerifyConnection(connection);
-
-                Path p = Path.Extract(path);
-
-                using (SqlCommand command = connection.CreateCommand())
-                {
-
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.CommandText = "usp_get_one";
-
-                    p.ToCommandParameters(command);
-
-                    foreach (Entry entry in new Entries(p, IndexType.Id, connection, command))
-                    {
-                        return entry;
-                    }
-
-                    throw new KeyNotFoundException("Could not find the specified key or path");
-
-                }
-            }
-
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string, object, object, Enum)"/>
-        /// </summary>
-        public override IEnumerable<Entry> Get(string path, object start, object end, Enum index)
+        public override IEnumerable<Entry> Read(string path, object start, object end, Enum index)
         {
             
             SqlConnection connection = CreateConnection();
@@ -535,100 +502,16 @@ namespace PSMonitor.Stores
         }                
 
         /// <summary>
-        /// <see cref="IStore.Put(Envelope)"/>
+        /// <see cref="IStore.Write(Envelope)"/>
         /// </summary>
-        public override void Put(Envelope data)
+        public override void Write(Envelope data)
         {
 
             if (!_disposed)
                 _queue.Enqueue(data);
 
         }
-
-        /// <summary>
-        /// <see cref="IStore.Meta(string)"/>
-        /// </summary>
-        public override Dictionary<string, object> Meta(string path)
-        {
-
-            Dictionary<string, object> dict = new Dictionary<string, object>();
-
-            using (SqlConnection connection = CreateConnection())
-            {
-
-                VerifyConnection(connection);
-
-                using (SqlCommand command = connection.CreateCommand())
-                {
-
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.CommandText = "usp_get_meta";
-
-                    command.Parameters.Add(new SqlParameter("@Namespace", SqlDbType.VarChar)
-                    {
-                        Direction = ParameterDirection.Input,
-                        SqlValue = path
-                    });
-
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-
-                        while (reader.Read())
-                        {
-
-                            dict.Add(reader.GetString(reader.GetOrdinal("Key")), reader.GetValue(reader.GetOrdinal("Value")));
-
-                        }
-                    }
-                }
-
-            }
-
-            return dict;
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Meta(string, string, object)"/>
-        /// </summary>
-        public override void Meta(string path, string key, object value)
-        {
-
-            using (SqlConnection connection = CreateConnection())
-            {
-
-                VerifyConnection(connection);
-
-
-                using (SqlCommand command = connection.CreateCommand())
-                {
-
-                    command.CommandType = CommandType.StoredProcedure;
-                    command.CommandText = "usp_insert_meta";
-
-                    command.Parameters.Add(new SqlParameter("@Namespace", SqlDbType.VarChar)
-                    {
-                        Direction = ParameterDirection.Input,
-                        SqlValue = path
-                    });
-
-                    command.Parameters.Add(new SqlParameter("@Key", SqlDbType.VarChar)
-                    {
-                        Direction = ParameterDirection.Input,
-                        SqlValue = key
-                    });
-
-                    command.Parameters.Add(new SqlParameter("@Value", SqlDbType.Variant)
-                    {
-                        Direction = ParameterDirection.Input,
-                        SqlValue = value
-                    });
-
-                    command.ExecuteNonQuery();
-                }
-
-            }
-        }
-
+        
         /// <summary>
         /// <see cref="IStore.Keys(string)"/>
         /// </summary>
@@ -714,7 +597,7 @@ namespace PSMonitor.Stores
                     {
 
                         command.CommandType = CommandType.Text;
-                        command.CommandText = String.Format("select [Name], [Type] from [keys] where [Visible] = 1 and [NamespaceId] = {0};", id);
+                        command.CommandText = String.Format("select [Name], [Type] from [keys] where [NamespaceId] = {0};", id);
 
                         using (SqlDataReader reader = command.ExecuteReader())
                         {
@@ -783,6 +666,12 @@ namespace PSMonitor.Stores
                     SqlValue = path.Key
                 });
 
+                command.Parameters.Add(new SqlParameter("@IndexColumn", SqlDbType.VarChar)
+                {
+                    Direction = ParameterDirection.Input,
+                    SqlValue = path.Index
+                });
+
                 Entry[] entries = null;
 
                 if (processed.TryGetValue(path, out entries))
@@ -844,11 +733,13 @@ namespace PSMonitor.Stores
         {
 
             DB context = (DB)instance;
-            
-            try
+
+
+
+            while (!context._disposed)
             {
 
-                while (!context._disposed)
+                try
                 {
 
                     int totalCount = 0;
@@ -873,32 +764,30 @@ namespace PSMonitor.Stores
                     }
 
                     Debug.WriteLine("{1}.DB.Receive(object instance) : Count {0}, Going to sleep now...", totalCount, Thread.CurrentThread.Name);
-                    
-                    Thread.Sleep(context.Options.Get<int>("PollingInterval"));
-                }
 
+                    Thread.Sleep(context.Options.Get<int>("PollingInterval"));
+
+
+                }
+                catch (NullReferenceException e)
+                {
+                    throw e;
+                }
+                catch (ThreadInterruptedException e)
+                {
+                    Debug.WriteLine(e.ToString());
+                }
+                catch (Exception error)
+                {
+                    Logger.Error(error);
+                }
             }
-            catch (InvalidOperationException e)
-            {
-                throw e;
-            }
-            catch (NullReferenceException e)
-            {
-                throw e;
-            }
-            catch (ThreadInterruptedException e)
-            {
-                Debug.WriteLine(e.ToString());
-            }
-            catch (Exception error)
-            {
-                Logger.Error(error);
-            }
+
         }
 
         /// <summary>
         /// The entry point for the thread that will do the task of saving the data that has been added into the database.
-        /// <see cref="Put(Envelope)"/>
+        /// <see cref="Write(Envelope)"/>
         /// </summary>
         /// <param name="ctx">The <see cref="DB"/> instance that the thread belongs to.</param>
         protected static void Dispatch(object ctx)

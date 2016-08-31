@@ -49,7 +49,6 @@ namespace PSMonitor.Powershell
             state.Commands.Add(new SessionStateCmdletEntry("set-interval", typeof(SetIntervalCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("set-namespace", typeof(SetNamespaceCommand), null));
             state.Commands.Add(new SessionStateCmdletEntry("push-data", typeof(PushDataCommand), null));
-            state.Commands.Add(new SessionStateCmdletEntry("set-meta", typeof(SetMetaCommand), null));
 
             state.Variables.Add(new SessionStateVariableEntry(_scriptExecutionContextIDString, _id, "The Guid of the ScriptExecutionContext that executed this script", ScopedItemOptions.Constant));
 
@@ -68,15 +67,23 @@ namespace PSMonitor.Powershell
             string id = (string)sender.GetVariableValue(_scriptExecutionContextIDString);
 
             if (id == _id)
+            {
                 _script.Interval = sender.Interval;
+
+                Debug.WriteLine(String.Format("{0}: Interval set to {1}", _script.File.FullName, sender.Interval));
+            }
         }
 
         private void NamespaceChanged(SetNamespaceCommand sender) {
 
             string id = (string)sender.GetVariableValue(_scriptExecutionContextIDString);
 
-            if (id == _id)
+            if (id == _id) {
+
                 _script.Path = sender.Path;
+
+                Debug.WriteLine(String.Format("{0}: Namespace set to {1}", _script.File.FullName, sender.Path));
+            }               
 
         }
 
@@ -87,16 +94,19 @@ namespace PSMonitor.Powershell
 
             if (id == _id)
             {
+                Entry entry;
 
-                _queue.Enqueue(new Entry()
+                _queue.Enqueue(entry = new Entry()
                 {
 
-                    Key       = sender.Key,
-                    Value     = sender.Data.BaseObject,
-                    Type      = sender.Data.BaseObject.GetType(),
+                    Key = sender.Key,
+                    Value = sender.Data.BaseObject,
+                    Type = sender.Data.BaseObject.GetType(),
                     Timestamp = DateTime.Now
 
                 });
+
+                Debug.WriteLine(String.Format("{0}: Added data to queue (Key: {1}, Value: {2})", _script.File.FullName, entry.Key, entry.Value));
 
             }
 
@@ -106,7 +116,8 @@ namespace PSMonitor.Powershell
         {
 
             int count = _queue.Count;
-            Entry entry;            
+            Entry entry;
+                        
             Envelope env = new Envelope()
             {
                 Path = _script.Path,
@@ -114,12 +125,17 @@ namespace PSMonitor.Powershell
                 Timestamp = DateTime.Now
             };
 
-            for(int i = 0; i < count; i++)
+            if(count > 0)
+                Logger.Info(String.Format("*** {0} ***", _script.Path));
+
+            for (int i = 0; i < count; i++)
             {
 
                 while(!_queue.TryDequeue(out entry));
 
                 env.Entries[i] = entry;
+                
+                Logger.Info(String.Format(" {0} : {1}", entry.Key, entry.Value));
 
                 if (!all)
                     break;
@@ -151,7 +167,13 @@ namespace PSMonitor.Powershell
                     context._powerShell.Streams.ClearStreams();
                     context._lastExecutionTime = DateTime.Now;
 
-                    context._powerShell.Invoke();
+                    try
+                    {
+                        Logger.Info(String.Format("Executing script: {0}", context._script.File.Name));
+                        context._powerShell.Invoke();
+                    }
+                    catch(ThreadInterruptedException) { }
+                    
                 }
 
                 foreach (ErrorRecord errorRecord in powerShell.Streams.Error)

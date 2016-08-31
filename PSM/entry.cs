@@ -85,7 +85,7 @@ namespace PSMonitor
         /// <returns></returns>
         public override string ToString()
         {
-            return String.Format("{0} = {1}", Key, Value);
+            return Value.ToString();
         }
     }
 

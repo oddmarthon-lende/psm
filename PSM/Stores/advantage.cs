@@ -143,7 +143,7 @@ namespace PSMonitor.Stores
         /// This method has been disabled in this implementation of the <see cref="IStore"/> interface
         /// Using it will result in an exception being thrown.
         /// </summary>
-        public override void Put(Envelope data)
+        public override void Write(Envelope data)
         {
             throw new InvalidOperationException("Writing to the Advantage Database has not been implemented.");
         }
@@ -240,15 +240,7 @@ namespace PSMonitor.Stores
 
             return keys.OrderBy((k) => { return k.Name; }).ToArray();
         }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string)"/>
-        /// </summary>
-        public override Entry Get(string path)
-        {
-            return Get(path, 0, 0, IndexType.Index).FirstOrDefault();
-        }
-
+        
         /// <summary>
         /// Generate the query string
         /// </summary>
@@ -292,9 +284,9 @@ namespace PSMonitor.Stores
         
         /// <summary>
         /// Gets data
-        /// <see cref="IStore.Get(string, object, object, Enum)"/>
+        /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
-        public override IEnumerable<Entry> Get(string path, object start, object end, Enum index)
+        public override IEnumerable<Entry> Read(string path, object start, object end, Enum index)
         {
 
             ParameterizedPath p = ParameterizedPath.Extract(path);
@@ -322,35 +314,7 @@ namespace PSMonitor.Stores
             return new Entries(p, index, connection, command, true);
 
         }
-
-        /// <summary>
-        /// <see cref="IStore.Meta(string)"/>
-        /// </summary>
-        public override Dictionary<string, object> Meta(string path)
-        {
-
-            Dictionary<string, object> dict = new Dictionary<string, object>();
-            Path p = ParameterizedPath.Extract(path);
-
-
-            using (SqlConnection connection = CreateConnection())
-            {
-
-                VerifyConnection(connection);
-                
-            }
-
-            return dict;
-        }
-
-        /// <summary>
-        /// This method has been disabled in this implementation of the <see cref="IStore"/> interface
-        /// </summary>
-        public override void Meta(string path, string key, object value)
-        {
-            throw new NotImplementedException();
-        }
-
+        
         /// <summary>
         /// This method has been disabled in this implementation of the <see cref="IStore"/> interface
         /// </summary>

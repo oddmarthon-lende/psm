@@ -93,49 +93,5 @@ namespace PSMonitor.Powershell
             base.ProcessRecord();
         }
     }
-    
-    [Cmdlet(VerbsCommon.Set, "Meta")]
-    public class SetMetaCommand : PSCmdlet
-    {
-
-        [Parameter(
-            Position = 0,
-            Mandatory = true,
-            HelpMessage = "The path")]
-        public string Path
-        {
-            get; set;
-        }
-
-        [Parameter(
-            Position = 1,
-            Mandatory = true,
-            HelpMessage = "The key")]
-        public string Key
-        {
-            get; set;
-        }
-
-        [Parameter(
-            Position = 2,
-            Mandatory = true,
-            HelpMessage = "The value")]
-        [ValidateNotNullOrEmpty]
-        public PSObject Value
-        {
-            get; set;
-        }
-
-        protected override void ProcessRecord()
-        {
-            try
-            {
-                PSM.Store().Meta(Path, Key, Value);
-            }
-            catch (Exception error)
-            {
-                WriteError(new ErrorRecord(error, "SET", ErrorCategory.NotSpecified, this));
-            }
-        }
-    }
+        
 }

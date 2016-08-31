@@ -41,22 +41,8 @@ namespace PSMonitor.Stores
         }
 
         private Random _randy = new Random();
-
-        public override Entry Get(string path)
-        {
-
-            return new Entry()
-            {
-                Index = 0,
-                Timestamp = DateTime.Now,
-                Key = Path.Extract(path).Key,
-                Type = typeof(double),
-                Value = _randy.NextDouble()
-            };
-
-        }
-
-        public override IEnumerable<Entry> Get(string path, object start, object end, Enum index)
+                
+        public override IEnumerable<Entry> Read(string path, object start, object end, Enum index)
         {
 
             long s    = (long)start;
@@ -95,7 +81,7 @@ namespace PSMonitor.Stores
             return keys.ToArray();
         }
 
-        public override void Put(Envelope envelope)
+        public override void Write(Envelope envelope)
         {
             throw new NotImplementedException();
         }

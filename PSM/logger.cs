@@ -29,7 +29,8 @@ namespace PSMonitor
 
             try
             {
-                EventLog.WriteEntry(Source, msg, t);
+                if(t == EventLogEntryType.Error)
+                    EventLog.WriteEntry(Source, msg, t);
             }
             catch (Exception)
             {
@@ -67,13 +68,13 @@ namespace PSMonitor
                     default:
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
-                }
+                }                
 
-                if (OnLog != null) OnLog(msg, t);
-
-                Console.WriteLine("{0} : {1} : {2}", entryType, DateTime.Now.ToString(), msg);
+                Console.WriteLine("{0} : {1} : {2}", entryType, DateTime.Now.ToString("o"), msg);
                 Console.ResetColor();
             }
+
+            if (OnLog != null) OnLog(msg, t);
         }
 
         public static void Error(string msg)

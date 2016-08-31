@@ -87,18 +87,7 @@ namespace PSMonitor
         public override string ToString()
         {
 
-            StringBuilder str = new StringBuilder();
-
-            str.Append(Path);            
-
-            foreach(Entry entry in Entries)
-            {
-                str.AppendLine();
-                str.Append("\t");
-                str.Append(entry);
-            }
-            
-            return str.ToString();
+            return Path;
            
         }
     }

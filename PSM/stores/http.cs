@@ -86,10 +86,6 @@ namespace PSMonitor.Stores
             
         }
 
-        protected Frequency _rateIn = new Frequency();
-
-        protected Frequency _rateOut = new Frequency();
-
         /// <summary>
         /// The serializer used to convert data to JSON
         /// </summary>
@@ -268,28 +264,11 @@ namespace PSMonitor.Stores
                 Debug.WriteLine("HTTP Store : Waiting for threads to exit");
                 thread.Join();
             }
-
-            _rateIn.Dispose();
-            _rateOut.Dispose();
-
+            
             base.Dispose();
 
         }
-
-        /// <summary>
-        /// <see cref="IStore.Get(string)"/>
-        /// </summary>
-        public override Entry Get(string path)
-        {
-
-            foreach(Entry entry in Get_(path, null, null, null)) {
-                return entry;
-            }
-
-            throw new KeyNotFoundException("Could not find the specified key or path");
-
-        }
-
+        
         private static DateTime t = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);                
 
         /// <summary>
@@ -313,19 +292,9 @@ namespace PSMonitor.Stores
         }
 
         /// <summary>
-        /// <see cref="IStore.Get(string, object, object, Enum)"/>
+        /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
-        public override IEnumerable<Entry> Get(string path, object start, object end, Enum index)
-        {
-            return Get_(path, start, end, index);
-        }
-
-        /// <summary>
-        /// Handles both methods above
-        /// <see cref="Get(string, DateTime, DateTime)"/>
-        /// <see cref="Get(string, long, long)"/>
-        /// </summary>
-        private IEnumerable<Entry> Get_(string path, object start, object end, Enum index)
+        public override IEnumerable<Entry> Read(string path, object start, object end, Enum index)
         {
             
             DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Entry[]));
@@ -335,7 +304,7 @@ namespace PSMonitor.Stores
             {
                 
                 string uri = HttpUtility.UrlEncode(start != null && end != null && index != null ?
-                    String.Format("/data/{0}/{1}/{2}/{3}", path, (start is DateTime ? ToUnixTimestamp((DateTime)start) * 1000 : start), (start is DateTime ? ToUnixTimestamp((DateTime)start) * 1000 : start), index.ToString()) :
+                    String.Format("/data/{0}/{1}/{2}/{3}", path, (start is DateTime ? ToUnixTimestamp((DateTime)start) * 1000 : start), (end is DateTime ? ToUnixTimestamp((DateTime)end) * 1000 : end), index.ToString()) :
                     String.Format("/data/{0}/", path));
 
                 
@@ -417,9 +386,9 @@ namespace PSMonitor.Stores
         }
 
         /// <summary>
-        /// <see cref="IStore.Put(Envelope)"/>
+        /// <see cref="IStore.Write(Envelope)"/>
         /// </summary>
-        public override void Put(Envelope data)
+        public override void Write(Envelope data)
         {
             
             if (!_disposed)
@@ -494,7 +463,7 @@ namespace PSMonitor.Stores
                                     HttpResponseMessage response = task.Result;
 
                                     if (!response.IsSuccessStatusCode)
-                                        Debug.WriteLine(String.Format("Server responded with {0} {1}", response.StatusCode, response.ReasonPhrase));
+                                        Logger.Error(String.Format("Server responded with {0} {1}", response.StatusCode, response.ReasonPhrase));
 
                                 }
                                 
@@ -512,7 +481,7 @@ namespace PSMonitor.Stores
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e);
+                    Logger.Error(e.Message);
                 }
 
                 for (int i = 0; i < count; i++)

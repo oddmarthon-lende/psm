@@ -108,7 +108,7 @@ namespace PSMonitor.Stores
                                         
                 }
             }
-
+            
             public virtual Properties Get()
             {
 
@@ -160,7 +160,7 @@ namespace PSMonitor.Stores
                 {
                     return (T)value;
                 }
-                catch(Exception e)
+                catch(Exception)
                 {
                     return (T)Convert.ChangeType(value, typeof(T));
                 }
@@ -229,16 +229,11 @@ namespace PSMonitor.Stores
         /// <see cref="IStore.Delete(string, object, object, Enum)"/>
         /// </summary>
         public abstract long Delete(string path, object start, object end, Enum index);
-
+                
         /// <summary>
-        /// <see cref="IStore.Get(string)"/>
+        /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
-        public abstract Entry Get(string path);
-
-        /// <summary>
-        /// <see cref="IStore.Get(string, object, object, Enum)"/>
-        /// </summary>
-        public abstract IEnumerable<Entry> Get(string path, object start, object end, Enum index);
+        public abstract IEnumerable<Entry> Read(string path, object start, object end, Enum index);
         
         /// <summary>
         /// <see cref="IStore.Keys(string)"/>
@@ -246,9 +241,9 @@ namespace PSMonitor.Stores
         public abstract Key[] Keys(string ns);
 
         /// <summary>
-        /// <see cref="IStore.Put(Envelope)"/>
+        /// <see cref="IStore.Write(Envelope)"/>
         /// </summary>
-        public abstract void Put(Envelope envelope);
+        public abstract void Write(Envelope envelope);
 
         /// <summary>
         /// <see cref="IStore.Register(object, string, object, RealTimeData)"/>
@@ -347,16 +342,7 @@ namespace PSMonitor.Stores
             }
 
         }
-        
-        public virtual void Meta(string path, string key, object value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual Dictionary<string, object> Meta(string path)
-        {
-            return new Dictionary<string, object>();
-        }
+                
     }
 
 }
