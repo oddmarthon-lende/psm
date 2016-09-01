@@ -543,7 +543,7 @@ namespace PSMViewer.Visualizations
         /// </summary>
         protected List<PropertyDefinition> Properties { get; set; } = new List<PropertyDefinition>();
         
-        private KeyItemPathList _paths = new KeyItemPathList();
+       
         /// <summary>
         /// Holds the key paths.
         /// Used for serialization, need only paths not the whole <typeparamref name="KeyItem"/>
@@ -552,7 +552,14 @@ namespace PSMViewer.Visualizations
         {
             get
             {
-                return _paths;
+                KeyItemPathList list = new KeyItemPathList();
+
+                foreach(MultiControl c in Controls)
+                {
+                    list.Add(new KeyItemPath(c.Key.StaticPath, c.Key.Title.Position));
+                }
+
+                return list;
             }
 
             set
@@ -1141,6 +1148,7 @@ namespace PSMViewer.Visualizations
 
             VariableDefinitionList variables;
 
+
             if (key == null) return null;
 
             try
@@ -1190,10 +1198,6 @@ namespace PSMViewer.Visualizations
 
             if (key.Type == null)
             {
-
-                foreach(KeyItem k in key.Children)
-                    _paths.Add(new KeyItemPath(k.StaticPath, null));
-
                 key.Children.CollectionChanged += Key_Children_CollectionChanged;
 
                 this.OnReload(key);
@@ -1207,10 +1211,7 @@ namespace PSMViewer.Visualizations
             {
 
                 control = new MultiControl(key, this.OnReload, collection);                
-                _controls.Add(control);
-
-                if (key.Parent != null && !_paths.Contains(key.Parent.StaticPath))
-                    _paths.Add(new KeyItemPath(key.StaticPath, key.Title.Position));
+                _controls.Add(control);                
 
             }
 
@@ -1255,9 +1256,7 @@ namespace PSMViewer.Visualizations
                 Controls.Remove(m);
                 m.Dispose();
             }
-
-            Paths.Remove(key.StaticPath);
-
+            
             if (RefreshOperation == null)
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 

@@ -74,7 +74,7 @@ namespace PSMonitor
 
                 case 1:
 
-                    return new Path { Namespace = components[0], _components = components };
+                    return new Path { Namespace = "", Key = components[0], _components = components };
             }
 
             key = components.Last();

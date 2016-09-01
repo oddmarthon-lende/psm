@@ -15,10 +15,9 @@
         xmlns:c="clr-namespace:PSMViewer.Converters"
         x:Class="PSMViewer.MainWindow"
         mc:Ignorable="d" Cursor="{Binding Status, Converter={StaticResource CursorConverter}}"
-        Title="PSM Data Viewer" x:Name="window" SnapsToDevicePixels="True" Icon="..\icons\database_table.png" Drop="window_Drop" AllowDrop="True">
+        Title="PSM Data Viewer" x:Name="window" SnapsToDevicePixels="True" Icon="..\icons\database_table.png" Drop="window_Drop" AllowDrop="True" >
 
     <Window.Resources>
-        
         
     </Window.Resources>
 

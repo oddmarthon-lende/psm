@@ -31,6 +31,8 @@ namespace PSMViewer
     public class PropertiesWindow : Window
     {
 
+        public static event System.Action<PropertiesWindow> Created;
+
         private List<PropertyGrid> _grids = new List<PropertyGrid>();
         /// <summary>
         /// Gets a refrerence to the propertygrid
@@ -58,6 +60,9 @@ namespace PSMViewer
         /// <param name="definitions">The properties that will be visible to the user.</param>
         public PropertiesWindow(object selectedObject, PropertyDefinition[] definitions = null)
         {
+
+            if (Created != null)
+                Created(this);
 
             PropertyGrid g = new PropertyGrid()
             {
@@ -98,6 +103,9 @@ namespace PSMViewer
 
         public PropertiesWindow(params object[] selectedObjects)
         {
+
+            if (Created != null)
+                Created(this);
 
             Content = new StackPanel() { Orientation = Orientation.Vertical };
 

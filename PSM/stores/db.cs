@@ -796,6 +796,7 @@ namespace PSMonitor.Stores
             DB context = (DB)ctx;
             Envelope envelope;
             int count = 0;
+            int i = 0;
 
             while (!context._disposed)
             {
@@ -812,17 +813,15 @@ namespace PSMonitor.Stores
                         if (!context._queue.IsEmpty)
                         {
                             
-                            VerifyConnection(connection);
-
-                            
+                            VerifyConnection(connection);                            
 
                             using (SqlCommand command = connection.CreateCommand())
                             {
 
                                 command.CommandType = CommandType.StoredProcedure;
                                 command.CommandText = "usp_insert_value";
-
-                                for (int i = 0; i < count; i++)
+                                
+                                for (i = 0; i < count; i++)
                                 {
 
                                     while (!context._queue.TryDequeue(out envelope));
@@ -875,6 +874,7 @@ namespace PSMonitor.Stores
                                         catch (Exception error)
                                         {
                                             Debug.WriteLine(error);
+                                            Logger.Error(error);
                                             continue;
                                         }
 
@@ -895,9 +895,10 @@ namespace PSMonitor.Stores
                 catch (Exception e)
                 {
                     Debug.WriteLine(e);
+                    Logger.Error(e);
                 }
                 
-                for(int i = 0; i < count; i++)
+                for(int y = 0; y < (count - i); y++)
                     while (!context._queue.TryDequeue(out envelope));
 
             }

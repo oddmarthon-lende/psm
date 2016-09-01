@@ -80,9 +80,12 @@ namespace PSMonitor.Powershell
 
             if (id == _id) {
 
+                Flush(true);
+
                 _script.Path = sender.Path;
 
                 Debug.WriteLine(String.Format("{0}: Namespace set to {1}", _script.File.FullName, sender.Path));
+                
             }               
 
         }
@@ -142,7 +145,12 @@ namespace PSMonitor.Powershell
             }
             
             if(env.Entries.Length > 0)
+            {
                 _onData(env);
+                Debug.WriteLine("Flushed " + env.Entries.Length + " entries");
+
+            }
+                
 
         }
 
@@ -162,8 +170,7 @@ namespace PSMonitor.Powershell
 
                 if (DateTime.Now.Subtract(context._lastExecutionTime).TotalMilliseconds > context._script.Interval)
                 {
-                    powerShell.Streams.Error.Clear();
-
+                    
                     context._powerShell.Streams.ClearStreams();
                     context._lastExecutionTime = DateTime.Now;
 
@@ -178,8 +185,10 @@ namespace PSMonitor.Powershell
 
                 foreach (ErrorRecord errorRecord in powerShell.Streams.Error)
                 {
-                    Logger.Error(errorRecord.ToString());
+                    Logger.Error(String.Format("Powershell : {0} : {1}", context._script.File.Name, errorRecord.ToString()));
                 }
+
+                powerShell.Streams.Error.Clear();
 
                 context.Flush(true);
             }

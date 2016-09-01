@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:PSMViewer"
         xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:v="clr-namespace:PSMViewer.Visualizations"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d" Cursor="{Binding Status, Converter={StaticResource CursorConverter}}"
         Height="600" Width="800" Icon="..\icons\application_view_tile.png" WindowStyle="None" ShowInTaskbar="True" Topmost="False" x:Name="window"  DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
@@ -85,7 +86,7 @@
 
                         <MenuItem Header="Tools" >                
 
-                            <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}"  />
+                            <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}" />
                             <Separator />
                             <MenuItem Header="Show / Hide Controls" InputGestureText="Space" Command="{Binding Commands[ControlsVisibility]}"  />
                             <MenuItem Header="Capture Mouse" IsCheckable="True" IsChecked="{Binding CaptureRightClick}"  />
@@ -117,6 +118,56 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+
+                </ToolBar>
+
+                <ToolBar Width="Auto" Background="{x:Null}">
+
+                    <Button ToolTip="Previous" Command="{Binding Commands[Previous], ElementName=window}" >
+                        <Image Source="..\icons\resultset_previous.png"/>
+                    </Button>
+                    <Button ToolTip="Next" Command="{Binding Commands[Next], ElementName=window}">
+                        <Image Source="..\icons\resultset_next.png"/>
+                    </Button>
+                    <Button ToolTip="Refresh" Command="{Binding Commands[Refresh], ElementName=window}">
+                        <Image Source="..\icons\table_refresh.png"/>
+                    </Button>
+
+                </ToolBar>
+
+                <ToolBar Width="Auto" x:Name="zoomToolbar" Background="{x:Null}">
+
+                    <ToolBar.Resources>
+                        <Style TargetType="{x:Type ToggleButton}">
+                            <Setter Property="FontSize" Value="10" />
+                        </Style>
+
+                        <ObjectDataProvider x:Key="zoomValues" MethodName="GetNames" ObjectType="{x:Type sys:Enum}">
+                            <ObjectDataProvider.MethodParameters>
+                                <x:Type TypeName="local:TimeZoomInterval" />
+                            </ObjectDataProvider.MethodParameters>
+                        </ObjectDataProvider>
+
+                    </ToolBar.Resources>
+
+                    <ItemsControl ItemsSource="{Binding Source={StaticResource zoomValues}}" >                       
+                        
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+
+                        <ItemsControl.ItemsPanel>
+
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+
+                        </ItemsControl.ItemsPanel>
+                        
+
+                    </ItemsControl>   
 
                 </ToolBar>
 

@@ -27,6 +27,7 @@ namespace PSMViewer.Visualizations
                 Category = "Line.Stroke",
                 TargetProperties = new List<object>(new string[] { "StrokeThickness", "LineStyle" })
             });
+
         }       
 
         private void Line_SeriesAdded(MultiControl control, TwoColorLineSeries series)

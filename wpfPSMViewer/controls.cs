@@ -667,41 +667,23 @@ namespace PSMViewer.ViewModels
                 ReloadTask = Task.Factory.StartNew<IEnumerable<EntryItem>>(delegate
                 {
 
-                    int count = 0;
-                    
-                    while (true)
+                    try
                     {
-                        
-                        try
+                        return Reload(Selected);
+                    }
+                    catch (Exception error)
+                    {
+
+                        Dispatcher.InvokeAsync(delegate
                         {
-                            return Reload(Selected);
-                        }
-                        catch (Exception error) {
+                            SetField(ref _status, ReloadStatus.Error, "Status");
+                        });
 
-                            Dispatcher.Invoke(delegate
-                            {
-                                SetField(ref _status, ReloadStatus.Error, "Status");
-                            });
+                        Logger.Error(error);
 
-                            Logger.Error(error);
+                        return null;
 
-                            if(++count >= 10)
-                            {
 
-                                if(System.Windows.MessageBox.Show("Check the event log for more details.\nDo you want to retry loading?", "An error occurred while loading data", System.Windows.MessageBoxButton.OKCancel) == System.Windows.MessageBoxResult.OK)
-                                {
-                                    count = 0;
-                                    continue;
-                                }
-                                                                
-                                return null;                                    
-
-                            }
-
-                            Thread.Sleep(1000);
-                            
-                        }
-                        
                     }
 
                 }, CancellationTokenSource.Token);

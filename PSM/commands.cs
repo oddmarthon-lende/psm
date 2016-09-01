@@ -81,7 +81,6 @@ namespace PSMonitor.Powershell
             Position = 1,
             Mandatory = true,
             HelpMessage = "The data to store for the associated key")]
-        [ValidateNotNullOrEmpty]
         public PSObject Data
         {
             get; set;
@@ -89,6 +88,9 @@ namespace PSMonitor.Powershell
 
         protected override void ProcessRecord()
         {
+            if (Data == null)
+                return; 
+            
             Pushed(this);
             base.ProcessRecord();
         }

@@ -698,16 +698,19 @@ namespace PSMViewer.Models
             item._parent = KeyItem.CreateFromPath(p);
             item._path = p.Length > 0 ? p : null;
 
-            foreach (Key k in PSM.Store(ctx).Keys(item._parent != null ? item._parent.Path : ""))
-            {
-                item = new KeyItem(key, k.Type)
-                {
-                    Context = ctx,
-                    Variables = vars.Count > 0 ? vars : null,
-                    _parent = item._parent
-                };
+            Key[] keys = PSM.Store(ctx).Keys(item._parent != null ? item._parent.Path : "");
 
-                break;
+            foreach (Key k in keys)
+            {
+                if(item.Name == k.Name)
+                {
+                    item = new KeyItem(key, k.Type)
+                    {
+                        Context = ctx,
+                        Variables = vars.Count > 0 ? vars : null,
+                        _parent = item._parent
+                    };
+                }
             }
 
             return item;
@@ -753,6 +756,40 @@ namespace PSMViewer.Models
         public override string ToString()
         {
             return Path;
+        }
+
+        private bool _typeConfirmed = false;
+
+        private Type _type = null;
+        public new Type Type
+        {
+            get
+            {
+
+                if(base.Type == null && _type == null && !_typeConfirmed)
+                {
+
+                    Key[] keys = PSM.Store(Dispatcher).Keys(_parent != null ? _parent.Path : "");
+
+                    foreach (Key k in keys)
+                    {
+                        if (Name == k.Name)
+                        {
+                            _type = k.Type;
+                            break;
+                        }
+                    }
+
+                    _typeConfirmed = true;
+                }
+
+                return _type ?? base.Type ?? (Variables != null && Variables.Count() > 0 ? typeof(object) : null);
+            }
+
+            set
+            {
+                _type = value;
+            }
         }
                 
     }

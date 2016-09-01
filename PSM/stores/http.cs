@@ -405,7 +405,8 @@ namespace PSMonitor.Stores
 
             HTTP context = (HTTP)ctx;
             Envelope envelope;
-            
+            Envelope[] data = null;
+
             int count = 0;
 
             while (!context._disposed)
@@ -427,7 +428,7 @@ namespace PSMonitor.Stores
                         using (MemoryStream stream = new MemoryStream())
                         {
 
-                            Envelope[] data = context._dispatch_queue.ToArray();
+                            data = context._dispatch_queue.ToArray();
 
                             json.WriteObject(stream, data);
                             stream.Seek(0, SeekOrigin.Begin);
@@ -484,8 +485,8 @@ namespace PSMonitor.Stores
                     Logger.Error(e.Message);
                 }
 
-                for (int i = 0; i < count; i++)
-                    while (!context._dispatch_queue.TryDequeue(out envelope)) ;
+                for (int y = 0; data != null && y < (count - data.Length); y++)
+                    while (!context._dispatch_queue.TryDequeue(out envelope));
 
             }
 

@@ -26,6 +26,7 @@ using PSMonitor.Stores;
 using PSMViewer.Models;
 using PSMViewer.ViewModels;
 using System.Linq;
+using System.Windows.Controls.Primitives;
 
 namespace PSMViewer
 {
@@ -210,7 +211,19 @@ namespace PSMViewer
     /// An observable collection of <see cref="ColumnDefinition"/>'s
     /// </summary>
     public class ColumnDefinitionList     : ObservableCollection<ColumnDefinition> { }
-        
+
+    public enum TimeZoomInterval
+    {
+        h6,
+        h24,
+        d2,
+        d4,
+        w1,
+        w2,
+        m1,
+        y1
+    }
+
     /// <summary>
     /// A window that can contain many <see cref="VisualizationControl"/>
     /// </summary>
@@ -529,6 +542,64 @@ namespace PSMViewer
             }
         }
 
+        private TimeZoomInterval? _zoomInterval;
+        public TimeZoomInterval? ZoomInterval
+        {
+            get
+            {
+                return _zoomInterval;
+            }
+
+            set
+            {
+                _zoomInterval = value;
+
+                foreach (VisualizationControl c in Children)
+                {
+                    TimeSpan ts = c.Timespan;
+
+                    switch (_zoomInterval)
+                    {
+                        case TimeZoomInterval.d2:
+                            ts = new TimeSpan(2, 0, 0, 0);
+                            break;
+                        case TimeZoomInterval.d4:
+                            ts = new TimeSpan(4, 0, 0, 0);
+                            break;
+                        case TimeZoomInterval.h24:
+                            ts = new TimeSpan(24, 0, 0, 0);
+                            break;
+                        case TimeZoomInterval.h6:
+                            ts = new TimeSpan(6, 0, 0);
+                            break;
+                        case TimeZoomInterval.m1:
+                            ts = new TimeSpan(DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 0, 0, 0);
+                            break;
+                        case TimeZoomInterval.w1:
+                            ts = new TimeSpan(7, 0, 0, 0);
+                            break;
+                        case TimeZoomInterval.w2:
+                            ts = new TimeSpan(14, 0, 0, 0);
+                            break;
+                        case TimeZoomInterval.y1:
+                            ts = new TimeSpan(365, 0, 0, 0);
+                            break;
+                    }
+
+                    c.Timespan = _timeSpan = ts;
+                }
+
+                ToggleButton[] buttons = zoomToolbar.Find<ToggleButton>();
+
+                foreach(ToggleButton b in buttons)
+                {
+                    b.IsChecked = b.Content is string && _zoomInterval == (TimeZoomInterval)Enum.Parse(typeof(TimeZoomInterval), (string)b.Content);
+                }
+            }
+        }
+
+        private TimeSpan _timeSpan { get; set;}
+
         #endregion
 
         /// <summary>
@@ -558,6 +629,10 @@ namespace PSMViewer
             
             DataContext = this;
             Closing += VisualizationWindow_Closing;
+
+            zoomToolbar.Loaded += delegate { ZoomInterval = _zoomInterval; };
+
+            PropertiesWindow.Created += (w) => { w.Closed += (sender, e) => Refresh(); };
 
             #region Bindings
             
@@ -638,16 +713,20 @@ namespace PSMViewer
 
         }
 
+        
         private void CreateCommands()
         {
             Commands.Add("Export", new RelayCommand(ExecuteCommand, canExecute, CommandType.EXPORT));
             Commands.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             Commands.Add("PropertiesW", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES_W));
+            Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
+            Commands.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
             Commands.Add("Refresh", new RelayCommand(ExecuteCommand, canExecute, CommandType.RELOAD));
             Commands.Add("Delete", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
             Commands.Add("ControlsVisibility", new RelayCommand(ExecuteCommand, canExecute, CommandType.CONTROLS));
             Commands.Add("AddChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD));
             Commands.Add("Save", new RelayCommand(ExecuteCommand, canExecute, CommandType.SAVE));
+            Commands.Add("Zoom", new RelayCommand(ExecuteCommand, canExecute, CommandType.ZOOM));
             Commands.Add("Undo", new RelayCommand(ExecuteCommand, delegate { return UndoExtension.Count > 0; }, CommandType.UNDO));
         }
         
@@ -797,6 +876,14 @@ namespace PSMViewer
 
                         DependencyPropertyDescriptor.FromProperty(VisualizationControl.StatusProperty, widget.GetType()).AddValueChanged(widget, Widget_StatusChanged);
 
+                        if (ZoomInterval.HasValue)
+                            widget.Timespan = _timeSpan;
+
+                        widget.Controls.CollectionChanged += delegate
+                        {
+                            OnPropertyChanged("Variables");
+                            OnPropertyChanged("VariablesVisibility");
+                        };
 
                     }
             }
@@ -889,7 +976,12 @@ namespace PSMViewer
             /// <summary>
             /// Move widget to new window
             /// </summary>
-            TO_NEW
+            TO_NEW,
+            /// Zoom widgets
+            ZOOM,
+            
+            PREVIOUS,
+            NEXT
         }
                
         
@@ -1050,7 +1142,7 @@ namespace PSMViewer
                     grid.SelectedObject = null;
 
                     window.Show();
-
+                    
                     grid.SelectedObjectChanged += settings_propertyGrid_SelectedObjectChanged;
                     grid.SelectedObject = _options.Store;
 
@@ -1059,7 +1151,43 @@ namespace PSMViewer
                 case CommandType.CONTROLS:
 
                     ControlsVisibility = ControlsVisibility == Visibility.Hidden ? Visibility.Visible : Visibility.Hidden;
+                    break;
 
+                case CommandType.ZOOM:
+
+                    ToggleButton button = (ToggleButton)parameter;
+                    ToggleButton[] buttons = zoomToolbar.Find<ToggleButton>();
+
+                    if (button.IsChecked.HasValue && !button.IsChecked.Value)
+                    {
+                        ZoomInterval = null;
+                        break;
+                    }                       
+
+                    ZoomInterval = (TimeZoomInterval)Enum.Parse(typeof(TimeZoomInterval), (string)button.Content);
+
+                    this.OnReload(this);
+
+                    break;
+
+                case CommandType.PREVIOUS:
+
+                    foreach(VisualizationControl c in Children)
+                    {
+                        c.Previous();
+                    }
+
+                    this.OnReload(this);
+                    break;
+
+                case CommandType.NEXT:
+
+                    foreach (VisualizationControl c in Children)
+                    {
+                        c.Next();
+                    }
+
+                    this.OnReload(this);
                     break;
 
                 default:
@@ -1120,12 +1248,13 @@ namespace PSMViewer
         {
 
             ObservableCollection<KeyItem.Variable> variables = KeyItem.GetGlobalVariables();
-            
-            if(variables != null)
+
+            if (variables != null)
                 variables.Clear();
 
             foreach (VisualizationControl widget in Children)
             {
+
                 MultiControl[] controls = new MultiControl[widget.Controls.Count];
                 widget.Controls.CopyTo(controls, 0);
 
@@ -1134,7 +1263,7 @@ namespace PSMViewer
 
                     widget.Remove(control.Key);
 
-                    KeyItem key = KeyItem.CreateFromPath(control.Key.Path);
+                    KeyItem key = KeyItem.CreateFromPath(control.Key.StaticPath);
                     key.Title.Position = control.Key.Title.Position;
 
                     widget.Add(key);

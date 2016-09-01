@@ -6,6 +6,11 @@
 AS 
 	declare @nsid bigint, @keyid bigint, @basetype varchar(100), @q nvarchar(max);
 
+	if(@Value is null)
+	begin
+		return 0;
+	end
+
 	select @nsid = [Id] from [namespaces] where [Namespace] = @Namespace;
 
 	if(@nsid is null)
@@ -42,7 +47,7 @@ AS
 
 	exec usp_create_table @basetype;
 
-	set @q = N'insert into [tbl_'+@basetype+'] ([KeyId], [Value], [Timestamp]) values (@keyid, convert('+@basetype+', @Value), coalesce(@Timestamp, GETDATE()));';
+	set @q = N'insert into [tbl_'+@basetype+'] ([KeyId], [Value], [Timestamp]) values (@keyid, convert(' + @basetype + (case when @basetype like '%var%' then '(max)' else '' end) + ', @Value), coalesce(@Timestamp, GETDATE()));';
 
 	exec sp_executesql
 		@q,
