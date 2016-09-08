@@ -39,7 +39,7 @@ namespace PSMViewer.Visualizations
             RegisterUserCommand("Modify Group Title", new RelayCommand(delegate
             {
 
-                List<ModDataTitle.Item> items = new List<ModDataTitle.Item>();
+                List<KeyEditor.Item> items = new List<KeyEditor.Item>();
                 List<KeyItem> parents = new List<KeyItem>();
 
                 foreach (dynamic s in _series)
@@ -49,7 +49,7 @@ namespace PSMViewer.Visualizations
                     parents.Add(parent);
 
                     if (!Groups.Contains(s.Key))
-                        Groups.Add(new KeyItemPath(s.Key, null));
+                        Groups.Add(new KeyItemPath(s.Key));
                     else
                         parent.Title.Position = Groups.Get(s.Key).Position ?? parent.Title.Position;
 
@@ -59,10 +59,10 @@ namespace PSMViewer.Visualizations
 
                 foreach (KeyItem k in parents)
                 {
-                    items.Add(new ModDataTitle.Item(k));
+                    items.Add(new KeyEditor.Item(k));
                 }
 
-                ModDataTitle window = new ModDataTitle(items.ToArray());
+                KeyEditor window = new KeyEditor(items.ToArray());
                 window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                 window.Owner = this.Owner;
 

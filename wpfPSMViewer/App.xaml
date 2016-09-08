@@ -11,7 +11,11 @@
     
     <Application.Resources>
 
-        
+        <Style TargetType="{x:Type TextBlock}">
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+        </Style>
+
 
         <c:ReloadStatusToCursorConverter x:Key="CursorConverter" />
         <c:ReloadStatusToBooleanConverter x:Key="BooleanConverter" />
@@ -24,6 +28,62 @@
             <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Setter Property="Icon" Value="{StaticResource Icon}"/>
         </Style>
+
+        
+
+        <ControlTemplate x:Key="WindowTemplate" TargetType="{x:Type Window}">
+            
+            <ControlTemplate.Resources>
+                <Style TargetType="{x:Type ToolBar}">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style TargetType="{x:Type DockPanel}">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style TargetType="{x:Type ToolBarTray}">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                <Style TargetType="{x:Type Menu}">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
+                
+            </ControlTemplate.Resources>
+            
+            <Border BorderThickness="1" BorderBrush="{TemplateBinding Foreground}">
+                
+                <Grid Background="{TemplateBinding Background}">
+                    
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="100*" />
+                    </Grid.RowDefinitions>                    
+
+                    <ContentPresenter Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="0" Margin="0" />
+
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Panel.ZIndex="1" Opacity=".5" >
+
+                        <StackPanel.Resources>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0" />
+                            </Style>
+                        </StackPanel.Resources>
+                        <Button Margin="5">
+                            <Image Source="..\icons\minimize_window.png" Width="16" Height="16"  />
+                        </Button>
+                        <Button Margin="5" >
+                            <Image Source="..\icons\maximize_window.png" Width="16" Height="16" />
+                        </Button>
+                        <Button Margin="5" >
+                            <Image Source="..\icons\close.png" Width="16" Height="16"  />
+                        </Button>
+
+                    </StackPanel>
+
+                </Grid>
+            </Border>
+        </ControlTemplate>
               
         <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}" >
             
@@ -72,23 +132,6 @@
                         
                     </Grid.Resources>
                     
-                    <Button  Grid.Column="0" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Command="{Binding Commands[Previous]}" Visibility="{TemplateBinding HorizontalArrowsVisibility}" >
-                        <Image Source="images/left.png" Width="27" Height="44" />
-                    </Button>
-
-                    <Button Grid.Column="2" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Command="{Binding Commands[Next]}" Visibility="{TemplateBinding HorizontalArrowsVisibility}" >
-                        <Image Source="images/right.png" Width="27" Height="44" />    
-                    </Button>
-
-                    <Button  Grid.Column="1" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="{TemplateBinding VerticalArrowsVisibility}" Command="{Binding Commands[Up]}" >
-                        <Image Source="images/up.png" Height="27" Width="44" />
-                    </Button>
-
-                    <Button Grid.Column="1" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="{TemplateBinding VerticalArrowsVisibility}" Command="{Binding Commands[Down]}" >
-                        <Image Source="images/down.png" Height="27" Width="44" />
-                    </Button>
-
-
                 </Grid>
 
                 <toolkit:BusyIndicator Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" IsBusy="{TemplateBinding Status, Converter={StaticResource BooleanConverter}}" Foreground="Black" FontFamily="Segoe UI" FontSize="12" Background="Transparent" Panel.ZIndex="50" />

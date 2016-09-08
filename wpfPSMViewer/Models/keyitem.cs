@@ -17,9 +17,18 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Windows.Media;
 
 namespace PSMViewer.Models
 {
+
+    // How to display the title
+    public enum KeyItemTitleMode
+    {
+        Alias,
+        Full,
+        Component
+    }
 
     /// <summary>
     /// The <see cref="KeyItem"/> title property
@@ -27,20 +36,62 @@ namespace PSMViewer.Models
     public class KeyItemTitle : INotifyPropertyChanged
     {
 
+        private KeyItemTitleMode _mode = KeyItemTitleMode.Component;
+        public KeyItemTitleMode Mode
+        {
+            get
+            {
+                return _mode;
+            }
+
+            set
+            {
+                _mode = value;
+                OnPropertyChanged("Mode");
+                OnPropertyChanged("Value");
+            }
+        }
+
         public KeyItem Key { get; private set; }
 
         public string Value
         {
             get
             {
-                return Alias ?? GetComponents()[Position];
+                switch(Mode)
+                {
+
+                    case KeyItemTitleMode.Alias:
+                        return Alias;
+
+                    case KeyItemTitleMode.Component:
+                        return GetComponents()[Position];
+
+                    case KeyItemTitleMode.Full:
+                        return Key.Path.ToLower();
+
+                }
+
+                return null;
+                
             }
 
         }
 
+        private string _alias;
         public string Alias
         {
-            get; set;
+            get
+            {
+                return _alias;
+            }
+
+            set
+            {
+                _alias = value;
+                OnPropertyChanged("Alias");
+                OnPropertyChanged("Value");
+            }
         }
 
         private uint? _position = null;
@@ -69,6 +120,7 @@ namespace PSMViewer.Models
 
                 OnPropertyChanged("Position");
                 OnPropertyChanged("Name");
+                OnPropertyChanged("Value");
             }
 
         }
@@ -77,6 +129,13 @@ namespace PSMViewer.Models
         {
             Key = item;
             item.PropertyChanged += Item_PropertyChanged;
+        }
+
+        public KeyItemTitle(KeyItemTitle other) : this(other.Key)
+        {
+            this.Mode = other.Mode;
+            this.Alias = other.Alias;
+            this.Position = other.Position;
         }
 
         private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -91,6 +150,42 @@ namespace PSMViewer.Models
         public override string ToString()
         {
             return Value;
+        }
+
+        public static bool operator ==(KeyItemTitle a, KeyItemTitle b)
+        {
+            if (System.Object.ReferenceEquals(a, b)) return true;
+            if (((object)a) == null || ((object)b) == null) return false;
+
+            return a.Value == b.Value;
+        }
+
+        public static bool operator !=(KeyItemTitle a, KeyItemTitle b)
+        {
+            return !(a == b);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            if (obj is KeyItemTitle)
+                return ((KeyItemTitle)obj).Value == this.Value;
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode();
+        }
+
+        public void CopyTo(KeyItemTitle other)
+        {
+            other.Mode = this.Mode;
+            other.Alias = this.Alias;
+            other.Position = this.Position;
         }
 
     }
@@ -110,6 +205,106 @@ namespace PSMViewer.Models
     {
         
         private static ConcurrentDictionary<object, ObservableCollection<Variable>> _variables_global = new ConcurrentDictionary<object, ObservableCollection<Variable>>();
+
+        
+        public static KeyItem[] Parse(string path)
+        {
+            List<KeyItem> keys = new List<KeyItem>();
+            Path p = PSMonitor.Path.Extract(path);
+            int i = 0;
+            List<string> components = p.Components.ToList();
+
+            if (path.IndexOf('*') == -1)
+                keys.Add(KeyItem.CreateFromPath(path));
+
+            foreach (string c in components.ToArray())
+            {
+                
+                if(c.Contains("*"))
+                {
+
+                    string ns = String.Join(".", components.GetRange(0, i));
+                    Wildcard wildcard = new Wildcard(c, RegexOptions.IgnoreCase);
+
+                    foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).Keys(ns))
+                    {
+                        if (!wildcard.IsMatch(k.Name))
+                            continue;
+                        else if (k.Type != null && i < components.Count - 1)
+                            continue;
+                        else if (k.Type == null && i == components.Count - 1)
+                            continue;
+
+                        components[i] = k.Name;
+                        keys.AddRange(KeyItem.Parse(String.Join(".", components)));
+
+                    }
+
+                }                
+                
+                i++;
+            }
+
+            return keys.ToArray();
+        } 
+
+        private Color _color = Colors.Black;
+        public Color Color
+        {
+            get
+            {
+                return _color;
+            }
+
+            set
+            {
+                _color = value;
+                OnPropertyChanged("Color");
+                OnPropertyChanged("Brush");
+            }
+        }
+
+        public SolidColorBrush Brush
+        {
+            get
+            {
+                return new SolidColorBrush(_color);
+            }
+        }
+
+        private bool _typeConfirmed = false;
+
+        private Type _type = null;
+        public new Type Type
+        {
+            get
+            {
+
+                if (base.Type == null && _type == null && !_typeConfirmed)
+                {
+
+                    Key[] keys = PSM.Store(Dispatcher).Keys(_parent != null ? _parent.Path : "");
+
+                    foreach (Key k in keys)
+                    {
+                        if (Name == k.Name)
+                        {
+                            _type = k.Type;
+                            break;
+                        }
+                    }
+
+                    _typeConfirmed = true;
+                }
+
+                return _type ?? base.Type ?? (Variables != null && Variables.Count() > 0 ? typeof(object) : null);
+            }
+
+            set
+            {
+                _type = value;
+            }
+        }
 
         /// <summary>
         /// Get the variables defined
@@ -716,6 +911,14 @@ namespace PSMViewer.Models
             return item;
         }
 
+        public void CopyTo(KeyItem other)
+        {
+            this.Conversion.CopyTo(other.Conversion);
+            this.Title.CopyTo(other.Title);
+            other.Color = this.Color;
+           
+        }
+
         /// <summary>
         /// Reloads the children
         /// </summary>
@@ -758,39 +961,34 @@ namespace PSMViewer.Models
             return Path;
         }
 
-        private bool _typeConfirmed = false;
-
-        private Type _type = null;
-        public new Type Type
+        public static bool operator == (KeyItem a, KeyItem b)
         {
-            get
-            {
+            if (System.Object.ReferenceEquals(a,b)) return true;
+            if (((object)a) == null || ((object)b) == null) return false;
 
-                if(base.Type == null && _type == null && !_typeConfirmed)
-                {
-
-                    Key[] keys = PSM.Store(Dispatcher).Keys(_parent != null ? _parent.Path : "");
-
-                    foreach (Key k in keys)
-                    {
-                        if (Name == k.Name)
-                        {
-                            _type = k.Type;
-                            break;
-                        }
-                    }
-
-                    _typeConfirmed = true;
-                }
-
-                return _type ?? base.Type ?? (Variables != null && Variables.Count() > 0 ? typeof(object) : null);
-            }
-
-            set
-            {
-                _type = value;
-            }
+            return a.StaticPath == b.StaticPath;
         }
-                
+
+        public static bool operator !=(KeyItem a, KeyItem b)
+        {
+            return !(a == b);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            if (obj is KeyItem)
+                return ((KeyItem)obj).StaticPath == this.StaticPath;
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return StaticPath.GetHashCode();
+        }
+
     }
 }

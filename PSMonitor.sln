@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OxyPlot.SharpDX.Wpf", "oxyp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PSMControl", "PSMControl\PSMControl.csproj", "{66DC4A9A-FC33-4C8E-936C-AF17CF222336}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OxyPlot.Wpf", "oxyplot\Source\OxyPlot.Wpf\OxyPlot.Wpf.csproj", "{698CCD8E-ADCC-4565-8517-5EDD36F07155}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		oxyplot\Source\OxyPlot.SharpDX\OxyPlot.SharpDX.projitems*{92129d21-61e9-4952-ab75-6e5b27c8d3f7}*SharedItemsImports = 4
@@ -459,6 +461,30 @@ Global
 		{66DC4A9A-FC33-4C8E-936C-AF17CF222336}.Release+Log|x64.Build.0 = Release|Any CPU
 		{66DC4A9A-FC33-4C8E-936C-AF17CF222336}.Release+Log|x86.ActiveCfg = Release|Any CPU
 		{66DC4A9A-FC33-4C8E-936C-AF17CF222336}.Release+Log|x86.Build.0 = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug|x64.Build.0 = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug|x86.Build.0 = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug+Log|Any CPU.ActiveCfg = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug+Log|Any CPU.Build.0 = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug+Log|x64.ActiveCfg = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug+Log|x64.Build.0 = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug+Log|x86.ActiveCfg = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Debug+Log|x86.Build.0 = Debug|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release|Any CPU.Build.0 = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release|x64.ActiveCfg = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release|x64.Build.0 = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release|x86.ActiveCfg = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release|x86.Build.0 = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release+Log|Any CPU.ActiveCfg = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release+Log|Any CPU.Build.0 = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release+Log|x64.ActiveCfg = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release+Log|x64.Build.0 = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release+Log|x86.ActiveCfg = Release|Any CPU
+		{698CCD8E-ADCC-4565-8517-5EDD36F07155}.Release+Log|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

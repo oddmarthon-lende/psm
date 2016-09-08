@@ -128,7 +128,40 @@ namespace PSMonitor.Stores
 
     }
 
-    
+    public enum KeyValueConversionMode
+    {
+        None,
+        Add,
+        Subtract,
+        Multiply,
+        Divide
+
+    }
+
+    public class KeyValueConversion
+    {
+        public KeyValueConversionMode Mode { get; set; } = KeyValueConversionMode.None;
+
+        public double Value { get; set; }
+
+        public KeyValueConversion()
+        {
+
+        }
+
+        public KeyValueConversion(KeyValueConversion other)
+        {
+            this.Mode = other.Mode;
+            this.Value = other.Value;
+        }
+
+        public void CopyTo(KeyValueConversion other)
+        {
+            other.Mode = this.Mode;
+            other.Value = this.Value;
+        }
+    }
+
     /// <summary>
     /// A data model that describes a key
     /// </summary>
@@ -145,6 +178,11 @@ namespace PSMonitor.Stores
         /// The data type for this key's <see cref="Entry.Value"/>
         /// </summary>
         public Type Type { get; private set; }
+
+        /// <summary>
+        /// The value conversion parameters
+        /// </summary>
+        public KeyValueConversion Conversion { get; set; } = new KeyValueConversion();
 
         /// <summary>
         /// Create a new Key with the provided <paramref name="name"/>  and <paramref name="type"/>
@@ -204,6 +242,11 @@ namespace PSMonitor.Stores
 
             double? v = null;
 
+            if (value is Entry)
+                return Convert<T>(((Entry)value).Value);
+            else if (value.GetType().Equals(typeof(T)))
+                return (T)value;
+
             switch (Type.GetTypeCode(value.GetType()))
             {
 
@@ -242,7 +285,33 @@ namespace PSMonitor.Stores
                     break;
             }
 
-            return (T)(object)(v.HasValue ? v.Value : System.Convert.ToDouble(value));
+            try {
+
+                v = (v.HasValue ? v.Value : System.Convert.ToDouble(value));
+
+                switch (Conversion.Mode)
+                {
+                    case KeyValueConversionMode.Add:
+                        v += Conversion.Value;
+                        break;
+                    case KeyValueConversionMode.Divide:
+                        v /= Conversion.Value;
+                        break;
+                    case KeyValueConversionMode.Multiply:
+                        v *= Conversion.Value;
+                        break;
+                    case KeyValueConversionMode.Subtract:
+                        v -= Conversion.Value;
+                        break;
+                }
+
+                return (T)System.Convert.ChangeType(v.Value, typeof(T));
+
+            }
+            catch(Exception)
+            {
+               return (T)System.Convert.ChangeType(value, typeof(T));
+            }
 
         }
 

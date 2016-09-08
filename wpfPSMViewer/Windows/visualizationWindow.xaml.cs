@@ -211,19 +211,7 @@ namespace PSMViewer
     /// An observable collection of <see cref="ColumnDefinition"/>'s
     /// </summary>
     public class ColumnDefinitionList     : ObservableCollection<ColumnDefinition> { }
-
-    public enum TimeZoomInterval
-    {
-        h6,
-        h24,
-        d2,
-        d4,
-        w1,
-        w2,
-        m1,
-        y1
-    }
-
+    
     /// <summary>
     /// A window that can contain many <see cref="VisualizationControl"/>
     /// </summary>
@@ -542,8 +530,8 @@ namespace PSMViewer
             }
         }
 
-        private TimeZoomInterval? _zoomInterval;
-        public TimeZoomInterval? ZoomInterval
+        private string _zoomInterval;
+        public string ZoomInterval
         {
             get
             {
@@ -560,28 +548,28 @@ namespace PSMViewer
 
                     switch (_zoomInterval)
                     {
-                        case TimeZoomInterval.d2:
+                        case "2d":
                             ts = new TimeSpan(2, 0, 0, 0);
                             break;
-                        case TimeZoomInterval.d4:
+                        case "4d":
                             ts = new TimeSpan(4, 0, 0, 0);
                             break;
-                        case TimeZoomInterval.h24:
-                            ts = new TimeSpan(24, 0, 0, 0);
+                        case "24h":
+                            ts = new TimeSpan(24, 0, 0);
                             break;
-                        case TimeZoomInterval.h6:
+                        case "6h":
                             ts = new TimeSpan(6, 0, 0);
                             break;
-                        case TimeZoomInterval.m1:
+                        case "1m":
                             ts = new TimeSpan(DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 0, 0, 0);
                             break;
-                        case TimeZoomInterval.w1:
+                        case "1w":
                             ts = new TimeSpan(7, 0, 0, 0);
                             break;
-                        case TimeZoomInterval.w2:
+                        case "2w":
                             ts = new TimeSpan(14, 0, 0, 0);
                             break;
-                        case TimeZoomInterval.y1:
+                        case "1y":
                             ts = new TimeSpan(365, 0, 0, 0);
                             break;
                     }
@@ -593,12 +581,14 @@ namespace PSMViewer
 
                 foreach(ToggleButton b in buttons)
                 {
-                    b.IsChecked = b.Content is string && _zoomInterval == (TimeZoomInterval)Enum.Parse(typeof(TimeZoomInterval), (string)b.Content);
+                    b.IsChecked = b.Content is string && _zoomInterval == (string)b.Content;
                 }
             }
         }
 
         private TimeSpan _timeSpan { get; set;}
+
+        private int _page = 0;
 
         #endregion
 
@@ -635,13 +625,14 @@ namespace PSMViewer
             PropertiesWindow.Created += (w) => { w.Closed += (sender, e) => Refresh(); };
 
             #region Bindings
-            
-            SetBinding(ControlsVisibilityProperty, new Binding("Value") {
+
+            SetBinding(ControlsVisibilityProperty, new Binding("Value")
+            {
                 Source = new BindingWrapper<Visibility>(
                     (visibility) =>
                     {
 
-                        switch(visibility)
+                        switch (visibility)
                         {
                             case Visibility.Visible:
                                 WindowStyle = WindowStyle.SingleBorderWindow;
@@ -654,7 +645,7 @@ namespace PSMViewer
                         return visibility;
                     }),
                 Mode = BindingMode.OneWayToSource
-            });                       
+            });
 
             SetBinding(CaptureRightClickProperty, new Binding("Value")
             {
@@ -695,12 +686,7 @@ namespace PSMViewer
                                     element.IsEnabled = true;
                                 }
 
-                                foreach (VisualizationControl widget in Children)
-                                {
-                                    widget.HorizontalArrowsVisibility = Visibility.Collapsed;
-                                }
-
-                                 this.OnReload(this);
+                                this.OnReload(this);
 
                             }
 
@@ -719,8 +705,9 @@ namespace PSMViewer
             Commands.Add("Export", new RelayCommand(ExecuteCommand, canExecute, CommandType.EXPORT));
             Commands.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             Commands.Add("PropertiesW", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES_W));
-            Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
+            Commands.Add("Previous", new RelayCommand(ExecuteCommand, delegate { return _page > 0; }, CommandType.PREVIOUS));
             Commands.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
+            Commands.Add("Reset", new RelayCommand(ExecuteCommand, delegate { return _page > 0; }, CommandType.RESET));
             Commands.Add("Refresh", new RelayCommand(ExecuteCommand, canExecute, CommandType.RELOAD));
             Commands.Add("Delete", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
             Commands.Add("ControlsVisibility", new RelayCommand(ExecuteCommand, canExecute, CommandType.CONTROLS));
@@ -759,18 +746,6 @@ namespace PSMViewer
         {
 
             VisualizationControl w = ((VisualizationControl)sender);
-            
-            if(w.HorizontalArrowsVisibility != Visibility.Visible)
-            {
-                w.HorizontalArrowsVisibility = Visibility.Visible;
-            }
-            else
-            {
-                
-                w.HorizontalArrowsVisibility = Visibility.Collapsed;
-
-                this.OnReload(w);
-            }
             
         }
                
@@ -869,6 +844,7 @@ namespace PSMViewer
                         widget.RegisterUserCommand();
                         widget.RegisterUserCommand("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_WIDGET, widget));
                         widget.RegisterUserCommand("Copy To New Window", new RelayCommand(ExecuteCommand, canExecute, CommandType.TO_NEW, widget));
+                        widget.RegisterUserCommand("Clone", new RelayCommand(ExecuteCommand, canExecute, CommandType.CLONE, widget));
 
                         widget.MouseDoubleClick += Widget_MouseDblClick;
 
@@ -876,7 +852,7 @@ namespace PSMViewer
 
                         DependencyPropertyDescriptor.FromProperty(VisualizationControl.StatusProperty, widget.GetType()).AddValueChanged(widget, Widget_StatusChanged);
 
-                        if (ZoomInterval.HasValue)
+                        if (ZoomInterval != null)
                             widget.Timespan = _timeSpan;
 
                         widget.Controls.CollectionChanged += delegate
@@ -981,7 +957,9 @@ namespace PSMViewer
             ZOOM,
             
             PREVIOUS,
-            NEXT
+            NEXT,
+            RESET,
+            CLONE
         }
                
         
@@ -995,37 +973,31 @@ namespace PSMViewer
             VisualizationControl w;
             Window window;
             RelayCommand cmd = (RelayCommand)sender;
-            Stream stream;
+            Stream stream = null;
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
 
-                case CommandType.EXPORT:
-                case CommandType.SAVE:
+                case CommandType.TO_NEW:
+                case CommandType.CLONE:
 
-
-
+                    w = (VisualizationControl)cmd.Arguments[1].Value;
+                    stream = new MemoryStream();
+                    w.Export(stream);
+                    stream.Seek(0, SeekOrigin.Begin);
                     break;
             }
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
 
-                case CommandType.TO_NEW:
-
-                    w = (VisualizationControl)cmd.Arguments[1].Value;
-
-                    stream = new MemoryStream();
-
-                    w.Export(stream);
-                    w.Dispose();                        
+                case CommandType.TO_NEW:                    
 
                     App.Current.Dispatcher.Invoke(delegate
                     {
 
                         ((MainWindow)App.Current.MainWindow).Create(v =>
-                        {
-                            stream.Seek(0, SeekOrigin.Begin);
+                        {                            
                             v.Children.Add((VisualizationControl)System.Windows.Markup.XamlReader.Load(stream));
                             stream.Dispose();
                             v.OnReload(v);
@@ -1033,6 +1005,11 @@ namespace PSMViewer
 
                     });                                      
 
+                    break;
+
+                case CommandType.CLONE:
+
+                    Children.Add((VisualizationControl)System.Windows.Markup.XamlReader.Load(stream));
                     break;
 
                 case CommandType.UNDO:
@@ -1134,18 +1111,26 @@ namespace PSMViewer
                         Owner = this,
                         Width = SystemParameters.FullPrimaryScreenWidth * .5,
                         Height = SystemParameters.FullPrimaryScreenHeight * .5,
-                        WindowStartupLocation = WindowStartupLocation.CenterScreen
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                        WindowStyle = WindowStyle.ToolWindow
                     });
 
                     PropertyGrid grid = ((PropertiesWindow)window).PropertyGrids.ToArray()[1];
                     
                     grid.SelectedObject = null;
 
-                    window.Show();
-                    
-                    grid.SelectedObjectChanged += settings_propertyGrid_SelectedObjectChanged;
-                    grid.SelectedObject = _options.Store;
+                    window.Closed += (a, b) => Refresh();
 
+                    Dispatcher.InvokeAsync(delegate
+                    {
+                        grid.SelectedObjectChanged += settings_propertyGrid_SelectedObjectChanged;
+                        grid.SelectedObject = _options.Store;
+
+                    }, System.Windows.Threading.DispatcherPriority.Background);
+
+                    window.ShowDialog();
+                    
+                    
                     break;
 
                 case CommandType.CONTROLS:
@@ -1164,7 +1149,7 @@ namespace PSMViewer
                         break;
                     }                       
 
-                    ZoomInterval = (TimeZoomInterval)Enum.Parse(typeof(TimeZoomInterval), (string)button.Content);
+                    ZoomInterval =  (string)button.Content;
 
                     this.OnReload(this);
 
@@ -1172,29 +1157,24 @@ namespace PSMViewer
 
                 case CommandType.PREVIOUS:
 
-                    foreach(VisualizationControl c in Children)
-                    {
-                        c.Previous();
-                    }
-
-                    this.OnReload(this);
+                    Previous();
                     break;
 
                 case CommandType.NEXT:
 
-                    foreach (VisualizationControl c in Children)
-                    {
-                        c.Next();
-                    }
+                    Next();
+                    break;
 
-                    this.OnReload(this);
+                case CommandType.RESET:
+
+                    Reset();
                     break;
 
                 default:
 
                     break;
             }
-
+            
         }
 
         #endregion
@@ -1231,7 +1211,12 @@ namespace PSMViewer
                 NameProperty,
                 CaptureRightClickProperty,
                 ShowActivatedProperty,
-                StatusProperty
+                StatusProperty,
+                TemplateProperty,
+                WindowStyleProperty,
+                VisibilityProperty,
+                CursorProperty,
+                AllowsTransparencyProperty
 
             };
 
@@ -1264,9 +1249,9 @@ namespace PSMViewer
                     widget.Remove(control.Key);
 
                     KeyItem key = KeyItem.CreateFromPath(control.Key.StaticPath);
-                    key.Title.Position = control.Key.Title.Position;
+                    control.Key.CopyTo(key);
 
-                    widget.Add(key);
+                    widget.Add(key, control.Entries);
 
                 }
 
@@ -1311,7 +1296,11 @@ namespace PSMViewer
             foreach (VisualizationControl widget in Children)
                 r |= widget.Next();
 
-            return r;
+            this.OnReload(this);
+
+            ++_page;
+
+            return _page < 0;
         }
 
         /// <summary>
@@ -1325,7 +1314,19 @@ namespace PSMViewer
             foreach (VisualizationControl widget in Children)
                 r |= widget.Previous();
 
+            this.OnReload(this);
+
+            _page = Math.Max(0, --_page);
+
             return r;
+        }
+
+        public void Reset()
+        {
+            _page = 0;
+            foreach (VisualizationControl widget in Children)
+                widget.Reset();
+            this.OnReload(this);
         }
         
         /// <summary>

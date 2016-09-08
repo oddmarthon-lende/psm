@@ -1,0 +1,45 @@
+﻿<local:VisualizationControl x:Class="PSMViewer.Visualizations.LogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:PSMViewer.Visualizations"
+             mc:Ignorable="d">
+
+    <ItemsControl ItemsSource="{Binding Controls}">
+
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <UniformGrid Rows="1" />
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <StackPanel Orientation="Vertical" Margin="1" Background="{Binding Key.Brush, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBlock Background="#55000000" Text="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" TextAlignment="Justify" Padding="5" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+                        <ItemsControl ItemsSource="{Binding Entries}" ScrollViewer.CanContentScroll="True" >
+
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Vertical" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Value}" Padding="5" Margin="1" Background="#55FFFFFF" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+        
+    </ItemsControl>
+  
+
+</local:VisualizationControl>

@@ -9,6 +9,7 @@ using OxyPlot;
 using System.Windows.Data;
 using System.Collections.Specialized;
 using PSMonitor;
+using System.Windows.Media;
 
 namespace PSMViewer.Visualizations
 {
@@ -32,11 +33,11 @@ namespace PSMViewer.Visualizations
                 }
             }
 
-            public KeyItemTitle Title
+            public string Title
             {
                 get
                 {
-                    return _key.Title;
+                    return _key.Title.Value;
                 }
             }
 
@@ -47,6 +48,8 @@ namespace PSMViewer.Visualizations
                     return _key.Convert<double>(entry);
                 }
             }
+
+            public OxyColor Color { get; set; }
 
             public PieSliceItem(KeyItem key, Entry entry, Pie pie) : base(entry) {
                 this._pie = pie;
@@ -73,12 +76,14 @@ namespace PSMViewer.Visualizations
 
             s.ItemsSource = Enumerable.SelectMany<MultiControl, PieSliceItem>(Controls, m => {
                 return m.Entries.Select(entryitem => {
-                    return new PieSliceItem(m.Key, entryitem, this);
+                    Color c = m.Key.Color;
+                    return new PieSliceItem(m.Key, entryitem, this) { Color = OxyColor.FromArgb(c.A, c.R, c.G, c.B) };
                 });
             });
 
             s.LabelField = "Title";
             s.ValueField = "ConvertedValue";
+            s.ColorField = "Color";
         }
 
         private PieSeries _series = new PieSeries();

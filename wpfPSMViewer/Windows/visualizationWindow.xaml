@@ -8,7 +8,7 @@
         xmlns:v="clr-namespace:PSMViewer.Visualizations"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d" Cursor="{Binding Status, Converter={StaticResource CursorConverter}}"
-        Height="600" Width="800" Icon="..\icons\application_view_tile.png" WindowStyle="None" ShowInTaskbar="True" Topmost="False" x:Name="window"  DataContext="{Binding RelativeSource={RelativeSource Self}}">
+        Height="600" Width="800" Icon="..\icons\application_view_tile.png"  ShowInTaskbar="True" Topmost="False" x:Name="window"  DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
     <Window.InputBindings>
         
@@ -26,6 +26,10 @@
     </Window.InputBindings>
     
     <Grid>
+
+        <Grid.Resources>
+            
+        </Grid.Resources>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"></RowDefinition>
@@ -122,7 +126,10 @@
                 </ToolBar>
 
                 <ToolBar Width="Auto" Background="{x:Null}">
-
+                    
+                    <Button ToolTip="Reset" Command="{Binding Commands[Reset], ElementName=window}" >
+                        <Image Source="..\icons\resultset_first.png"/>
+                    </Button>                    
                     <Button ToolTip="Previous" Command="{Binding Commands[Previous], ElementName=window}" >
                         <Image Source="..\icons\resultset_previous.png"/>
                     </Button>
@@ -130,7 +137,7 @@
                         <Image Source="..\icons\resultset_next.png"/>
                     </Button>
                     <Button ToolTip="Refresh" Command="{Binding Commands[Refresh], ElementName=window}">
-                        <Image Source="..\icons\table_refresh.png"/>
+                        <Image Source="..\icons\arrow_refresh.png"/>
                     </Button>
 
                 </ToolBar>
@@ -142,32 +149,16 @@
                             <Setter Property="FontSize" Value="10" />
                         </Style>
 
-                        <ObjectDataProvider x:Key="zoomValues" MethodName="GetNames" ObjectType="{x:Type sys:Enum}">
-                            <ObjectDataProvider.MethodParameters>
-                                <x:Type TypeName="local:TimeZoomInterval" />
-                            </ObjectDataProvider.MethodParameters>
-                        </ObjectDataProvider>
-
                     </ToolBar.Resources>
 
-                    <ItemsControl ItemsSource="{Binding Source={StaticResource zoomValues}}" >                       
-                        
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="{Binding}" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-
-                        <ItemsControl.ItemsPanel>
-
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-
-                        </ItemsControl.ItemsPanel>
-                        
-
-                    </ItemsControl>   
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="6h" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="24h" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="2d" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="4d" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1w" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="2w" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1m" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1y" />
 
                 </ToolBar>
 

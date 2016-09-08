@@ -126,7 +126,7 @@ namespace PSMViewer.Visualizations
 
             foreach(var canvas in elements)
             {
-                if (((KeyItem)((Canvas)canvas).DataContext).StaticPath == key.StaticPath)
+                if (((KeyItem)((Canvas)canvas).DataContext) == key)
                     grid.Children.Remove((UIElement)canvas);
             }
 

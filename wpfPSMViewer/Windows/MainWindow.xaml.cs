@@ -234,7 +234,8 @@ namespace PSMViewer
             /// <summary>
             /// Delete key from tree
             /// </summary>
-            DELETE
+            DELETE,
+            RESET
         }
 
         private VisualizationControl _graph = null;
@@ -244,7 +245,6 @@ namespace PSMViewer
         /// </summary>
         public MainWindow()
         {
-
             CreateCommands();
             InitializeComponent();
 
@@ -320,8 +320,13 @@ namespace PSMViewer
             Commands.Add("RefreshTable", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH_TABLE));
             Commands.Add("RefreshTree", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH_TREE));
             Commands.Add("SetChartType", new RelayCommand(ExecuteCommand, ContextMenu_CanExecute, CommandType.SET_CHART_TYPE));
+            Commands.Add("Reset", new RelayCommand(ExecuteCommand, delegate {
+                return DataContext == null ? false : ((MultiControl)DataContext).Get().Page > 0;
+            }, CommandType.RESET));
             Commands.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
-            Commands.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREVIOUS));
+            Commands.Add("Previous", new RelayCommand(ExecuteCommand, delegate {
+                return DataContext == null ? false : ((MultiControl)DataContext).Get().Page > 0;
+            }, CommandType.PREVIOUS));
             Commands.Add("NewWindow", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEW_WINDOW));
             Commands.Add("Stop", new RelayCommand(ExecuteCommand, canExecute, CommandType.STOP));
             Commands.Add("EventLog", new RelayCommand(ExecuteCommand, canExecute, CommandType.EVENT_LOG));
@@ -434,7 +439,8 @@ namespace PSMViewer
 
                     if(_graph != null)
                     {
-                        RefreshSettingsValues(_graph.Add((KeyItem)parameter));
+                        _graph.Add((KeyItem)parameter);
+                        RefreshSettingsValues(_graph.GetControl((KeyItem)parameter));
                     }                        
 
                     break;
@@ -565,6 +571,10 @@ namespace PSMViewer
 
                 case CommandType.PREVIOUS:
                     this.Previous();
+                    break;
+
+                case CommandType.RESET:
+                    this.Reset();
                     break;
 
                 case CommandType.REFRESH_TABLE:
@@ -979,6 +989,13 @@ namespace PSMViewer
             return result;
         }
 
+        public void Reset()
+        {
+            MultiControl control = ((MultiControl)this.DataContext);
+            control.Reset();
+            RefreshSettingsValues(control);
+        }
+
         /// <summary>
         /// Refresh some values in the property grid for the <see cref="Options"/>
         /// </summary>
@@ -1020,7 +1037,7 @@ namespace PSMViewer
                     if (c.Entries == ctrl.Entries)
                         continue;
 
-                    c.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField), Options.StartIndex, ctrl.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField)).Count).Reload();
+                    c.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField), ctrl.Get((Enum)Enum.Parse(PSMonitor.PSM.Store(Dispatcher).Index, Options.IndexField)).Count).Reload();
 
                 }
 

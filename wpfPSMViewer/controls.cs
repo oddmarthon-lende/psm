@@ -135,6 +135,20 @@ namespace PSMViewer.ViewModels
             }
         }
 
+        protected int _page = 0;
+        public int Page
+        {
+            get
+            {
+                return _page;
+            }
+
+            set
+            {
+                SetField(ref _page, value, "Page");
+            }
+        }
+
         /// <summary>
         /// The constructor
         /// </summary>
@@ -363,6 +377,13 @@ namespace PSMViewer.ViewModels
             OnActivationRequested();
         }
 
+        public virtual void Reset()
+        {
+            Page = 0;
+            OnPropertyChanged("Start");
+            OnPropertyChanged("End");
+        }
+
         
     }
 
@@ -404,7 +425,7 @@ namespace PSMViewer.ViewModels
 
         private object _start = null;
 
-        private object _count = default(TCount);        
+        private object _count = default(TCount);
 
         /// <summary>
         /// <see cref="Controls.Start"/>
@@ -415,7 +436,8 @@ namespace PSMViewer.ViewModels
             {                
                 object default_value = null;
 
-                if (_start != null) return _start;
+                if (_start != null)
+                    return _start;
 
                 switch (typeof(T).Name.ToLower())
                 {
@@ -427,7 +449,17 @@ namespace PSMViewer.ViewModels
 
                             case "timespan" :
 
-                                default_value = (DateTime.Now - (TimeSpan)Count);
+                                {
+                                    TimeSpan ts = (TimeSpan)Count;
+
+                                    for(int i = 0; i < Page; i++)
+                                    {
+                                        ts += (TimeSpan)Count;
+                                    }
+
+                                    default_value = (DateTime.Now - ts);
+                                }
+
                                 break;
                         }
 
@@ -438,7 +470,8 @@ namespace PSMViewer.ViewModels
                     case "int32":
                     case "int64":
 
-                        default_value = 0D;
+                        default_value = (long)Count * Page;
+
                         break;
 
                 }
@@ -475,7 +508,7 @@ namespace PSMViewer.ViewModels
 
                                 return ((DateTime)Start + (TimeSpan)Count);
                         }
-                        break;                        
+                        break;
 
                     case "byte":
                     case "int16":
@@ -572,10 +605,9 @@ namespace PSMViewer.ViewModels
         /// <param name="Entries"></param>
         /// <param name="Start"></param>
         /// <param name="Count"></param>
-        public Controls(ObservableCollection<EntryItem> Entries, object Start, object Count)
+        public Controls(ObservableCollection<EntryItem> Entries, object Count)
         {
             this.Entries = Entries??this.Entries;
-            this.Start = Start;
             this.Count = Count;
         }
 
@@ -583,7 +615,7 @@ namespace PSMViewer.ViewModels
         /// Constructor
         /// </summary>
         /// <param name="other"></param>
-        public Controls(Controls<T, TCount> other) : this(other.Entries, other.Start, other.Count)
+        public Controls(Controls<T, TCount> other) : this(other.Entries, other.Count)
         {
             Selected = other.Selected;
         }
@@ -718,7 +750,10 @@ namespace PSMViewer.ViewModels
                 Entries.Add(entry);
             }
 
-            SetField(ref _status, ReloadStatus.Idle, "Status");            
+            SetField(ref _status, ReloadStatus.Idle, "Status");
+
+            if (Page == 0)
+                Register();
 
         }
 
@@ -871,34 +906,41 @@ namespace PSMViewer.ViewModels
             
             
         }
-
+        
         /// <summary>
         /// Move to the next result set
         /// </summary>
         /// <returns></returns>
         public override bool Next()
         {
-
-            switch (typeof(T).Name.ToLower())
+            if(_start != null)
             {
-                case "datetime":
+                switch (typeof(T).Name.ToLower())
+                {
+                    case "datetime":
 
-                    Start = ((DateTime)Start + (TimeSpan)Count);
-                    break;
+                        _start = ((DateTime)_start + (TimeSpan)Count);
+                        break;
 
-                case "byte":
-                case "int16":
-                case "int32":
-                case "int64":
+                    case "byte":
+                    case "int16":
+                    case "int32":
+                    case "int64":
 
-                    if (Entries.Count < (long)Convert.ChangeType(Count, typeof(long))) return false;
+                        if (Entries.Count < (long)Convert.ChangeType(Count, typeof(long))) return false;
 
-                    Start = ((long)Start + (long)Count);
-                    break;
+                        _start = ((long)_start + (long)Count);
+                        break;
 
-                default:
-                    return false;
+                    default:
+                        return false;
+                }
             }
+
+            Page++;
+
+            OnPropertyChanged("Start");
+            OnPropertyChanged("End");
 
             OnReload(this);
 
@@ -913,31 +955,48 @@ namespace PSMViewer.ViewModels
         public override bool Previous()
         {
 
-            switch (typeof(T).Name.ToLower())
+            if(_start != null)
             {
-                case "datetime":
+                switch (typeof(T).Name.ToLower())
+                {
+                    case "datetime":
 
-                    Start = ((DateTime)Start - (TimeSpan)Count);
-                    break;
+                        _start = ((DateTime)_start - (TimeSpan)Count);
+                        break;
 
-                case "byte":
-                case "int16":
-                case "int32":
-                case "int64":
+                    case "byte":
+                    case "int16":
+                    case "int32":
+                    case "int64":
 
-                    if ((long)Start == 0L) return false;
+                        if ((long)_start == 0L) return false;
 
-                    Start = Math.Max(0L, (long)Start - (long)Count);
-                    break;
+                        _start = Math.Max(0L, (long)_start - (long)Count);
+                        break;
 
-                default:
-                    return false;
+                    default:
+                        return false;
+                }
             }
+
+            Page = Math.Max(0, --Page);
+
+            OnPropertyChanged("Start");
+            OnPropertyChanged("End");
 
             OnReload(this);
 
-            return true;
+            return Page > 0;
 
+        }
+
+        public override void Reset()
+        {
+
+            while (_page > 0)
+                Previous();
+
+            base.Reset();
         }
 
     }

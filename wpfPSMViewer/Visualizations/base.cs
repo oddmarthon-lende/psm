@@ -27,6 +27,7 @@ using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Collections;
 using System.Text.RegularExpressions;
 using PSMonitor;
+using System.Windows.Media;
 
 namespace PSMViewer.Visualizations
 {
@@ -137,11 +138,37 @@ namespace PSMViewer.Visualizations
 
         public uint? Position { get; set; }
 
-        public KeyItemPath(string path, uint? pos)
-        {
-            Path = path;
-            Position = pos;
+        public Color? Color { get; set; }
 
+        public KeyValueConversion Conversion { get; set; }
+
+        public KeyItemTitleMode Mode { get; set; }
+
+        public string Alias { get; set; }
+
+        public static KeyItem ToKeyItem(KeyItemPath p)
+        {
+            KeyItem key = KeyItem.CreateFromPath(p.Path);
+
+            if (p.Position.HasValue)
+                key.Title.Position = p.Position.Value;
+
+            key.Color = p.Color.Value;
+            key.Conversion = p.Conversion;
+            key.Title.Mode = p.Mode;
+            key.Title.Alias = p.Alias;
+
+            return key;
+        }
+
+        public KeyItemPath(KeyItem key)
+        {
+            Path = key.StaticPath;
+            Position = key.Title.Position;
+            Color = key.Color;
+            Conversion = key.Conversion;
+            Mode = key.Title.Mode;
+            Alias = key.Title.Alias;
         }
 
         public KeyItemPath()
@@ -336,58 +363,7 @@ namespace PSMViewer.Visualizations
         /// </summary>
         public static readonly DependencyProperty StatusProperty =
             DependencyProperty.Register("Status", typeof(ReloadStatus), typeof(VisualizationControl), new PropertyMetadata(ReloadStatus.Idle));
-        
-
-        /// <summary>
-        /// The visibility of the right and left navigation arrows that are overlayed the control
-        /// </summary>
-        public Visibility HorizontalArrowsVisibility
-        {
-            get { return (Visibility)GetValue(HorizontalArrowsVisibilityProperty); }
-            set {
-                SetValue(HorizontalArrowsVisibilityProperty, value);
-            }
-        }
-        /// <summary>
-        /// Identifies the <see cref="HorizontalArrowsVisibility"/> dependency property.
-        /// </summary>
-        public static readonly DependencyProperty HorizontalArrowsVisibilityProperty =
-            DependencyProperty.Register("HorizontalArrowsVisibility", typeof(Visibility), typeof(VisualizationControl), new FrameworkPropertyMetadata(Visibility.Collapsed, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) =>
-            {
-
-                VisualizationControl w = (VisualizationControl)sender;
-
-                if (((Visibility)e.NewValue) != Visibility.Visible && ((Visibility)e.OldValue) == Visibility.Visible)
-                    foreach (MultiControl control in w._controls)
-                    {
-                        control.PopState();
-                    }
-                else if (((Visibility)e.NewValue) == Visibility.Visible && ((Visibility)e.OldValue) != Visibility.Visible)
-                    foreach (MultiControl control in w._controls)
-                    {
-                        control.PushState();
-                    }
-
-            }));
-
-
-
-        /// <summary>
-        /// The visibility of the up and down navigation arrows that are overlayed the control
-        /// </summary>
-        public Visibility VerticalArrowsVisibility
-        {
-            get { return (Visibility)GetValue(VerticalArrowsVisibilityProperty); }
-            set { SetValue(VerticalArrowsVisibilityProperty, value); }
-        }
-        /// <summary>
-        /// Identifies the <see cref="VerticalArrowsVisibility"/> dependency property.
-        /// </summary>
-        public static readonly DependencyProperty VerticalArrowsVisibilityProperty =
-            DependencyProperty.Register("VerticalArrowsVisibility", typeof(Visibility), typeof(VisualizationControl), new PropertyMetadata(Visibility.Collapsed));
-        
-        
-                
+              
         /// <summary>
         /// The title, which can be show at the top of the control
         /// </summary>
@@ -556,7 +532,7 @@ namespace PSMViewer.Visualizations
 
                 foreach(MultiControl c in Controls)
                 {
-                    list.Add(new KeyItemPath(c.Key.StaticPath, c.Key.Title.Position));
+                    list.Add(new KeyItemPath(c.Key));
                 }
 
                 return list;
@@ -566,13 +542,7 @@ namespace PSMViewer.Visualizations
             {
                 foreach (KeyItemPath p in value)
                 {
-                    
-                    KeyItem key = KeyItem.CreateFromPath(p.Path);
-
-                    if (p.Position.HasValue)
-                        key.Title.Position = p.Position.Value;
-
-                    Add(key);
+                    Add(KeyItemPath.ToKeyItem(p));
                 }
             }
         }
@@ -705,15 +675,7 @@ namespace PSMViewer.Visualizations
             /// <summary>
             /// Modify the title position
             /// </summary>
-            MOD_TITLE,
-            /// <summary>
-            /// Add a key to visualize its data
-            /// </summary>
-            ADD_KEY = int.MinValue,
-            /// <summary>
-            /// Remove a previously added key
-            /// </summary>
-            REMOVE_KEY,
+            EDIT_KEYS = int.MinValue,
             /// <summary>
             /// Shows the properties window
             /// </summary>
@@ -725,9 +687,7 @@ namespace PSMViewer.Visualizations
             /// <summary>
             /// Load next results
             /// </summary>
-            NEXT,
-            DOWN,
-            UP
+            NEXT
         }
                 
         /// <summary>
@@ -756,34 +716,25 @@ namespace PSMViewer.Visualizations
 
             CommandType cmd = (CommandType)((RelayCommand)sender).Arguments[0].Value;
 
-            Tree tree = null;
             Window window = null;
             PropertiesWindow grid = null;
 
             switch (cmd)
             {
 
-                case CommandType.MOD_TITLE:
+                case CommandType.EDIT_KEYS:
 
-                    window = new Dialogs.ModDataTitle(this);
-                    window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                    window.Owner = this.Owner;
-
-                    window.ShowDialog();
-
-                    break;
-
-                case CommandType.ADD_KEY:
-                case CommandType.REMOVE_KEY:
-
-                    tree = new Tree();
-                    window = tree.Window;
-
+                    window = new Dialogs.KeyEditor(this);
+                    window.Title += String.Format(" [{0}]", Title);
                     window.WindowStyle = WindowStyle.ToolWindow;
                     window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                     window.Owner = this.Owner;
                     window.Width = Math.Sqrt(this.Owner.Width * this.Owner.Height);
                     window.Height = window.Width;
+
+                    window.Closed += (a,b) => Refresh();
+
+                    window.ShowDialog();
 
                     break;
 
@@ -791,17 +742,7 @@ namespace PSMViewer.Visualizations
 
             switch (cmd)
             {
-
-                case CommandType.DOWN:
-
-                    Down();
-                    return;
-
-                case CommandType.UP:
-
-                    Up();
-                    return;
-
+                
                 case CommandType.NEXT:
 
                     Previous();
@@ -812,39 +753,7 @@ namespace PSMViewer.Visualizations
                     Next();
                     return;
 
-                case CommandType.MOD_TITLE:
-
-                    break;
-
-                case CommandType.ADD_KEY:
-
-                    if(parameter != null && parameter is KeyItem)
-                    {
-                        Add((KeyItem)parameter);
-                        break;
-                    }
-
-                    window.Title = String.Format("Add Key [{0}]", Title);
-
-                    this.OnReload(tree);
-
-                    tree.Window.ShowDialog();
-
-                    if(tree.SelectedValue != null)
-                        Add((KeyItem)tree.SelectedValue);
-                                        
-                    break;
-
-                case CommandType.REMOVE_KEY:
-
-                    window.Title = String.Format("Remove Key [{0}]", Title);
-
-                    ((TreeViewItem)tree.Items[0]).ItemsSource = Paths.Select(p => { return KeyItem.CreateFromPath(p.Path); });
-
-                    tree.Window.ShowDialog();
-
-                    if (tree.Key != null)
-                        Remove(tree.Key);
+                case CommandType.EDIT_KEYS:
 
                     break;
 
@@ -852,15 +761,16 @@ namespace PSMViewer.Visualizations
                     
                     window = ((grid = new PropertiesWindow(this, Properties.ToArray())
                     {
-
+                        WindowStyle = WindowStyle.ToolWindow,
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
                         Owner = this.Owner,
                         Width = Math.Sqrt(this.Owner.Width * this.Owner.Height)
 
                     }));
-                    
+
                     //grid.PropertyGrids.ToArray()[0].PropertyValueChanged += (s, a) => Refresh();
+                    window.Closed += (a, b) => Refresh();
 
                     window.Height = window.Width;
                     window.ShowDialog();
@@ -889,21 +799,17 @@ namespace PSMViewer.Visualizations
             AllowDrop   = true;
 
             #region Commands
-
-            CommandsSource.Add("Add", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD_KEY));
-            CommandsSource.Add("ModifyDataTitle", new RelayCommand(ExecuteCommand, canExecute, CommandType.MOD_TITLE));
-            CommandsSource.Add("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_KEY));
+            
+            CommandsSource.Add("EditKeys", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_KEYS));
             CommandsSource.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             CommandsSource.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREV));
             CommandsSource.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
-            CommandsSource.Add("Down", new RelayCommand(ExecuteCommand, canExecute, CommandType.DOWN));
-            CommandsSource.Add("Up", new RelayCommand(ExecuteCommand, canExecute, CommandType.UP));
 
             #endregion
 
             #region PropertyDefinitions
 
-            Properties.Add(new PropertyDefinition()
+                Properties.Add(new PropertyDefinition()
                 {
                     Category = "Layout",
                     TargetProperties = new List<object>(new string[] { "Row", "RowSpan", "Column", "ColumnSpan", "Margin" })
@@ -931,7 +837,7 @@ namespace PSMViewer.Visualizations
                 {
                     IsExpandable = true,
                     Category = "Colors",
-                    TargetProperties = new List<object>(new string[] { "Background", "Foreground", "BorderBrush" })
+                    TargetProperties = new List<object>(new string[] { "Background", "Foreground", "BorderBrush", "Opacity" })
                 });
                             
 
@@ -943,10 +849,7 @@ namespace PSMViewer.Visualizations
 
             RegisterUserCommand("Properties", CommandsSource["Properties"]);
             RegisterUserCommand();
-            RegisterUserCommand("Remove Data", CommandsSource["Remove"]);
-            RegisterUserCommand("Add Data", CommandsSource["Add"]);
-            RegisterUserCommand();
-            RegisterUserCommand("Modify Data Title", CommandsSource["ModifyDataTitle"]);
+            RegisterUserCommand("Edit Keys", CommandsSource["EditKeys"]);
 
             #endregion
 
@@ -954,8 +857,6 @@ namespace PSMViewer.Visualizations
             ContextMenu.ContextMenuOpening += delegate
             {
                 ContextMenu.ItemsSource = MenuItems;
-                HorizontalArrowsVisibility = Visibility.Collapsed;
-                VerticalArrowsVisibility = Visibility.Collapsed;
             };
                       
 
@@ -985,7 +886,7 @@ namespace PSMViewer.Visualizations
 
                 if(path != null)
                 {
-                    CommandsSource["Add"].Execute(KeyItem.CreateFromPath(path));
+                   Add(KeyItem.CreateFromPath(path));
                 }
                
             }
@@ -1088,7 +989,7 @@ namespace PSMViewer.Visualizations
         /// </summary>
         /// <param name="key">The key</param>
         /// <returns>The <see cref="MultiControl"/> if any</returns>
-        protected MultiControl GetControlsFor(KeyItem key)
+        public MultiControl GetControl(KeyItem key)
         {
             return (from s in _controls where s.Key.Path == key.Path select s).ElementAtOrDefault(0);
         }
@@ -1120,8 +1021,6 @@ namespace PSMViewer.Visualizations
                 ContextMenuProperty,
                 ContentProperty,
                 NameProperty,
-                HorizontalArrowsVisibilityProperty,
-                VerticalArrowsVisibilityProperty,
                 TemplateProperty,
                 IsEnabledProperty,
                 AllowDropProperty,
@@ -1143,13 +1042,13 @@ namespace PSMViewer.Visualizations
         /// <param name="key">The key to load</param>
         /// <param name="collection">A collection for the data. Used to share collection between objects.</param>
         /// <returns>The MultiControl that is created for the key</returns>
-        public virtual MultiControl Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
+        public virtual bool Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
         {
 
             VariableDefinitionList variables;
 
 
-            if (key == null) return null;
+            if (key == null) return false;
 
             try
             {
@@ -1178,8 +1077,7 @@ namespace PSMViewer.Visualizations
                         {
 
                             KeyItem k = KeyItem.CreateFromPath(String.Join(".", path));
-
-                            k.Title.Position = key.Title.Position;
+                            key.CopyTo(k);
                             key = k;
 
                         }
@@ -1193,55 +1091,31 @@ namespace PSMViewer.Visualizations
             catch (Exception e) {
                 Logger.Error(e);
             }
-
-            key.Title.PropertyChanged += KeyItemTitle_PropertyChanged;
-
+            
             if (key.Type == null)
             {
-                key.Children.CollectionChanged += Key_Children_CollectionChanged;
-
-                this.OnReload(key);
-
-                return null;
+                return false;
             }
 
-            MultiControl control = GetControlsFor(key);
+            MultiControl control = GetControl(key);
 
             if (control == null)
             {
 
-                control = new MultiControl(key, this.OnReload, collection);                
-                _controls.Add(control);                
+                control = new MultiControl(key, this.OnReload, collection);
+                _controls.Add(control);
 
             }
+            else
+                return false;
 
             if(RefreshOperation == null)
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
-            return control;
+            return true;
 
         }
-
-        /// <summary>
-        /// Called when a <see cref="KeyItem.Titles"/> changes
-        /// </summary>
-        private void KeyItemTitle_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-
-            KeyItemTitle title = (KeyItemTitle)sender;
-
-            foreach(KeyItemPath p in Paths)
-            {
-
-                if (title.Key.StaticPath == p.Path)
-                    p.Position = title.Position;
-
-            }
-
-            Refresh();
-
-        }
-
+        
         /// <summary>
         /// Removes the key, so that it will no longer be associated with this control.
         /// </summary>
@@ -1251,7 +1125,7 @@ namespace PSMViewer.Visualizations
 
             key.Children.CollectionChanged -= Key_Children_CollectionChanged;
 
-            foreach(MultiControl m in (from s in Controls.ToArray() where s.Key.StaticPath == key.StaticPath || (s.Key.Parent != null && s.Key.Parent.StaticPath == key.StaticPath) select s))
+            foreach(MultiControl m in (from s in Controls.ToArray() where s.Key == key || (s.Key.Parent != null && s.Key.Parent == key) select s))
             {
                 Controls.Remove(m);
                 m.Dispose();
@@ -1298,8 +1172,6 @@ namespace PSMViewer.Visualizations
         public virtual void Reload()
         {
             
-            HorizontalArrowsVisibility = Visibility.Collapsed;
-
             object Start = null;
             object Count = null;
             
@@ -1370,7 +1242,7 @@ namespace PSMViewer.Visualizations
             foreach (MultiControl m in _controls)
             {
 
-                Controls control = m.Get(DataIndexFieldAsEnum, Start, Count);
+                Controls control = m.Get(DataIndexFieldAsEnum, Count);
 
                 control.PropertyChanged -= Control_PropertyChanged;
                 control.PropertyChanged += Control_PropertyChanged;
@@ -1378,8 +1250,6 @@ namespace PSMViewer.Visualizations
                 KeyItem key = m.Key;
 
                 m.Reload();
-                m.Register();
-
                 key.Reload();
 
             }
@@ -1391,28 +1261,31 @@ namespace PSMViewer.Visualizations
 
         private void Control_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            
-            if (e.PropertyName == "Status")
-            {
 
-                foreach (MultiControl controls in Controls)
+            Dispatcher.Invoke(delegate
+            {
+                if (e.PropertyName == "Status")
                 {
 
-                    IReload reloadable = controls.Get(DataIndexFieldAsEnum);
-
-                    if (reloadable.Status != ReloadStatus.Idle)
+                    foreach (MultiControl controls in Controls)
                     {
-                        Status = reloadable.Status;
-                        return;
+
+                        IReload reloadable = controls.Get(DataIndexFieldAsEnum);
+
+                        if (reloadable.Status != ReloadStatus.Idle)
+                        {
+                            Status = reloadable.Status;
+                            return;
+                        }
+
                     }
 
+                    Status = ReloadStatus.Idle;
                 }
+            });
 
-                Status = ReloadStatus.Idle;
-            }
-                
 
-            
+
         }
 
         /// <summary>
@@ -1448,20 +1321,14 @@ namespace PSMViewer.Visualizations
             return yn;
         }
 
-        /// <summary>
-        /// Called when the Up arrow is clicked
-        /// </summary>
-        public virtual void Up() {
-            throw new NotImplementedException();
+        public virtual void Reset()
+        {
+            foreach (MultiControl control in _controls)
+            {
+                control.Reset();
+            }
         }
-
-        /// <summary>
-        /// Called when the Down arrow is clicked
-        /// </summary>
-        public virtual void Down() {
-            throw new NotImplementedException();
-        }
-        
+                
         /// <summary>
         /// Overrides what should be displayed if the object is converted to text.
         /// </summary>

@@ -23,27 +23,27 @@ namespace PSMonitor
         /// <summary>
         /// The data path
         /// </summary>
-        public string Key;
+        public string Key { get; set; }
 
         /// <summary>
         /// The index value for this entry
         /// </summary>
-        public object Index;
+        public object Index { get; set; }
 
         /// <summary>
         /// The data value for this entry
         /// </summary>
-        public object Value;
+        public object Value { get; set; }
 
         /// <summary>
         /// The value type
         /// </summary>
-        public Type Type;
+        public Type Type { get; set; }
 
         /// <summary>
         /// The timestamp for this entry.
         /// </summary>
-        public DateTime Timestamp;
+        public DateTime Timestamp { get; set; }
 
         [NonSerialized]
         public int Retry;

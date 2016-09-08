@@ -26,190 +26,6 @@ using PSMViewer.ViewModels;
 namespace PSMViewer.Visualizations
 {
     
-    public class OxySolidColorBrushList : IList<SolidColorBrush>, ICollection<SolidColorBrush>, ICollection, IList {
-
-
-        private IList<OxyColor> OxyColors;
-        private IValueConverter Converter = new SolidColorBrushToOxyColorConverter();
-        
-        public OxySolidColorBrushList()
-        {
-            OxyColors = new List<OxyColor>();
-        }               
-
-        public OxySolidColorBrushList(IList<OxyColor> OxyColors) {
-            this.OxyColors = OxyColors;          
-        }
-
-        public void Reset (IList<OxyColor> OxyColors)
-        {
-
-            IList<OxyColor> colors = this.OxyColors.ToList();
-
-            this.OxyColors = OxyColors;
-
-            OxyColors.Clear();
-
-            foreach (OxyColor color in colors)
-                OxyColors.Add(color);
-
-        }
-
-        public SolidColorBrush this[int index]
-        {
-            get
-            {
-                return (SolidColorBrush)Converter.Convert(OxyColors[index], typeof(SolidColorBrush), null, null);
-            }
-
-            set
-            {
-                OxyColors[index] = (OxyColor)Converter.ConvertBack(value, typeof(OxyColor), null, null);
-            }
-        }
-
-        public int Count
-        {
-            get
-            {
-                return OxyColors.Count;
-            }
-        }
-
-        public bool IsReadOnly
-        {
-            get
-            {
-                return OxyColors.IsReadOnly;
-            }
-        }
-
-        public object SyncRoot
-        {
-            get
-            {
-                return OxyColors;
-            }
-        }
-
-        public bool IsSynchronized
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        public bool IsFixedSize
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        object IList.this[int index]
-        {
-            get
-            {
-                return this[index];
-            }
-
-            set
-            {
-                this[index] = (SolidColorBrush)value;
-            }
-        }
-
-        public void Add(SolidColorBrush item)
-        {
-            OxyColors.Add((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
-        }
-
-        public void Clear()
-        {
-            OxyColors.Clear();
-        }
-
-        public bool Contains(SolidColorBrush item)
-        {
-            return OxyColors.Contains((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
-        }
-
-        public void CopyTo(SolidColorBrush[] array, int arrayIndex)
-        {
-            foreach(SolidColorBrush color in this)
-            {
-                array[arrayIndex++] = color;
-            }
-        }
-
-        public IEnumerator<SolidColorBrush> GetEnumerator()
-        {
-            
-            return OxyColors.Select(color =>
-            {
-                return (SolidColorBrush)Converter.Convert(color, typeof(SolidColorBrush), null, null);
-            }).GetEnumerator();
-        }
-
-        public int IndexOf(SolidColorBrush item)
-        {
-            return OxyColors.IndexOf((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
-        }
-
-        public void Insert(int index, SolidColorBrush item)
-        {
-            OxyColors.Insert(index, (OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
-        }
-
-        public bool Remove(SolidColorBrush item)
-        {
-            return OxyColors.Remove((OxyColor)Converter.ConvertBack(item, typeof(OxyColor), null, null));
-        }
-
-        public void RemoveAt(int index)
-        {
-            OxyColors.RemoveAt(index);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
-
-        public void CopyTo(Array array, int index)
-        {
-            this.CopyTo((SolidColorBrush[])array, index);
-        }
-
-        public int Add(object value)
-        {
-            this.Add((SolidColorBrush)value);
-            return 1;
-        }
-
-        public bool Contains(object value)
-        {
-            return this.Contains((SolidColorBrush)value);
-        }
-
-        public int IndexOf(object value)
-        {
-            return this.IndexOf((SolidColorBrush)value);
-        }
-
-        public void Insert(int index, object value)
-        {
-            this.Insert(index, (SolidColorBrush)value);
-        }
-
-        public void Remove(object value)
-        {
-            this.Remove((SolidColorBrush)value);
-        }
-    }
-
     /// <summary>
     /// Base class used when creating widgets using <see cref="OxyPlot"/>
     /// </summary>
@@ -238,16 +54,6 @@ namespace PSMViewer.Visualizations
         public PlotModel Model { get; private set; } = new PlotModel() { Title = "" };
         public PlotController Controller { get; private set; } = new PlotController();
         
-        public OxySolidColorBrushList Colors
-        {
-            get { return (OxySolidColorBrushList)GetValue(ColorsProperty); }
-            set { SetValue(ColorsProperty, value); }
-        }
-        public static readonly DependencyProperty ColorsProperty =
-            DependencyProperty.Register("Colors", typeof(OxySolidColorBrushList), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, (sender, e) => {
-                ((OxySolidColorBrushList)e.NewValue).Reset(((OxyBase<T>)sender).Model.DefaultColors);
-            }));
-
         public override void Refresh()
         {
             
@@ -259,21 +65,21 @@ namespace PSMViewer.Visualizations
             if (Parent != null)
             {
 
-                Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.SharpDX.Wpf.TrackerControl) };
+                Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.Wpf.TrackerControl) };
 
                 Parent.Resources.Remove(TrackerControlStyle.TargetType);
 
-                Setter setter = new Setter() { Property = OxyPlot.SharpDX.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
+                Setter setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
                 TrackerControlStyle.Setters.Add(setter);
 
-                setter = new Setter() { Property = OxyPlot.SharpDX.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
+                setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
                 TrackerControlStyle.Setters.Add(setter);
 
                 Parent.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
 
             }            
 
-            Model.InvalidatePlot(true);
+            Model.InvalidatePlot(false);
 
             foreach (KeyValuePair<KeyItem, T> s in Series)
             {
@@ -285,7 +91,7 @@ namespace PSMViewer.Visualizations
 
         protected void DataChanged(object sender)
         {
-            Refresh();
+            //Refresh();
             
             foreach(MultiControl c in Controls)
             {
@@ -294,7 +100,9 @@ namespace PSMViewer.Visualizations
                     SetAxis(AxisPosition.Bottom, c.Entries[0].Index.GetType());
 
                 break;
-            }            
+            }
+
+            Model.InvalidatePlot(true);
         }
 
         #region Dependency Properties
@@ -607,8 +415,6 @@ namespace PSMViewer.Visualizations
             MajorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MinorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             IsLegendVisible = false;
-
-            Colors = new OxySolidColorBrushList(Model.DefaultColors);
 
             SetAxis(AxisPosition.Bottom, typeof(double));
             SetAxis(AxisPosition.Left, typeof(double));

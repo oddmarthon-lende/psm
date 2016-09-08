@@ -6,14 +6,17 @@
 /// 
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -23,11 +26,63 @@ using System.Xml;
 namespace PSMViewer
 {
 
+     
+
     /// <summary>
     /// Adds extensions to some object types.
     /// </summary>
     public static class Extensions
     {
+
+        /// <summary>
+        /// Manually update all binding targets
+        /// </summary>
+        /// <param name="obj">The object to start recursive update from</param>
+        /// <param name="properties">Dependency properties to update</param>
+        public static void UpdateBindingTargets(this DependencyObject obj, params DependencyProperty[] properties)
+        {
+            foreach (DependencyProperty depProperty in properties)
+            {
+                //check whether the submitted object provides a bound property
+                //that matches the property parameters
+                BindingExpression be =
+                  BindingOperations.GetBindingExpression(obj, depProperty);
+                if (be != null) be.UpdateTarget();
+            }
+
+            int count = VisualTreeHelper.GetChildrenCount(obj);
+            for (int i = 0; i < count; i++)
+            {
+                //process child items recursively
+                DependencyObject childObject = VisualTreeHelper.GetChild(obj, i);
+                UpdateBindingTargets(childObject, properties);
+            }
+        }
+
+        /// <summary>
+        /// Manually update all binding sources
+        /// </summary>
+        /// <param name="obj">The object to start recursive update from</param>
+        /// <param name="properties">Dependency properties to update</param>
+        public static void UpdateBindingSources(this DependencyObject obj, params DependencyProperty[] properties)
+        {
+            foreach (DependencyProperty depProperty in properties)
+            {
+                //check whether the submitted object provides a bound property
+                //that matches the property parameters
+                BindingExpression be =
+                  BindingOperations.GetBindingExpression(obj, depProperty);
+                if (be != null) be.UpdateSource();
+            }
+
+            int count = VisualTreeHelper.GetChildrenCount(obj);
+            for (int i = 0; i < count; i++)
+            {
+                //process child items recursively
+                DependencyObject childObject = VisualTreeHelper.GetChild(obj, i);
+                UpdateBindingSources(childObject, properties);
+            }
+        }
 
         /// <summary>
         /// Contains the last error that occured
@@ -310,5 +365,6 @@ namespace PSMViewer
             return result.ToArray();
 
         }
+        
     }
 }

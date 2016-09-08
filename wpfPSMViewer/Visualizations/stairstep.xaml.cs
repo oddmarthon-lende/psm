@@ -1,9 +1,11 @@
 ﻿
 using OxyPlot;
 using OxyPlot.Series;
+using PSMViewer.Models;
 using PSMViewer.ViewModels;
 using System.Collections.Generic;
 using System.Windows.Data;
+using System.Windows.Media;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 
 namespace PSMViewer.Visualizations
@@ -29,6 +31,17 @@ namespace PSMViewer.Visualizations
                 TargetProperties = new List<object>(new string[] { "StrokeThickness", "LineStyle" })
             });
 
+        }
+
+        public override void Refresh()
+        {
+            foreach (KeyValuePair<KeyItem, StairStepSeries> s in Series)
+            {
+                Color color = s.Key.Color;
+                s.Value.Color = OxyColor.FromArgb(color.A, color.R, color.G, color.B);
+            }
+
+            base.Refresh();
         }
 
         private void StairStep_SeriesAdded(MultiControl control, StairStepSeries series)

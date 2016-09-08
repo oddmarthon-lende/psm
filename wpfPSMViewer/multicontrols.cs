@@ -16,7 +16,7 @@ namespace PSMViewer.ViewModels
     /// A multicontrol can handle the different <typeparamref name="ControlType"/> in one object.
     /// Each key gets a <typeparamref name="MultiControl"/> when added to the <typeparamref name="VisualizationControl"/>
     /// </summary>
-    public class MultiControl : IDisposable, IUndo, IReload, INotifyPropertyChanged
+    public class MultiControl : IDisposable, IReload, INotifyPropertyChanged
     {
 
         private KeyItem _key = null;
@@ -81,7 +81,7 @@ namespace PSMViewer.ViewModels
 
             return true;
         }
-
+        
         /// <summary>
         /// The constructor
         /// </summary>
@@ -94,17 +94,15 @@ namespace PSMViewer.ViewModels
 
             _indexIdentifier = PSMonitor.PSM.Store(Dispatcher).Default;
 
-            Controls.Add(PSMonitor.Stores.DB.IndexType.Index, new Controls<long, long>(this.Entries, 0, 1));
-            Controls.Add(PSMonitor.Stores.DB.IndexType.Id, new Controls<long, long>(this.Entries, 0, 1));
-            Controls.Add(PSMonitor.Stores.DB.IndexType.Value, new Controls<long, long>(this.Entries, 0, 1));
-            Controls.Add(PSMonitor.Stores.DB.IndexType.Timestamp, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan(1, 0, 0)));
-            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Time, new Controls<DateTime, TimeSpan>(this.Entries, null, new TimeSpan()));
-            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Depth, new Controls<long, long>(this.Entries, 0, 100));
-            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Index, new Controls<long, long>(this.Entries, 0, 1));
-            Controls.Add(PSMonitor.Stores.Dummy.IndexType.Dummy, new Controls<long, long>(this.Entries, 0, 1));
-
-            Stack = new Stack<Dictionary<Enum, ViewModels.Controls>>();
-
+            Controls.Add(PSMonitor.Stores.DB.IndexType.Index, new Controls<long, long>(this.Entries, 1));
+            Controls.Add(PSMonitor.Stores.DB.IndexType.Id, new Controls<long, long>(this.Entries, 1));
+            Controls.Add(PSMonitor.Stores.DB.IndexType.Value, new Controls<long, long>(this.Entries, 1));
+            Controls.Add(PSMonitor.Stores.DB.IndexType.Timestamp, new Controls<DateTime, TimeSpan>(this.Entries, new TimeSpan(1, 0, 0)));
+            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Time, new Controls<DateTime, TimeSpan>(this.Entries, new TimeSpan()));
+            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Depth, new Controls<long, long>(this.Entries, 100));
+            Controls.Add(PSMonitor.Stores.Advantage.IndexType.Index, new Controls<long, long>(this.Entries, 1));
+            Controls.Add(PSMonitor.Stores.Dummy.IndexType.Dummy, new Controls<long, long>(this.Entries, 1));
+            
             foreach (var pair in Controls)
             {
                 
@@ -125,49 +123,6 @@ namespace PSMViewer.ViewModels
                 Status = ((ViewModels.Controls)sender).Status;
         }
 
-        private Stack<Dictionary<Enum, ViewModels.Controls>> Stack;
-
-        /// <summary>
-        /// Make a copy of the current state and push it to the stack
-        /// </summary>
-        public void PushState()
-        {
-
-            Dictionary<Enum, Controls> c = new Dictionary<Enum, ViewModels.Controls>();
-
-            Stack.Push(c);
-
-            foreach (KeyValuePair<Enum, Controls> pair in Controls)
-            {
-                c[pair.Key] = (Controls)Activator.CreateInstance(pair.Value.GetType(), Controls[pair.Key]);
-                c[pair.Key].DataChanged += Value_DataChanged;
-
-                foreach (Delegate d in Controls[pair.Key].Load.GetInvocationList())
-                    c[pair.Key].Load += (LoadHandler)d;
-            }
-        }
-
-        /// <summary>
-        /// Pop off the stack and restore the saved state
-        /// </summary>
-        public void PopState()
-        {
-            if (Stack.Count == 0)
-                return;
-
-            Dictionary<Enum, Controls> c = Stack.Pop();
-
-            if (c != null)
-            {
-                foreach (KeyValuePair<Enum, Controls> pair in c)
-                {
-                    Controls[pair.Key].Dispose();
-                    Controls[pair.Key] = c[pair.Key];
-                }
-
-            }
-        }
-
         /// <summary>
         /// Called when the data has changed for a control type
         /// </summary>
@@ -185,7 +140,7 @@ namespace PSMViewer.ViewModels
         /// <param name="Start"></param>
         /// <param name="Count"></param>
         /// <returns>The controls</returns>
-        public Controls Get(Enum indexIdentifier = null, object Start = null, object Count = null)
+        public Controls Get(Enum indexIdentifier = null, object Count = null)
         {
 
             indexIdentifier = indexIdentifier ?? _indexIdentifier;
@@ -196,9 +151,6 @@ namespace PSMViewer.ViewModels
             {
 
                 c.Activate(this);
-
-                if (Start != null)
-                    c.Start = Start;
 
                 if (Count != null)
                     c.Count = Count;
@@ -262,6 +214,7 @@ namespace PSMViewer.ViewModels
             Controls ctrl = Get();
             if(ctrl != null)
                 return ctrl.Next();
+
             return false;
         }
 
@@ -271,6 +224,12 @@ namespace PSMViewer.ViewModels
             if (ctrl != null)
                 return ctrl.Previous();
             return false;
+        }
+
+        public void Reset()
+        {
+            foreach (var ctrl in Controls)
+                ctrl.Value.Reset();
         }
     }
 }

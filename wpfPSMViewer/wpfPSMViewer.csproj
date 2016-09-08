@@ -86,8 +86,8 @@
     <Compile Include="Converters\reloadstatustoboolean.cs" />
     <Compile Include="Converters\reloadstatustocursor.cs" />
     <Compile Include="Converters\tree_icon_converter.cs" />
-    <Compile Include="Dialogs\modify_data_title.xaml.cs">
-      <DependentUpon>modify_data_title.xaml</DependentUpon>
+    <Compile Include="Dialogs\keys.xaml.cs">
+      <DependentUpon>keys.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\properties.cs" />
     <Compile Include="Editors\store_enum_editor.cs" />
@@ -100,11 +100,17 @@
     <Compile Include="propertywrapper.cs" />
     <Compile Include="settings.cs" />
     <Compile Include="Utilities\bindingwrapper.cs" />
-    <None Include="Visualizations\gauge.cs" />
-    <Compile Include="Visualizations\dots.xaml.cs">
+    <None Include="Visualizations\experiments\gauge.cs" />
+    <None Include="Visualizations\experiments\dots.xaml.cs">
       <DependentUpon>dots.xaml</DependentUpon>
+    </None>
+    <None Include="Visualizations\template.xaml.cs">
+      <DependentUpon>template.xaml</DependentUpon>
+    </None>
+    <Compile Include="Visualizations\keyvalue_list.xaml.cs">
+      <DependentUpon>keyvalue_list.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\replicator.cs" />
+    <Compile Include="Visualizations\experiments\replicator.cs" />
     <Compile Include="Utilities\tracker.cs" />
     <Compile Include="Dialogs\tree.xaml.cs">
       <DependentUpon>tree.xaml</DependentUpon>
@@ -112,31 +118,31 @@
     <Compile Include="ireload.cs" />
     <EmbeddedResource Include="Shaders\gauge.fs" />
     <EmbeddedResource Include="Shaders\gauge.vs" />
-    <Compile Include="Visualizations\barBase.cs" />
-    <Compile Include="Visualizations\bar.xaml.cs">
+    <None Include="Visualizations\experiments\barBase.cs" />
+    <None Include="Visualizations\experiments\bar.xaml.cs">
       <DependentUpon>bar.xaml</DependentUpon>
-    </Compile>
-    <None Include="Visualizations\vtkBase.cs" />
-    <None Include="Visualizations\vtkChartBase.cs" />
-    <None Include="Visualizations\vtkBar.xaml.cs">
+    </None>
+    <None Include="Visualizations\experiments\vtkBase.cs" />
+    <None Include="Visualizations\experiments\vtkChartBase.cs" />
+    <None Include="Visualizations\experiments\vtkBar.xaml.cs">
       <DependentUpon>vtkBar.xaml</DependentUpon>
     </None>
-    <None Include="Visualizations\vtkBag.xaml.cs">
+    <None Include="Visualizations\experiments\vtkBag.xaml.cs">
       <DependentUpon>vtkBag.xaml</DependentUpon>
     </None>
-    <None Include="Visualizations\vtkImageData.xaml.cs">
+    <None Include="Visualizations\experiments\vtkImageData.xaml.cs">
       <DependentUpon>vtkImageData.xaml</DependentUpon>
     </None>
-    <None Include="Visualizations\vtkLine.xaml.cs">
+    <None Include="Visualizations\experiments\vtkLine.xaml.cs">
       <DependentUpon>vtkLine.xaml</DependentUpon>
     </None>
     <Compile Include="Visualizations\pie.xaml.cs">
       <DependentUpon>pie.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\column.xaml.cs">
+    <None Include="Visualizations\experiments\column.xaml.cs">
       <DependentUpon>column.xaml</DependentUpon>
-    </Compile>
-    <None Include="Visualizations\area.xaml.cs">
+    </None>
+    <None Include="Visualizations\experiments\area.xaml.cs">
       <DependentUpon>area.xaml</DependentUpon>
     </None>
     <Compile Include="Visualizations\stairstep.xaml.cs">
@@ -147,13 +153,26 @@
     </Compile>
     <Compile Include="Visualizations\base.cs" />
     <Compile Include="Visualizations\oxyBase.cs" />
-    <Compile Include="Visualizations\glGauge.cs">
+    <None Include="Visualizations\experiments\glGauge.cs">
       <Generator>MSBuild:Compile</Generator>
-    </Compile>
-    <Compile Include="Visualizations\glBase.cs" />
-    <Compile Include="Visualizations\text.xaml.cs">
+    </None>
+    <Compile Include="Visualizations\experiments\glBase.cs" />
+    <None Include="Visualizations\experiments\line_scichart.xaml.cs">
+      <DependentUpon>line_scichart.xaml</DependentUpon>
+    </None>
+    <None Include="Visualizations\experiments\text.xaml.cs">
       <DependentUpon>text.xaml</DependentUpon>
+    </None>
+    <Compile Include="Visualizations\logview.xaml.cs">
+      <DependentUpon>logview.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Visualizations\tableview.xaml.cs">
+      <DependentUpon>tableview.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Visualizations\image.xaml.cs">
+      <DependentUpon>image.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="wildcard.cs" />
     <Compile Include="windowinfo.cs" />
     <Compile Include="windowstate.cs" />
     <Compile Include="Windows\log.xaml.cs">
@@ -166,7 +185,7 @@
     <Compile Include="Models\keyitem.cs" />
     <Compile Include="commands.cs" />
     <Compile Include="controls.cs" />
-    <Page Include="Dialogs\modify_data_title.xaml">
+    <Page Include="Dialogs\keys.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -174,40 +193,48 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\bar.xaml">
+    <None Include="Visualizations\experiments\bar.xaml">
       <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <None Include="Visualizations\vtkBar.xaml">
+    </None>
+    <None Include="Visualizations\experiments\vtkBar.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <None Include="Visualizations\vtkBag.xaml">
+    <None Include="Visualizations\experiments\vtkBag.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <None Include="Visualizations\vtkImageData.xaml">
+    <None Include="Visualizations\experiments\vtkImageData.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <None Include="Visualizations\vtkLine.xaml">
+    <None Include="Visualizations\experiments\vtkLine.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <Page Include="Visualizations\dots.xaml">
+    <None Include="Visualizations\experiments\dots.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </Page>
+    </None>
+    <None Include="Visualizations\template.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </None>
     <Page Include="Visualizations\pie.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\column.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <None Include="Visualizations\area.xaml">
+    <None Include="Visualizations\experiments\column.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
+    <None Include="Visualizations\experiments\area.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </None>
+    <Page Include="Visualizations\keyvalue_list.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Visualizations\stairstep.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -215,9 +242,24 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\text.xaml">
+    <None Include="Visualizations\experiments\line_scichart.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+    <None Include="Visualizations\experiments\text.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </None>
+    <Page Include="Visualizations\logview.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\tableview.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\image.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Windows\log.xaml">
       <SubType>Designer</SubType>
@@ -293,9 +335,9 @@
       <Project>{72e591d6-8f83-4d8c-8f67-9c325e623234}</Project>
       <Name>Xceed.Wpf.Toolkit</Name>
     </ProjectReference>
-    <ProjectReference Include="..\oxyplot\Source\OxyPlot.SharpDX.Wpf\OxyPlot.SharpDX.Wpf.csproj">
-      <Project>{92129d21-61e9-4952-ab75-6e5b27c8d3f7}</Project>
-      <Name>OxyPlot.SharpDX.Wpf</Name>
+    <ProjectReference Include="..\oxyplot\Source\OxyPlot.Wpf\OxyPlot.Wpf.csproj">
+      <Project>{698ccd8e-adcc-4565-8517-5edd36f07155}</Project>
+      <Name>OxyPlot.Wpf</Name>
     </ProjectReference>
     <ProjectReference Include="..\oxyplot\Source\OxyPlot\OxyPlot.csproj">
       <Project>{7a0b35c0-dd17-4964-8e9a-44d6cecdc692}</Project>
@@ -1325,7 +1367,7 @@
     <Resource Include="Icons\zoom_out.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="splash.png" />
+    <SplashScreen Include="splash.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\left.png" />
@@ -1333,6 +1375,15 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Icons\chart_column.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\close.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\maximize_window.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\minimize_window.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
