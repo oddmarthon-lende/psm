@@ -598,7 +598,7 @@ namespace PSMViewer.ViewModels
 
             }
         }
-
+        
         /// <summary>
         /// Constructor
         /// </summary>
@@ -672,88 +672,74 @@ namespace PSMViewer.ViewModels
             }
 
             base.Append(item);
-        }        
+        }
+
+        private static ConcurrentDictionary<Controls, Thread> _threads = new ConcurrentDictionary<Controls, Thread>();
+
+        private static void ProcessReload(object ctx)
+        {
+
+            Controls ctrl = (Controls)ctx;
+            IEnumerable<EntryItem> entries;
+            Thread t;
+            
+            try
+            {
+                Debug.WriteLine("Loading... {0}", ctrl.Selected);
+
+                entries = ctrl.Reload(ctrl.Selected);
+                while (!_threads.TryRemove(ctrl, out t)) ;                
+
+                if(!_threads.ContainsKey(ctrl))
+                    ctrl.Dispatcher.InvokeAsync(delegate
+                    {
+                        ctrl.Entries.Clear();
+
+                        foreach (EntryItem entry in entries)
+                        {
+                            ctrl.Entries.Add(entry);
+                        }
+
+                        if (ctrl.Page == 0)
+                            ctrl.Register();
+
+                        ctrl.Status = ReloadStatus.Idle;
+
+                    });
+
+
+            }
+            catch (Exception error)
+            {
+
+                ctrl.Dispatcher.InvokeAsync(delegate
+                {
+                    ctrl.Status = ReloadStatus.Error;
+                });
+
+                Logger.Error(error);
+            }
+            
+
+        }
 
         /// <summary>
         /// <see cref="Controls.Reload"/>
         /// </summary>
         public override void Reload()
         {
-            
-            IEnumerable<EntryItem> data = null;
+            Thread t;
 
             Unregister();
-
-            if (ReloadTask != null)
-            {
-
-                CancellationTokenSource.Cancel();
-                CancellationTokenSource = new CancellationTokenSource();
-                
-            }
-
-            Debug.WriteLine("Loading... {0}", Selected);
-
-            try {
-
-                ReloadTask = Task.Factory.StartNew<IEnumerable<EntryItem>>(delegate
-                {
-
-                    try
-                    {
-                        return Reload(Selected);
-                    }
-                    catch (Exception error)
-                    {
-
-                        Dispatcher.InvokeAsync(delegate
-                        {
-                            SetField(ref _status, ReloadStatus.Error, "Status");
-                        });
-
-                        Logger.Error(error);
-
-                        return null;
-
-
-                    }
-
-                }, CancellationTokenSource.Token);
-
-                Dispatcher.Invoke(delegate
-                {
-                    SetField(ref _status, ReloadStatus.Loading, "Status");
-                });
-
-                if(ReloadTask == null) return;
-
-                ReloadTask.Wait();
-
-                data = ReloadTask.Result;
-
-                if (data == null) return;
-
-            }
-            catch(TaskCanceledException)
-            {
-                return;
-            }       
-            finally
-            {
-                ReloadTask = null;
-            }
-
-            Entries.Clear();
             
-            foreach (EntryItem entry in data)
-            {
-                Entries.Add(entry);
-            }
+            Status = ReloadStatus.Loading;
 
-            SetField(ref _status, ReloadStatus.Idle, "Status");
+            t = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
+            
+            while (!_threads.TryAdd(this, t));
 
-            if (Page == 0)
-                Register();
+            t.Start(this);
+
 
         }
 

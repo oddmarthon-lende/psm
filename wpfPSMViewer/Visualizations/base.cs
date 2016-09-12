@@ -731,10 +731,10 @@ namespace PSMViewer.Visualizations
                     window.Owner = this.Owner;
                     window.Width = Math.Sqrt(this.Owner.Width * this.Owner.Height);
                     window.Height = window.Width;
-
-                    window.Closed += (a,b) => Refresh();
-
+                    
                     window.ShowDialog();
+
+                    this.OnReload(this);
 
                     break;
 
@@ -770,13 +770,14 @@ namespace PSMViewer.Visualizations
                     }));
 
                     //grid.PropertyGrids.ToArray()[0].PropertyValueChanged += (s, a) => Refresh();
-                    window.Closed += (a, b) => Refresh();
-
+                    
                     window.Height = window.Width;
                     window.ShowDialog();
                     
                     break;
-            }            
+            }
+
+            Refresh();    
 
         }
         
@@ -1046,7 +1047,6 @@ namespace PSMViewer.Visualizations
         {
 
             VariableDefinitionList variables;
-
 
             if (key == null) return false;
 

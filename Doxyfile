@@ -44,14 +44,14 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "Process Monitor"
+PROJECT_BRIEF          = 
 
 # With the PROJECT_LOGO tag one can specify a logo or an icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = C:/Users/lendodd/Desktop/PSMonitor/logo.png
+PROJECT_LOGO           = 
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -874,17 +874,13 @@ EXCLUDE_SYMLINKS       = NO
 
 EXCLUDE_PATTERNS       = *.xaml \
                          *.g.i.cs \
-                         */packages/* \
-                         */.vs/* \
-                         */.git/* \
-                         */VTK/* \
-                         */PSMService/* \
-                         */PSMdb/* \
-                         */PSMCmd/* \
-                         */oxyplot/* \
-                         */ExtendedWPFToolkitSolution/* \
-                         */docs/* \
-                         */PSMHttpApi/*
+                         C:/Users/lendodd/Desktop/PSMonitor/packages/* \
+                         C:/Users/lendodd/Desktop/PSMonitor/.vs/* \
+                         C:/Users/lendodd/Desktop/PSMonitor/.git/* \
+                         C:/Users/lendodd/Desktop/PSMonitor/sharpgl-master/* \
+                         C:/Users/lendodd/Desktop/PSMonitor/ExtendedWPFToolkitSolution/* \
+                         C:/Users/lendodd/Desktop/PSMonitor/oxyplot/* \
+                         C:/Users/lendodd/Desktop/PSMonitor/build/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the

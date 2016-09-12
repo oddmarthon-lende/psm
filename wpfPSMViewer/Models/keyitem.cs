@@ -891,7 +891,7 @@ namespace PSMViewer.Models
             item.Context = ctx;
             item.Variables = vars;
             item._parent = KeyItem.CreateFromPath(p);
-            item._path = p.Length > 0 ? p : null;
+            item._path = path;
 
             Key[] keys = PSM.Store(ctx).Keys(item._parent != null ? item._parent.Path : "");
 

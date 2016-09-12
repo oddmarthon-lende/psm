@@ -187,7 +187,7 @@ namespace PSMViewer
             obj.CancellationTokenSource.Cancel();
             obj.CancellationTokenSource = new System.Threading.CancellationTokenSource();
 
-            obj.Dispatcher.Invoke(delegate
+            obj.Dispatcher.InvokeAsync(delegate
             {
                 obj.Status = ReloadStatus.Loading;
             });

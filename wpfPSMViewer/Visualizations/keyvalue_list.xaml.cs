@@ -10,7 +10,7 @@ namespace PSMViewer.Visualizations
     [DisplayName("Key\\Value List")]
     [Icon("../icons/table.png")]
     [SubCategory("Built-In")]
-    public sealed partial class KeyValueList : VisualizationControl
+    public sealed partial class KeyValueList : TableBase
     {
                 
         public KeyValueList()

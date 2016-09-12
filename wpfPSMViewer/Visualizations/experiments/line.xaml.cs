@@ -65,7 +65,9 @@ namespace PSMViewer.Visualizations
             //        series.Points.Clear();
             //    }
             //};
+
             
+
             SetBinding(LineStyleProperty, new Binding("Value")
             {
                 Source = new Utilities.BindingWrapper<LineStyle>(

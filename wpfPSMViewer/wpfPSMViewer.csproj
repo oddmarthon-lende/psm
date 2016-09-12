@@ -56,6 +56,22 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SciChart.Charting, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Charting.dll</HintPath>
+    </Reference>
+    <Reference Include="SciChart.Core, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="SciChart.Data, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="SciChart.Drawing.DirectX, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Drawing.DirectX.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
@@ -136,7 +152,8 @@
     <None Include="Visualizations\experiments\vtkLine.xaml.cs">
       <DependentUpon>vtkLine.xaml</DependentUpon>
     </None>
-    <Compile Include="Visualizations\pie.xaml.cs">
+    <None Include="Visualizations\experiments\sciChartBase.cs" />
+    <Compile Include="Visualizations\experiments\pie.xaml.cs">
       <DependentUpon>pie.xaml</DependentUpon>
     </Compile>
     <None Include="Visualizations\experiments\column.xaml.cs">
@@ -145,27 +162,28 @@
     <None Include="Visualizations\experiments\area.xaml.cs">
       <DependentUpon>area.xaml</DependentUpon>
     </None>
-    <Compile Include="Visualizations\stairstep.xaml.cs">
+    <Compile Include="Visualizations\experiments\stairstep.xaml.cs">
       <DependentUpon>stairstep.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\line.xaml.cs">
+    <Compile Include="Visualizations\experiments\line.xaml.cs">
       <DependentUpon>line.xaml</DependentUpon>
     </Compile>
     <Compile Include="Visualizations\base.cs" />
-    <Compile Include="Visualizations\oxyBase.cs" />
+    <Compile Include="Visualizations\experiments\oxyBase.cs" />
     <None Include="Visualizations\experiments\glGauge.cs">
       <Generator>MSBuild:Compile</Generator>
     </None>
     <Compile Include="Visualizations\experiments\glBase.cs" />
-    <None Include="Visualizations\experiments\line_scichart.xaml.cs">
+    <Compile Include="Visualizations\experiments\line_scichart.xaml.cs">
       <DependentUpon>line_scichart.xaml</DependentUpon>
-    </None>
+    </Compile>
     <None Include="Visualizations\experiments\text.xaml.cs">
       <DependentUpon>text.xaml</DependentUpon>
     </None>
     <Compile Include="Visualizations\logview.xaml.cs">
       <DependentUpon>logview.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Visualizations\tableBase.cs" />
     <Compile Include="Visualizations\tableview.xaml.cs">
       <DependentUpon>tableview.xaml</DependentUpon>
     </Compile>
@@ -220,7 +238,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <Page Include="Visualizations\pie.xaml">
+    <Page Include="Visualizations\experiments\pie.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <None Include="Visualizations\experiments\column.xaml">
@@ -235,16 +253,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\stairstep.xaml">
+    <Page Include="Visualizations\experiments\stairstep.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\line.xaml">
+    <Page Include="Visualizations\experiments\line.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <None Include="Visualizations\experiments\line_scichart.xaml">
+    <Page Include="Visualizations\experiments\line_scichart.xaml">
       <Generator>MSBuild:Compile</Generator>
-    </None>
+    </Page>
     <None Include="Visualizations\experiments\text.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

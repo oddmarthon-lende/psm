@@ -151,14 +151,18 @@
 
                     </ToolBar.Resources>
 
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="6h" />
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="24h" />
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="2d" />
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="4d" />
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1w" />
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="2w" />
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1m" />
-                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1y" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="30S" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1M" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="30M" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1H" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="6H" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="24H" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="2D" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="4D" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1W" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="2W" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1MO" />
+                    <ToggleButton Command="{Binding Commands[Zoom], ElementName=window}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Content="1Y" />
 
                 </ToolBar>
 

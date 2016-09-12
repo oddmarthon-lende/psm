@@ -10,7 +10,7 @@ namespace PSMViewer.Visualizations
     [DisplayName("Log View")]
     [Icon("../icons/table.png")]
     [SubCategory("Built-In")]
-    public sealed partial class LogView : VisualizationControl
+    public sealed partial class LogView : TableBase
     {
                 
         public LogView()

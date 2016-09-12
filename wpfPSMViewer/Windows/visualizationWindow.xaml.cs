@@ -548,28 +548,40 @@ namespace PSMViewer
 
                     switch (_zoomInterval)
                     {
-                        case "2d":
+                        case "30S":
+                            ts = new TimeSpan(0, 0, 30);
+                            break;
+                        case "1M":
+                            ts = new TimeSpan(0, 1, 0);
+                            break;
+                        case "30M":
+                            ts = new TimeSpan(0, 30, 0);
+                            break;
+                        case "1H":
+                            ts = new TimeSpan(1, 0, 0);
+                            break;
+                        case "2D":
                             ts = new TimeSpan(2, 0, 0, 0);
                             break;
-                        case "4d":
+                        case "4D":
                             ts = new TimeSpan(4, 0, 0, 0);
                             break;
-                        case "24h":
+                        case "24H":
                             ts = new TimeSpan(24, 0, 0);
                             break;
-                        case "6h":
+                        case "6H":
                             ts = new TimeSpan(6, 0, 0);
                             break;
-                        case "1m":
+                        case "1MO":
                             ts = new TimeSpan(DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 0, 0, 0);
                             break;
-                        case "1w":
+                        case "1W":
                             ts = new TimeSpan(7, 0, 0, 0);
                             break;
-                        case "2w":
+                        case "2W":
                             ts = new TimeSpan(14, 0, 0, 0);
                             break;
-                        case "1y":
+                        case "1Y":
                             ts = new TimeSpan(365, 0, 0, 0);
                             break;
                     }
@@ -1118,9 +1130,7 @@ namespace PSMViewer
                     PropertyGrid grid = ((PropertiesWindow)window).PropertyGrids.ToArray()[1];
                     
                     grid.SelectedObject = null;
-
-                    window.Closed += (a, b) => Refresh();
-
+                                        
                     Dispatcher.InvokeAsync(delegate
                     {
                         grid.SelectedObjectChanged += settings_propertyGrid_SelectedObjectChanged;
@@ -1174,6 +1184,8 @@ namespace PSMViewer
 
                     break;
             }
+
+            Refresh();
             
         }
 

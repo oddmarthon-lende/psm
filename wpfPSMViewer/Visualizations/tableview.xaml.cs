@@ -8,6 +8,8 @@ using System.Windows;
 using PSMViewer.Dialogs;
 using System;
 using System.Windows.Media;
+using Xceed.Wpf.Toolkit.PropertyGrid;
+using PSMonitor;
 
 namespace PSMViewer.Visualizations
 {
@@ -19,20 +21,13 @@ namespace PSMViewer.Visualizations
 
         private IList<Cell> _cells;
 
-        public KeyItem Key
-        {
-            get
-            {
-                return _header.Key;
-            }
-        }
-
-        private KeyItemTitle _header;
+        public KeyItem Key { get; private set; }
+        
         public string Header
         {
             get
             {
-                return _header != null ? _header.Value : null;
+                return Key == null ? null : Key.Title.Value;
             }
         }
 
@@ -57,9 +52,9 @@ namespace PSMViewer.Visualizations
             }
         }
 
-        public Column(KeyItemTitle header, Dictionary<KeyItem, Row> rows, IList<Cell> cells)
+        public Column(KeyItem key, Dictionary<KeyItem, Row> rows, IList<Cell> cells)
         {
-            _header = header;
+            Key = key;
             Rows = rows;
             _cells = cells;
 
@@ -69,24 +64,17 @@ namespace PSMViewer.Visualizations
     public class Row
     {
 
-        public Dictionary<KeyItemTitle, Column> Columns { get; private set; }
+        public Dictionary<KeyItem, Column> Columns { get; private set; }
 
         private IList<Cell> _cells;
 
-        public KeyItem Key
-        {
-            get
-            {
-                return _header;
-            }
-        }
-
-        private KeyItem _header;
+        public KeyItem Key { get; private set; }
+        
         public string Header
         {
             get
             {
-                return _header.Title.Value;
+                return Key == null ? null : Key.Title.Value;
             }
         }
 
@@ -111,9 +99,9 @@ namespace PSMViewer.Visualizations
             }
         }
 
-        public Row(KeyItem header, Dictionary<KeyItemTitle, Column> columns, IList<Cell> cells)
+        public Row(KeyItem key, Dictionary<KeyItem, Column> columns, IList<Cell> cells)
         {
-            _header = header;
+            Key = key;
             Columns = columns;
             _cells = cells;
 
@@ -137,12 +125,20 @@ namespace PSMViewer.Visualizations
 
         public Row Row { get; private set; }
 
+        public EntryItem Entry
+        {
+            get
+            {
+                return Control == null || Control.Entries.Count == 0 ? null : Control.Entries[0];
+            }
+        }
+
         private object _value;
         public object Value
         {
             get
             {
-                return _value ?? (Control == null || Control.Entries.Count == 0 ? null : Control.Entries[0].Value is DateTime ? ((DateTime)Control.Entries[0].Value).ToString("o") : Control.Key.Convert<string>((PSMonitor.Entry)Control.Entries[0]));
+                return _value ?? (Entry == null ? null : Entry.Value is DateTime ? ((DateTime)Entry.Value).ToString("o") : Control.Key.Convert<string>((PSMonitor.Entry)Entry));
             }
         }
 
@@ -168,6 +164,7 @@ namespace PSMViewer.Visualizations
         private void _control_DataChanged(object sender)
         {
             OnPropertyChanged("Value");
+            OnPropertyChanged("Entry");
         }
 
         public void SetValue(object value)
@@ -180,10 +177,10 @@ namespace PSMViewer.Visualizations
     [DisplayName("Table View")]
     [Icon("../icons/table.png")]
     [SubCategory("Built-In")]
-    public sealed partial class TableView : VisualizationControl
+    public sealed partial class TableView : TableBase
     {
 
-        private Dictionary<KeyItemTitle, Column> _columns = new Dictionary<KeyItemTitle, Column>();
+        private Dictionary<KeyItem, Column> _columns = new Dictionary<KeyItem, Column>();
 
         private Dictionary<KeyItem, Row> _rows = new Dictionary<KeyItem, Row>();
 
@@ -226,7 +223,9 @@ namespace PSMViewer.Visualizations
             }
         }
 
-        private List<KeyItem> _rowKeysCache = new List<KeyItem>();
+        private List<KeyItem> _rowKeyCache = new List<KeyItem>();
+
+        private Dictionary<string, KeyItem> _columnKeyCache = new Dictionary<string, KeyItem>();
 
         public KeyItemPathList RowPaths
         {
@@ -245,17 +244,60 @@ namespace PSMViewer.Visualizations
             set
             {
 
-                _rowKeysCache.Clear();
+                _rowKeyCache.Clear();
 
                 foreach (KeyItemPath p in value)
                 {
 
                     KeyItem k = KeyItemPath.ToKeyItem(p);
-                    _rowKeysCache.Add(k);
+                    _rowKeyCache.Add(k);
                 }
 
             }
         }
+
+        public KeyItemPathList ColumnPaths
+        {
+            get
+            {
+                KeyItemPathList list = new KeyItemPathList();
+
+                foreach (Column c in Columns.Where((c) => { return c.Key != null; }))
+                {
+                    list.Add(new KeyItemPath(c.Key));
+                }
+
+                return list;
+            }
+
+            set
+            {
+
+                _columnKeyCache.Clear();
+
+                foreach (KeyItemPath p in value)
+                {
+
+                    KeyItem k = KeyItemPath.ToKeyItem(p);
+                    _columnKeyCache.Add(p.Path, k);
+                }
+
+            }
+        }
+
+        public int SplitPosition
+        {
+            get { return (int)GetValue(SplitPositionProperty); }
+            set { SetValue(SplitPositionProperty, value); }
+        }
+        public static readonly DependencyProperty SplitPositionProperty =
+            DependencyProperty.Register("SplitPosition", typeof(int), typeof(TableView), new PropertyMetadata(0), (value) => {
+
+                if((int)value <= 0)
+                    return true;
+
+                return false;
+            });
 
         public TableView()
         {
@@ -263,45 +305,74 @@ namespace PSMViewer.Visualizations
 
             RegisterUserCommand();
             RegisterUserCommand("Edit Rows", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_ROWS));
+            RegisterUserCommand("Edit Columns", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_COL));
+
+            Properties.Add(new PropertyDefinition()
+            {
+                Category = "Table View",
+                TargetProperties = new List<object>(new string[] { "SplitPosition" })
+            });
+
+            Foreground = Brushes.White;
 
         }
 
         private new enum CommandType
         {
-            EDIT_ROWS
+            EDIT_ROWS,
+            EDIT_COL
         }
 
         protected override void ExecuteCommand(object sender, object parameter)
         {
 
             RelayCommand cmd = (RelayCommand)sender;
+            KeyEditor window = null;
 
             switch ((CommandType)cmd.Arguments[0].Value)
             {
-                case CommandType.EDIT_ROWS:
+                case CommandType.EDIT_COL:
 
+                    
+                    window = new KeyEditor(Columns.Where((c) => { return c.Key != null; }).Select((c, i) =>
                     {
+                        return new KeyEditor.Item(c.Key);
+                    }).ToArray());
 
-                        KeyEditor window;
+                    window.Title = String.Format("Edit Columns [{0}]", Title);
 
-                        window = new KeyEditor(Rows.Select((r, i) =>
-                        {
-                            return new KeyEditor.Item(r.Key);
-                        }).ToArray());
+                    break;
 
-                        window.Title = String.Format("Edit Rows [{0}]", Title);
-                        window.WindowStyle = WindowStyle.ToolWindow;
-                        window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-                        window.Owner = this.Owner;
-                        window.Width = Math.Sqrt(this.Owner.Width * this.Owner.Height);
-                        window.Height = window.Width;
-                        window.CanAdd = false;
-                        window.CanDelete = false;
-                        window.TreeVisibility = Visibility.Collapsed;
+                case CommandType.EDIT_ROWS:
+                    
+                    window = new KeyEditor(Rows.Select((r, i) =>
+                    {
+                        return new KeyEditor.Item(r.Key);
+                    }).ToArray());
 
-                        window.Closed += (a, b) => Refresh();
-                        window.ShowDialog();
-                    }
+                    window.Title = String.Format("Edit Rows [{0}]", Title);
+
+                    break;
+            }
+
+            switch ((CommandType)cmd.Arguments[0].Value)
+            {
+
+                case CommandType.EDIT_COL:
+                case CommandType.EDIT_ROWS:
+                                        
+                    window.WindowStyle = WindowStyle.ToolWindow;
+                    window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                    window.Owner = this.Owner;
+                    window.Width = Math.Sqrt(this.Owner.Width * this.Owner.Height);
+                    window.Height = window.Width;
+                    window.CanAdd = false;
+                    window.CanDelete = false;
+                    window.TreeVisibility = Visibility.Collapsed;
+
+                    window.ShowDialog();
+
+                    this.OnReload(this);
 
                     break;
             }
@@ -309,9 +380,12 @@ namespace PSMViewer.Visualizations
             base.ExecuteCommand(sender, parameter);
         }
 
+        /// <summary>
+        /// Refreshed the control
+        /// </summary>
         public override void Refresh()
         {
-            
+
             _rows.Clear();
             _columns.Clear();
             _cells.Clear();
@@ -319,22 +393,47 @@ namespace PSMViewer.Visualizations
             foreach (MultiControl control in Controls)
             {
 
-                KeyItem parent = control.Key.Parent != null ? control.Key.Parent : null;
+                Path p = PSMonitor.Path.Extract(control.Key.Path);
 
-                if (_rowKeysCache.Contains(parent))
-                    parent = _rowKeysCache.Find((k) => { return k == parent; });
+                KeyItem r = control.Key.Parent != null ? control.Key.Parent : null;
+                KeyItem c = KeyItem.CreateFromPath(String.Join(".", p.Components.ToArray(), p.Length + SplitPosition - 1, Math.Abs(SplitPosition) + 1));
 
-                if (!_rows.ContainsKey(parent))
+                r.Color = Colors.LightGray;
+                c.Color = Colors.LightGray;
+
+                string s = c.Path;
+
+                for (uint i = 0; i < Math.Abs(SplitPosition); i++)
                 {
-                    _rows.Add(parent, new Row(parent, _columns, _cells));
+                    if (r.Parent != null)
+                    {
+                        r = r.Parent;
+                    }
+                    else
+                        break;
                 }
 
-                if (!_columns.ContainsKey(control.Key.Title))
+                if (_rowKeyCache.Contains(r))
+                    r = _rowKeyCache.Find((k) => { return k == r; });
+                else
+                    _rowKeyCache.Add(r);
+
+                if (!_rows.ContainsKey(r))
                 {
-                    _columns.Add(control.Key.Title, new Column(control.Key.Title, _rows, _cells));
+                    _rows.Add(r, new Row(r, _columns, _cells));
                 }
 
-                _cells.Add(new Cell(control, _columns[control.Key.Title], _rows[parent]));                
+                if (_columnKeyCache.ContainsKey(c.Path))
+                    c = _columnKeyCache[c.Path];
+                else
+                    _columnKeyCache.Add(c.Path, c);
+
+                if (!_columns.ContainsKey(c))
+                {
+                    _columns.Add(c, new Column(c, _rows, _cells));
+                }
+
+                _cells.Add(new Cell(control, _columns[c], _rows[r]));                
 
             }
             
