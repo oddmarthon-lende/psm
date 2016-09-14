@@ -99,6 +99,7 @@ namespace PSMViewer.Visualizations
         
     }
 
+    [Visible(false)]
     public class TableBase : VisualizationControl
     {        
 

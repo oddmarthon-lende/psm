@@ -23,7 +23,7 @@
             <DataTemplate>
                 <StackPanel Orientation="Vertical" Margin="1" Background="{Binding Key.Brush, UpdateSourceTrigger=PropertyChanged}">
                     <TextBlock Background="#55000000" Text="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" TextAlignment="Justify" Padding="5" />
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" >
+                    <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" >
                         <ItemsControl ItemsSource="{Binding Entries}" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" >
 
                             <ItemsControl.ItemsPanel>

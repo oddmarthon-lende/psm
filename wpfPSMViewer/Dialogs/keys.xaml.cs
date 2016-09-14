@@ -4,10 +4,13 @@ using PSMViewer.ViewModels;
 using PSMViewer.Visualizations;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Xceed.Wpf.Toolkit;
 
 namespace PSMViewer.Dialogs
@@ -17,9 +20,15 @@ namespace PSMViewer.Dialogs
     /// </summary>
     public partial class KeyEditor : Window
     {
-        
+        /// <summary>
+        /// 
+        /// </summary>
         public class Item
         {
+
+            /// <summary>
+            /// 
+            /// </summary>
             public class Component : INotifyPropertyChanged
             {
 
@@ -85,11 +94,21 @@ namespace PSMViewer.Dialogs
                 }
             }
 
-            public KeyItem Key { get; private set; }
+            /// <summary>
+            /// 
+            /// </summary>
+            public IKeyItem Key { get; private set; }
 
+            /// <summary>
+            /// 
+            /// </summary>
             public ObservableCollection<Component> Components { get; private set; } = new ObservableCollection<Component>();
 
-            public Item(KeyItem key)
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            /// <param name="key"></param>
+            public Item(IKeyItem key)
             {
 
                 Key = key;
@@ -107,17 +126,24 @@ namespace PSMViewer.Dialogs
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ObservableCollection<Item> Items { get; private set; } = new ObservableCollection<Item>();
         
         private VisualizationControl _widget;
 
-
-
+        /// <summary>
+        /// 
+        /// </summary>
         public Visibility TreeVisibility
         {
             get { return (Visibility)GetValue(TreeVisibilityProperty); }
             set { SetValue(TreeVisibilityProperty, value); }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         public static readonly DependencyProperty TreeVisibilityProperty =
             DependencyProperty.Register("TreeVisibility", typeof(Visibility), typeof(KeyEditor), new FrameworkPropertyMetadata(Visibility.Visible, (sender, args) => {
 
@@ -127,34 +153,38 @@ namespace PSMViewer.Dialogs
 
             }));
 
-
-
+        /// <summary>
+        /// 
+        /// </summary>
         public bool CanDelete
         {
             get { return (bool)GetValue(CanDeleteProperty); }
             set { SetValue(CanDeleteProperty, value); }
         }
-
-        // Using a DependencyProperty as the backing store for CanDelete.  This enables animation, styling, binding, etc...
+        /// <summary>
+        /// 
+        /// </summary>
         public static readonly DependencyProperty CanDeleteProperty =
             DependencyProperty.Register("CanDelete", typeof(bool), typeof(KeyEditor), new PropertyMetadata(true));
 
-
-
+        /// <summary>
+        /// 
+        /// </summary>
         public bool CanAdd
         {
             get { return (bool)GetValue(CanAddProperty); }
             set { SetValue(CanAddProperty, value); }
         }
-
-        // Using a DependencyProperty as the backing store for CanAdd.  This enables animation, styling, binding, etc...
+        /// <summary>
+        /// 
+        /// </summary>
         public static readonly DependencyProperty CanAddProperty =
             DependencyProperty.Register("CanAdd", typeof(bool), typeof(KeyEditor), new PropertyMetadata(true));
 
-
-
-
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="widget"></param>
         public KeyEditor(VisualizationControl widget) : this()
         {
 
@@ -162,31 +192,45 @@ namespace PSMViewer.Dialogs
 
             foreach (MultiControl control in _widget.Controls)
                 Items.Add(new Item(control.Key));
-
-
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="items"></param>
         public KeyEditor(params Item[] items) : this()
         {
 
             foreach (Item item in items)
-                Items.Add(item);
-
-            
+                Items.Add(item);            
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyEditor()
         {
             InitializeComponent();
             this.OnReload(treeView);
             treeView.MouseDoubleClick += TreeView_MouseDoubleClick;
+            Icon = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("PSMViewer.Icons.application_form_edit.png"));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             Add_Button_Click(null, null);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
 
@@ -194,22 +238,38 @@ namespace PSMViewer.Dialogs
             component.Select();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Add_Button_Click(object sender, RoutedEventArgs e)
         {
 
-            foreach (KeyItem key in KeyItem.Parse(path_field.Text))
+            if (this._widget != null && treeView.Key != null && treeView.Key.Type != null)
             {
+                KeyItemW itemw = KeyItemW.Create(path_field.Text);
+                int i = 0;
+                bool [] success = this._widget.Add(itemw);
 
-                if (this._widget != null && key != null && key.Type != null)
+                foreach (KeyItem key in itemw.Children)
                 {
-                    if (this._widget.Add(key))
+                    if (success[i++] && key != null && key.Type != null)
+                    {
+                        this._widget.Defaults.Keys.CopyTo(key);
                         Items.Add(new Item(this._widget.GetControl(key).Key));
-                }
+                    }
 
-            }
+                }
+            }           
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Remove_Button_Click(object sender, RoutedEventArgs e)
         {
 
@@ -218,14 +278,33 @@ namespace PSMViewer.Dialogs
             if (this._widget != null)
             {
 
-                this._widget.Remove(item.Key);
-                Items.Remove(item);
+                if(item.Key.W == null && this._widget.Remove(item.Key))
+                    Items.Remove(item);
+                else if(item.Key.W != null)
+                {
+                    if (System.Windows.MessageBox.Show("This item was added using wildcards, do you want to remove all items added by the wildcard?", "Cannot remove item", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    {
+                        this._widget.Remove(item.Key.W);
+
+                        foreach(Item it in Items.ToArray())
+                        {
+                            if (item.Key.W.Children.Contains(it.Key))
+                                Items.Remove(it);
+
+                        }
+                    }
+                }
 
             }
                 
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void CopyToAll_Button_Click(object sender, RoutedEventArgs e)
         {
             Item item = ((Item)((Button)sender).DataContext);

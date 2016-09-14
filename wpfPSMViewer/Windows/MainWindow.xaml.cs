@@ -860,7 +860,7 @@ namespace PSMViewer
 
                     foreach (KeyItemPath p in _graph.Paths.ToArray())
                     {
-                        _graph.Remove(KeyItem.CreateFromPath(p.Path));
+                        _graph.Remove(KeyItem.Create(p.Path));
                     }
 
                     _graph.Add(key, context.Entries);

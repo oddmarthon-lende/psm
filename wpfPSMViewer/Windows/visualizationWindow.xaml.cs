@@ -1260,7 +1260,7 @@ namespace PSMViewer
 
                     widget.Remove(control.Key);
 
-                    KeyItem key = KeyItem.CreateFromPath(control.Key.StaticPath);
+                    KeyItem key = KeyItem.Create(control.Key.StaticPath);
                     control.Key.CopyTo(key);
 
                     widget.Add(key, control.Entries);

@@ -396,7 +396,7 @@ namespace PSMViewer.Visualizations
                 Path p = PSMonitor.Path.Extract(control.Key.Path);
 
                 KeyItem r = control.Key.Parent != null ? control.Key.Parent : null;
-                KeyItem c = KeyItem.CreateFromPath(String.Join(".", p.Components.ToArray(), p.Length + SplitPosition - 1, Math.Abs(SplitPosition) + 1));
+                KeyItem c = KeyItem.Create(String.Join(".", p.Components.ToArray(), p.Length + SplitPosition - 1, Math.Abs(SplitPosition) + 1));
 
                 r.Color = Colors.LightGray;
                 c.Color = Colors.LightGray;

@@ -112,6 +112,9 @@
     <Compile Include="iundo.cs" />
     <Compile Include="layoutanchorablestate.cs" />
     <Compile Include="mainwindowstate.cs" />
+    <Compile Include="Models\ikeyitem.cs" />
+    <Compile Include="Models\keyitemtitle.cs" />
+    <Compile Include="Models\keyitemw.cs" />
     <Compile Include="multicontrols.cs" />
     <Compile Include="propertywrapper.cs" />
     <Compile Include="settings.cs" />
@@ -174,9 +177,9 @@
       <Generator>MSBuild:Compile</Generator>
     </None>
     <Compile Include="Visualizations\experiments\glBase.cs" />
-    <Compile Include="Visualizations\experiments\line_scichart.xaml.cs">
+    <None Include="Visualizations\experiments\line_scichart.xaml.cs">
       <DependentUpon>line_scichart.xaml</DependentUpon>
-    </Compile>
+    </None>
     <None Include="Visualizations\experiments\text.xaml.cs">
       <DependentUpon>text.xaml</DependentUpon>
     </None>
@@ -260,9 +263,9 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\experiments\line_scichart.xaml">
+    <None Include="Visualizations\experiments\line_scichart.xaml">
       <Generator>MSBuild:Compile</Generator>
-    </Page>
+    </None>
     <None Include="Visualizations\experiments\text.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -396,7 +399,7 @@
     <Resource Include="Icons\application_form.png" />
     <Resource Include="Icons\application_form_add.png" />
     <Resource Include="Icons\application_form_delete.png" />
-    <Resource Include="Icons\application_form_edit.png" />
+    <EmbeddedResource Include="Icons\application_form_edit.png" />
     <Resource Include="Icons\application_form_magnify.png" />
     <Resource Include="Icons\application_get.png" />
     <Resource Include="Icons\application_go.png" />

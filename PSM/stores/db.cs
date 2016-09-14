@@ -200,10 +200,11 @@ namespace PSMonitor.Stores
             public void Dispose()
             {
                 _reader.Close();
-
+                
                 if (_autoCloseConnection)
                 {                    
                     connection.Close();
+                    connection.Dispose();
                     command.Dispose();
                 }
             }
@@ -334,7 +335,7 @@ namespace PSMonitor.Stores
 
         protected DB(bool StartThreads)
         {
-
+            
             Options = new Configuration();
 
             _queue = new ConcurrentQueue<Envelope>();
@@ -461,7 +462,7 @@ namespace PSMonitor.Stores
         /// </summary>
         public override IEnumerable<Entry> Read(string path, object start, object end, Enum index)
         {
-            
+
             SqlConnection connection = CreateConnection();
 
             VerifyConnection(connection);
@@ -497,8 +498,6 @@ namespace PSMonitor.Stores
             });
 
             return new Entries(p, (IndexType)index, connection, command, true);
-
-
         }                
 
         /// <summary>

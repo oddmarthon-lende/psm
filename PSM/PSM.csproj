@@ -95,13 +95,14 @@
     <Compile Include="Stores\advantage.cs" />
     <Compile Include="Stores\db.cs" />
     <Compile Include="Stores\dummy.cs" />
-    <Compile Include="Stores\istore.cs" />
+    <Compile Include="istore.cs" />
     <Compile Include="logger.cs" />
     <Compile Include="psm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="script.cs" />
     <Compile Include="Stores\http.cs" />
-    <Compile Include="Stores\store.cs" />
+    <Compile Include="key.cs" />
+    <Compile Include="store.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

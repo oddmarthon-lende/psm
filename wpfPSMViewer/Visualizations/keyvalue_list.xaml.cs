@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System;
+using System.Windows.Media;
 
 namespace PSMViewer.Visualizations
 {
@@ -16,6 +17,7 @@ namespace PSMViewer.Visualizations
         public KeyValueList()
         {
             InitializeComponent();
+            Foreground = Brushes.White;
         }
         
     }

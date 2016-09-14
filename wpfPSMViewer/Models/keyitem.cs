@@ -22,233 +22,26 @@ using System.Windows.Media;
 namespace PSMViewer.Models
 {
 
-    // How to display the title
-    public enum KeyItemTitleMode
-    {
-        Alias,
-        Full,
-        Component
-    }
-
-    /// <summary>
-    /// The <see cref="KeyItem"/> title property
-    /// </summary>
-    public class KeyItemTitle : INotifyPropertyChanged
-    {
-
-        private KeyItemTitleMode _mode = KeyItemTitleMode.Component;
-        public KeyItemTitleMode Mode
-        {
-            get
-            {
-                return _mode;
-            }
-
-            set
-            {
-                _mode = value;
-                OnPropertyChanged("Mode");
-                OnPropertyChanged("Value");
-            }
-        }
-
-        public KeyItem Key { get; private set; }
-
-        public string Value
-        {
-            get
-            {
-                switch(Mode)
-                {
-
-                    case KeyItemTitleMode.Alias:
-                        return Alias;
-
-                    case KeyItemTitleMode.Component:
-                        return GetComponents()[Position];
-
-                    case KeyItemTitleMode.Full:
-                        return Key.Path.ToLower();
-
-                }
-
-                return null;
-                
-            }
-
-        }
-
-        private string _alias;
-        public string Alias
-        {
-            get
-            {
-                return _alias;
-            }
-
-            set
-            {
-                _alias = value;
-                OnPropertyChanged("Alias");
-                OnPropertyChanged("Value");
-            }
-        }
-
-        private uint? _position = null;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public uint Position
-        {
-
-            get {
-
-                string[] components = GetComponents();
-                return _position.HasValue ? _position.Value : ((uint)(components.Length - 1));
-            }
-
-            set {
-
-                string[] components = GetComponents();
-                _position = Math.Min(value, ((uint)(components.Length - 1)));
-
-                OnPropertyChanged("Position");
-                OnPropertyChanged("Name");
-                OnPropertyChanged("Value");
-            }
-
-        }
-
-        public KeyItemTitle(KeyItem item)
-        {
-            Key = item;
-            item.PropertyChanged += Item_PropertyChanged;
-        }
-
-        public KeyItemTitle(KeyItemTitle other) : this(other.Key)
-        {
-            this.Mode = other.Mode;
-            this.Alias = other.Alias;
-            this.Position = other.Position;
-        }
-
-        private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            OnPropertyChanged("Name");
-        }
-
-        private string[] GetComponents() {
-            return Key.Path.Split('.');
-        }
-
-        public override string ToString()
-        {
-            return Value;
-        }
-
-        public static bool operator ==(KeyItemTitle a, KeyItemTitle b)
-        {
-            if (System.Object.ReferenceEquals(a, b)) return true;
-            if (((object)a) == null || ((object)b) == null) return false;
-
-            return a.Value == b.Value;
-        }
-
-        public static bool operator !=(KeyItemTitle a, KeyItemTitle b)
-        {
-            return !(a == b);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null)
-                return false;
-
-            if (obj is KeyItemTitle)
-                return ((KeyItemTitle)obj).Value == this.Value;
-
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
-
-        public void CopyTo(KeyItemTitle other)
-        {
-            other.Mode = this.Mode;
-            other.Alias = this.Alias;
-            other.Position = this.Position;
-        }
-
-    }
-
-    public class KeyItemVariableException : Exception
-    {
-        public KeyItemVariableException(string msg) : base(msg)
-        {
-
-        }
-    }
+   
 
     /// <summary>
     /// The <see cref="Key"/> wrapper class.
     /// </summary>
-    public class KeyItem : Key, IReload, INotifyPropertyChanged
+    public class KeyItem : Key, IReload, INotifyPropertyChanged, IKeyItem
     {
         
         private static ConcurrentDictionary<object, ObservableCollection<Variable>> _variables_global = new ConcurrentDictionary<object, ObservableCollection<Variable>>();
 
-        
-        public static KeyItem[] Parse(string path)
-        {
-            List<KeyItem> keys = new List<KeyItem>();
-            Path p = PSMonitor.Path.Extract(path);
-            int i = 0;
-            List<string> components = p.Components.ToList();
-
-            if (path.IndexOf('*') == -1)
-                keys.Add(KeyItem.CreateFromPath(path));
-
-            foreach (string c in components.ToArray())
-            {
-                
-                if(c.Contains("*"))
-                {
-
-                    string ns = String.Join(".", components.GetRange(0, i));
-                    Wildcard wildcard = new Wildcard(c, RegexOptions.IgnoreCase);
-
-                    foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).Keys(ns))
-                    {
-                        if (!wildcard.IsMatch(k.Name))
-                            continue;
-                        else if (k.Type != null && i < components.Count - 1)
-                            continue;
-                        else if (k.Type == null && i == components.Count - 1)
-                            continue;
-
-                        components[i] = k.Name;
-                        keys.AddRange(KeyItem.Parse(String.Join(".", components)));
-
-                    }
-
-                }                
-                
-                i++;
-            }
-
-            return keys.ToArray();
-        } 
+        /// <summary>
+        /// 
+        /// </summary>
+        public KeyItemW W { get; set; } = null;
 
         private Color _color = Colors.Black;
+
+        /// <summary>
+        /// 
+        /// </summary>
         public Color Color
         {
             get
@@ -264,6 +57,9 @@ namespace PSMViewer.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public SolidColorBrush Brush
         {
             get
@@ -275,6 +71,10 @@ namespace PSMViewer.Models
         private bool _typeConfirmed = false;
 
         private Type _type = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
         public new Type Type
         {
             get
@@ -324,9 +124,7 @@ namespace PSMViewer.Models
         /// <summary>
         /// The local variables for this instance
         /// </summary>
-        public IEnumerable<Variable> Variables { get; private set; }
-
-        
+        public IEnumerable<Variable> Variables { get; private set; }        
 
         /// <summary>
         /// Key path variable
@@ -530,7 +328,7 @@ namespace PSMViewer.Models
 
                     variable.Name = name;
                     variable.Position = components.IndexOf(match.Value);
-                    variable.Parent = parent == null ? null : KeyItem.CreateFromPath(parent);
+                    variable.Parent = parent == null ? null : KeyItem.Create(parent);
 
                     variables.Add(variable);
                     variable.Reload();
@@ -637,7 +435,7 @@ namespace PSMViewer.Models
 
                     string p = String.Join(".", s);
 
-                    _parent = KeyItem.CreateFromPath(p);
+                    _parent = KeyItem.Create(p);
 
                 }
 
@@ -649,11 +447,11 @@ namespace PSMViewer.Models
         /// <summary>
         /// Backing field for the <see cref="Children"/> property
         /// </summary>
-        private ObservableCollection<KeyItem> _children = new ObservableCollection<KeyItem>();
+        private ObservableCollection<IKeyItem> _children = new ObservableCollection<IKeyItem>();
         /// <summary>
         /// A collection of <see cref="KeyItem"/>'s that are the children of this key.
         /// </summary>
-        public ObservableCollection<KeyItem> Children
+        public ObservableCollection<IKeyItem> Children
         {
 
             get
@@ -662,9 +460,10 @@ namespace PSMViewer.Models
             }
 
         }
-                
-        private string _path = null;
-
+              
+        /// <summary>
+        /// 
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
@@ -710,6 +509,7 @@ namespace PSMViewer.Models
             }
         }
 
+        private string _path = null;
         /// <summary>
         /// Gets the full path to this key.
         /// </summary>
@@ -825,7 +625,7 @@ namespace PSMViewer.Models
         /// <param name="path">The path</param>
         /// <param name="ctx">The variable context</param>
         /// <returns>The <see cref="KeyItem"/> that was created from the provided path.</returns>
-        public static KeyItem CreateFromPath(string path, object ctx = null)
+        public static KeyItem Create(string path, object ctx = null)
         {
 
             if (path == null || path.Length == 0)
@@ -890,7 +690,7 @@ namespace PSMViewer.Models
 
             item.Context = ctx;
             item.Variables = vars;
-            item._parent = KeyItem.CreateFromPath(p);
+            item._parent = KeyItem.Create(p);
             item._path = path;
 
             Key[] keys = PSM.Store(ctx).Keys(item._parent != null ? item._parent.Path : "");
@@ -911,11 +711,16 @@ namespace PSMViewer.Models
             return item;
         }
 
-        public void CopyTo(KeyItem other)
+        /// <summary>
+        /// Copy properties to other item
+        /// </summary>
+        /// <param name="other"></param>
+        public void CopyTo(IKeyItem other)
         {
             this.Conversion.CopyTo(other.Conversion);
             this.Title.CopyTo(other.Title);
             other.Color = this.Color;
+            other.W = this.W;
            
         }
 
@@ -961,6 +766,12 @@ namespace PSMViewer.Models
             return Path;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static bool operator == (KeyItem a, KeyItem b)
         {
             if (System.Object.ReferenceEquals(a,b)) return true;
@@ -969,11 +780,22 @@ namespace PSMViewer.Models
             return a.StaticPath == b.StaticPath;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static bool operator !=(KeyItem a, KeyItem b)
         {
             return !(a == b);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public override bool Equals(object obj)
         {
             if (obj == null)
@@ -985,6 +807,10 @@ namespace PSMViewer.Models
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override int GetHashCode()
         {
             return StaticPath.GetHashCode();

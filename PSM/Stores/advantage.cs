@@ -291,13 +291,14 @@ namespace PSMonitor.Stores
 
             ParameterizedPath p = ParameterizedPath.Extract(path);
             SqlConnection connection = CreateConnection();
-            SqlCommand command = connection.CreateCommand();
-                        
+                
             VerifyConnection(connection);
 
+            SqlCommand command = connection.CreateCommand();
+
             command.CommandType = System.Data.CommandType.Text;
-            command.CommandText = GenerateQuery(index, true, p); 
-            
+            command.CommandText = GenerateQuery(index, true, p);
+
 
             command.Parameters.Add(new SqlParameter("@StartIndex", GetType(start.GetType()))
             {
@@ -312,6 +313,7 @@ namespace PSMonitor.Stores
             });
 
             return new Entries(p, index, connection, command, true);
+
 
         }
         

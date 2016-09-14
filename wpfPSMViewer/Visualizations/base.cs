@@ -28,6 +28,7 @@ using System.Collections;
 using System.Text.RegularExpressions;
 using PSMonitor;
 using System.Windows.Media;
+using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace PSMViewer.Visualizations
 {
@@ -132,23 +133,55 @@ namespace PSMViewer.Visualizations
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class KeyItemPath
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public string Path { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public uint? Position { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Color? Color { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyValueConversion Conversion { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyItemTitleMode Mode { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string Alias { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public string W { get; set; }
+
+        /// <summary>
+        /// Convert to <see cref="KeyItem"/>
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns>A new <see cref="KeyItem"/></returns>
         public static KeyItem ToKeyItem(KeyItemPath p)
         {
-            KeyItem key = KeyItem.CreateFromPath(p.Path);
+
+            KeyItem key = KeyItem.Create(p.Path);
 
             if (p.Position.HasValue)
                 key.Title.Position = p.Position.Value;
@@ -161,7 +194,7 @@ namespace PSMViewer.Visualizations
             return key;
         }
 
-        public KeyItemPath(KeyItem key)
+        public KeyItemPath(IKeyItem key)
         {
             Path = key.StaticPath;
             Position = key.Title.Position;
@@ -169,12 +202,11 @@ namespace PSMViewer.Visualizations
             Conversion = key.Conversion;
             Mode = key.Title.Mode;
             Alias = key.Title.Alias;
-        }
-
-        public KeyItemPath()
-        {
+            W = key.W != null ? key.W.StaticPath : null;
 
         }
+
+        public KeyItemPath() { }
 
         
     }
@@ -222,12 +254,90 @@ namespace PSMViewer.Visualizations
     public class KeyItemTitleList : Dictionary<string, uint?> {}
 
     /// <summary>
+    /// 
+    /// </summary>
+    public class TitleDefaults
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public KeyItemTitleMode Mode { get; set; } = KeyItemTitleMode.Component;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public uint? Position { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="title"></param>
+        public void CopyTo(KeyItemTitle title)
+        {
+            if (Position.HasValue)
+                title.Position = Position.Value;
+
+            title.Mode = Mode;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class KeyDefaults
+    {
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        [ExpandableObject]
+        public TitleDefaults Title { get; set; } = new TitleDefaults();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [ExpandableObject]
+        public SolidColorBrush Brush { get; set; } = Brushes.Black;
+        /// <summary>
+        /// 
+        /// </summary>
+        [ExpandableObject]
+        public KeyValueConversion Conversion { get; set; } = new KeyValueConversion();
+
+        public void CopyTo(IKeyItem item)
+        {
+            Conversion.CopyTo(item.Conversion);
+            Title.CopyTo(item.Title);
+            item.Color = Brush.Color;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class Defaults
+    {             
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [ExpandableObject]
+        public KeyDefaults Keys { get; set; } = new KeyDefaults();
+
+        
+    }
+
+    /// <summary>
     /// The VisualizationControl base class, inherited by all visualization controls
     /// </summary>
     [Icon("../icons/application_view_gallery.png")]
     public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged
     {
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public Defaults Defaults { get; set; } = new Defaults();
 
         /// <summary>
         /// <see cref="IReload.CancellationTokenSource"/>
@@ -518,7 +628,11 @@ namespace PSMViewer.Visualizations
         /// Holds a list of <typeparamref name="PropertyDefinition"/> objects that will be exposed to the user.
         /// </summary>
         protected List<PropertyDefinition> Properties { get; set; } = new List<PropertyDefinition>();
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private Dictionary<string, KeyItemW> _wCache = new Dictionary<string, KeyItemW>();
        
         /// <summary>
         /// Holds the key paths.
@@ -528,8 +642,9 @@ namespace PSMViewer.Visualizations
         {
             get
             {
-                KeyItemPathList list = new KeyItemPathList();
 
+                KeyItemPathList list = new KeyItemPathList();
+                
                 foreach(MultiControl c in Controls)
                 {
                     list.Add(new KeyItemPath(c.Key));
@@ -540,9 +655,36 @@ namespace PSMViewer.Visualizations
 
             set
             {
+
                 foreach (KeyItemPath p in value)
                 {
-                    Add(KeyItemPath.ToKeyItem(p));
+
+                    if(p.W != null)
+                    {
+
+                        if(!_wCache.ContainsKey(p.W))
+                            Add(KeyItemW.Create(p.W));
+                    }
+                }
+
+                foreach (KeyItemPath p in value)
+                { 
+
+                    KeyItem k = KeyItemPath.ToKeyItem(p);
+
+                    if (p.W != null)
+                    {
+                        KeyItemW w = _wCache[p.W];
+
+                        foreach(KeyItem k2 in w.Children)
+                        {
+                            if (k == k2)
+                                k.CopyTo(k2);
+                        }
+
+                    }
+                    else
+                        Add(k);
                 }
             }
         }
@@ -840,8 +982,13 @@ namespace PSMViewer.Visualizations
                     Category = "Colors",
                     TargetProperties = new List<object>(new string[] { "Background", "Foreground", "BorderBrush", "Opacity" })
                 });
-                            
 
+                Properties.Add(new PropertyDefinition()
+                {
+                    IsExpandable = true,
+                    Category = "Defaults",
+                    TargetProperties = new List<object>(new string[] { "Defaults" })
+                });
 
 
             #endregion
@@ -887,7 +1034,7 @@ namespace PSMViewer.Visualizations
 
                 if(path != null)
                 {
-                   Add(KeyItem.CreateFromPath(path));
+                   Add(KeyItem.Create(path));
                 }
                
             }
@@ -1038,6 +1185,77 @@ namespace PSMViewer.Visualizations
         }
 
         /// <summary>
+        /// Add wildcard item
+        /// </summary>
+        /// <param name="key"></param>
+        public bool[] Add(KeyItemW key)
+        {
+
+            bool[] results = new bool[key.Children.Count];
+            int i = 0;
+
+            if(!_wCache.ContainsKey(key.StaticPath))
+            {
+                key.Children.CollectionChanged += Key_Children_CollectionChanged;
+
+                foreach (KeyItem k in key.Children)
+                    results[i++] = Add(k);
+
+                key.AutoRefresh = true;
+                
+                if (key.HasWildcards && results.Sum<bool>((b) => { return Convert.ToInt32(b); }) > 0)
+                    _wCache.Add(key.StaticPath, key);
+            }            
+
+            return results;
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        public virtual bool Add(IKeyItem key)
+        {
+            if (key is KeyItem)
+                return Add((KeyItem)key);
+            else if (key is KeyItemW)
+                return Add((KeyItemW)key).Length > 1;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Remove wildcard item
+        /// </summary>
+        /// <param name="key"></param>
+        public virtual bool Remove(KeyItemW key)
+        {
+            key.AutoRefresh = false;
+
+            foreach (KeyItem k in key.Children)
+                Remove(k);
+
+            key.Children.CollectionChanged -= Key_Children_CollectionChanged;
+
+            return _wCache.Remove(key.StaticPath);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        public virtual bool Remove(IKeyItem key)
+        {
+            if (key is KeyItem)
+                return Remove((KeyItem)key);
+            else if (key is KeyItemW)
+                return Remove((KeyItemW)key);
+
+            return false;
+        }
+
+        /// <summary>
         /// Add a key to this control. So that data is loaded for this key.
         /// </summary>
         /// <param name="key">The key to load</param>
@@ -1076,7 +1294,7 @@ namespace PSMViewer.Visualizations
                         if (changed)
                         {
 
-                            KeyItem k = KeyItem.CreateFromPath(String.Join(".", path));
+                            KeyItem k = KeyItem.Create(String.Join(".", path));
                             key.CopyTo(k);
                             key = k;
 
@@ -1120,20 +1338,19 @@ namespace PSMViewer.Visualizations
         /// Removes the key, so that it will no longer be associated with this control.
         /// </summary>
         /// <param name="key">The KeyItem to remove.</param>
-        public virtual void Remove(KeyItem key)
+        public virtual bool Remove(KeyItem key)
         {
-
-            key.Children.CollectionChanged -= Key_Children_CollectionChanged;
-
-            foreach(MultiControl m in (from s in Controls.ToArray() where s.Key == key || (s.Key.Parent != null && s.Key.Parent == key) select s))
+            
+            foreach (MultiControl m in (from s in Controls.ToArray() where s.Key == key || (s.Key.Parent != null && s.Key.Parent == key) select s))
             {
                 Controls.Remove(m);
                 m.Dispose();
             }
-            
+
             if (RefreshOperation == null)
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
+            return true;
         }
 
 
@@ -1145,6 +1362,9 @@ namespace PSMViewer.Visualizations
         protected void Key_Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
 
+            Dispatcher.InvokeAsync(this.Refresh);
+            this.OnReload(this);           
+
             foreach (MultiControl m in (from s in _controls select s))
             {
                 if (e.OldItems != null && (from KeyItem k in e.OldItems where k.Path == m.Key.Path select k).ElementAtOrDefault(0) == null)
@@ -1155,7 +1375,8 @@ namespace PSMViewer.Visualizations
 
             foreach (KeyItem k in e.NewItems)
             {
-                
+                Defaults.Keys.CopyTo(k);
+
                 if (k.Type != null && (from s in _controls where s.Key.Path == k.Path select s).ElementAtOrDefault(0) == null)
                     Add(k);
 

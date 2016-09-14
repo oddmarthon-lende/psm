@@ -88,14 +88,14 @@ namespace PSMViewer.Visualizations
 
         private PieSeries _series = new PieSeries();
 
-        public override void Remove(KeyItem key)
+        public override bool Remove(KeyItem key)
         {
-            base.Remove(key);
-
             if(!Model.Series.Contains(_series))
                 Model.Series.Add(_series);
 
             Model.InvalidatePlot(true);
+
+            return base.Remove(key);
         }
 
         protected override Series CreateInstance(MultiControl control)

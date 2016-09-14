@@ -13,6 +13,109 @@
         mc:Ignorable="d"
         Title="Edit Keys" Height="600" Width="800" x:Name="_window">
 
+    <Window.Resources>
+        
+        <DataTemplate x:Key="KeyItemTemplate">
+            <GroupBox Header="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="100*" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Height="20" Width="20"  Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Click="Remove_Button_Click" DataContext="{Binding}" IsEnabled="{Binding CanDelete, ElementName=_window}">
+                        <Image Source="..\icons\delete.png" />
+                    </Button>
+
+
+                    <StackPanel Grid.Column="1" Orientation="Vertical"  Margin="5" HorizontalAlignment="Stretch">
+
+                        <GroupBox Header="Path" Margin="5" HorizontalAlignment="Stretch">
+
+                            <ItemsControl ItemsSource="{Binding Components}" >
+
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Padding="2" Text="{Binding Name, Mode=OneWay}" Foreground="{Binding Foreground, UpdateSourceTrigger=PropertyChanged}" Background="{Binding Background, UpdateSourceTrigger=PropertyChanged}" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown" />
+                                            <TextBlock Text="."  VerticalAlignment="Bottom" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                        </GroupBox>
+
+                        <GroupBox Header="Title behaviour" Margin="5" HorizontalAlignment="Stretch" >
+
+                            <GroupBox.Resources>
+                                <ObjectDataProvider x:Key="KeyItemTitleMode" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+                                    <ObjectDataProvider.MethodParameters>
+                                        <x:Type TypeName="m:KeyItemTitleMode"/>
+                                    </ObjectDataProvider.MethodParameters>
+                                </ObjectDataProvider>
+                            </GroupBox.Resources>
+
+                            <StackPanel Orientation="Horizontal">
+                                <Label>Mode :</Label>
+                                <ComboBox Width="100" ItemsSource="{Binding Source={StaticResource KeyItemTitleMode}}" SelectedValue="{Binding Key.Title.Mode}" />
+                                <Label>Alias :</Label>
+                                <TextBox Width="100" Text="{Binding Key.Title.Alias, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+
+                        </GroupBox>
+
+                        <GroupBox Header="Value Conversion" HorizontalAlignment="Stretch">
+
+                            <StackPanel Orientation="Vertical">
+
+                                <StackPanel Orientation="Horizontal">
+
+                                    <StackPanel.Resources>
+                                        <ObjectDataProvider x:Key="KeyValueConversionMode" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
+                                            <ObjectDataProvider.MethodParameters>
+                                                <x:Type TypeName="s:KeyValueConversionMode"/>
+                                            </ObjectDataProvider.MethodParameters>
+                                        </ObjectDataProvider>
+
+                                    </StackPanel.Resources>
+                                    <Label>Mode :</Label>
+                                    <ComboBox ItemsSource="{Binding Source={StaticResource KeyValueConversionMode}}" SelectedValue="{Binding Key.Conversion.Mode, Mode=TwoWay, UpdateSourceTrigger=Default}" />
+                                    <Label>Value :</Label>
+                                    <t:DoubleUpDown Width="100" Value="{Binding Key.Conversion.Value, Mode=TwoWay, UpdateSourceTrigger=Default}" />
+                                </StackPanel>
+
+                            </StackPanel>
+
+
+                        </GroupBox>
+
+                        <GroupBox Header="Color" HorizontalAlignment="Stretch">
+                            <t:ColorPicker SelectedColor="{Binding Key.Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ColorMode="ColorCanvas"/>
+                        </GroupBox>
+
+                    </StackPanel>
+
+                    <Button Grid.Column="2" ToolTip="Copy To All"  Height="20" Width="20"  Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Click="CopyToAll_Button_Click" DataContext="{Binding}" >
+                        <Image Source="..\icons\style_go.png" />
+                    </Button>
+
+                </Grid>
+
+            </GroupBox>
+        </DataTemplate>
+        
+    </Window.Resources>
+
     <Grid>
 
         <Grid.ColumnDefinitions>
@@ -51,114 +154,14 @@
 
             <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" ScrollViewer.CanContentScroll="True">
 
-                <ItemsControl ItemsSource="{Binding Items}" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Stretch"  DataContext="{Binding ElementName=_window}" >
+                <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource KeyItemTemplate}" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Stretch"  DataContext="{Binding ElementName=_window}" >
 
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <UniformGrid Columns="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
-
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <GroupBox Header="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch">
-
-                                <Grid>
-
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="auto" />
-                                        <ColumnDefinition Width="100*" />
-                                        <ColumnDefinition Width="auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <Button Grid.Column="0" Height="20" Width="20"  Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Click="Remove_Button_Click" DataContext="{Binding}" IsEnabled="{Binding CanDelete, ElementName=_window}">
-                                        <Image Source="..\icons\delete.png" />
-                                    </Button>
-
-
-                                    <StackPanel Grid.Column="1" Orientation="Vertical"  Margin="5" HorizontalAlignment="Stretch">
-
-                                        <GroupBox Header="Path" Margin="5" HorizontalAlignment="Stretch">
-
-                                            <ItemsControl ItemsSource="{Binding Components}" >
-
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <StackPanel Orientation="Horizontal" />
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Padding="2" Text="{Binding Name, Mode=OneWay}" Foreground="{Binding Foreground, UpdateSourceTrigger=PropertyChanged}" Background="{Binding Background, UpdateSourceTrigger=PropertyChanged}" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown" />
-                                                            <TextBlock Text="."  VerticalAlignment="Bottom" />
-                                                        </StackPanel>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-
-                                        </GroupBox>
-
-                                        <GroupBox Header="Title behaviour" Margin="5" HorizontalAlignment="Stretch" >
-
-                                            <GroupBox.Resources>
-                                                <ObjectDataProvider x:Key="KeyItemTitleMode" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
-                                                    <ObjectDataProvider.MethodParameters>
-                                                        <x:Type TypeName="m:KeyItemTitleMode"/>
-                                                    </ObjectDataProvider.MethodParameters>
-                                                </ObjectDataProvider>
-                                            </GroupBox.Resources>
-
-                                            <StackPanel Orientation="Horizontal">
-                                                <Label>Mode :</Label>
-                                                <ComboBox Width="100" ItemsSource="{Binding Source={StaticResource KeyItemTitleMode}}" SelectedValue="{Binding Key.Title.Mode}" />
-                                                <Label>Alias :</Label>
-                                                <TextBox Width="100" Text="{Binding Key.Title.Alias, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                            </StackPanel>
-
-                                        </GroupBox>
-
-                                        <GroupBox Header="Value Conversion" HorizontalAlignment="Stretch">
-
-                                            <StackPanel Orientation="Vertical">
-
-                                                <StackPanel Orientation="Horizontal">
-
-                                                    <StackPanel.Resources>
-                                                        <ObjectDataProvider x:Key="KeyValueConversionMode" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
-                                                            <ObjectDataProvider.MethodParameters>
-                                                                <x:Type TypeName="s:KeyValueConversionMode"/>
-                                                            </ObjectDataProvider.MethodParameters>
-                                                        </ObjectDataProvider>
-
-                                                    </StackPanel.Resources>
-                                                    <Label>Mode :</Label>
-                                                    <ComboBox ItemsSource="{Binding Source={StaticResource KeyValueConversionMode}}" SelectedValue="{Binding Key.Conversion.Mode, Mode=TwoWay, UpdateSourceTrigger=Default}" />
-                                                    <Label>Value :</Label>
-                                                    <t:DoubleUpDown Width="100" Value="{Binding Key.Conversion.Value, Mode=TwoWay, UpdateSourceTrigger=Default}" />
-                                                </StackPanel>
-
-                                            </StackPanel>
-
-
-                                        </GroupBox>
-
-                                        <GroupBox Header="Color" HorizontalAlignment="Stretch">
-                                            <t:ColorPicker SelectedColor="{Binding Key.Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ColorMode="ColorCanvas"/>
-                                        </GroupBox>
-
-                                    </StackPanel>
-
-                                    <Button Grid.Column="2" ToolTip="Copy To All"  Height="20" Width="20"  Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Click="CopyToAll_Button_Click" DataContext="{Binding}" >
-                                        <Image Source="..\icons\style_go.png" />
-                                    </Button>
-                                    
-                                </Grid>
-
-                            </GroupBox>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
+                    
                 </ItemsControl>
 
             </StackPanel>

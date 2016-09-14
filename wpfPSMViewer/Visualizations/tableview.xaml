@@ -13,7 +13,7 @@
             <c:TextHighlightColorConverter x:Key="ColorConverter" Parent="{x:Reference _vc}" />
         </Grid.Resources>
         
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
             <ItemsControl ItemsSource="{Binding Columns, UpdateSourceTrigger=PropertyChanged}" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True">
 
             <ItemsControl.ItemsPanel>

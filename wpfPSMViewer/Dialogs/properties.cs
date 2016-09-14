@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 /// <copyright file="properties.xaml.cs" company="Baker Hughes Incorporated">
 /// Copyright (c) 2015 All Rights Reserved
 /// </copyright>
@@ -8,9 +9,12 @@ using System.ComponentModel;
 /// <summary>Code behind for the Properties Window</summary>
 /// 
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 
@@ -46,6 +50,9 @@ namespace PSMViewer
             }
 
         }
+        
+        private ImageSource _icon = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("PSMViewer.Icons.application_form_edit.png"));
+
 
         /// <summary>
         /// A constructor that takes an <see cref="IPropertyProvider"/> as an argument
@@ -60,6 +67,7 @@ namespace PSMViewer
         /// <param name="definitions">The properties that will be visible to the user.</param>
         public PropertiesWindow(object selectedObject, PropertyDefinition[] definitions = null)
         {
+            Icon = _icon;
 
             if (Created != null)
                 Created(this);
@@ -103,6 +111,8 @@ namespace PSMViewer
 
         public PropertiesWindow(params object[] selectedObjects)
         {
+
+            Icon = _icon;
 
             if (Created != null)
                 Created(this);

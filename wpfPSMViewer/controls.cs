@@ -734,11 +734,17 @@ namespace PSMViewer.ViewModels
             
             Status = ReloadStatus.Loading;
 
-            t = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
-            
-            while (!_threads.TryAdd(this, t));
+            Dispatcher.InvokeAsync(delegate
+            {
 
-            t.Start(this);
+                while (_threads.Count > 50) ;
+
+                t = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
+
+                while (!_threads.TryAdd(this, t)) ;
+
+                t.Start(this);
+            });
 
 
         }
