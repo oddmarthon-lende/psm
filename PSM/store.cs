@@ -223,12 +223,8 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Delete(string)"/>
         /// </summary>
-        public abstract long Delete(string path);
+        public abstract void Delete(string path);
 
-        /// <summary>
-        /// <see cref="IStore.Delete(string, object, object, Enum)"/>
-        /// </summary>
-        public abstract long Delete(string path, object start, object end, Enum index);
                 
         /// <summary>
         /// <see cref="IStore.Read(string, object, object, Enum)"/>

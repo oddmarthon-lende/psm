@@ -127,7 +127,7 @@ namespace PSMonitor.Stores
             /// </summary>
             /// <param name="path"></param>
             /// <returns></returns>
-            public static ParameterizedPath Extract(string path)
+            public static new ParameterizedPath Extract(string path)
             {
                 return new ParameterizedPath(Path.Extract(path));
             }
@@ -320,15 +320,7 @@ namespace PSMonitor.Stores
         /// <summary>
         /// This method has been disabled in this implementation of the <see cref="IStore"/> interface
         /// </summary>
-        public override long Delete(string path)
-        {
-            throw new InvalidOperationException("Deletion of data in the Advantage Database is disabled.");
-        }
-
-        /// <summary>
-        /// This method has been disabled in this implementation of the <see cref="IStore"/> interface
-        /// </summary>
-        public override long Delete(string path, object start, object end, Enum index)
+        public override void Delete(string path)
         {
             throw new InvalidOperationException("Deletion of data in the Advantage Database is disabled.");
         }

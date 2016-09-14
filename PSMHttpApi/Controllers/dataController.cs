@@ -102,30 +102,25 @@ namespace PSMonitor.Controllers
 
         /// <summary>
         /// <see cref="IStore.Delete(string)"/>
-        /// /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
+        /// /// <see cref="IStore.Delete(string)"/>
         /// </summary>
         /// <param name="path">The data path</param>
         /// <param name="start">The start index as a unix timestamp or null</param>
         /// <param name="end">The end index as a unix timestamp or null</param>
         /// <returns>Success/Error http result</returns>
         [HttpDelete]
-        public IHttpActionResult Delete(string path, long start, long end, string index)
+        public IHttpActionResult Delete(string path)
         {
 
-            long count = 0;
-            
-            Enum idx = (Enum)Enum.Parse(PSM.Store().Index, index);
-
-            try {
-
-                count = Store.Delete(path, start, end, idx, ActionContext);
+            try
+            {
+                Store.Delete(path, ActionContext);
+                return Ok();
             }
-            catch(Exception error)
+            catch (Exception error)
             {
                 return InternalServerError(error);
             }
-
-            return ResponseMessage(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Convert.ToString(count)) });
 
         }
     }

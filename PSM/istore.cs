@@ -83,17 +83,7 @@ namespace PSMonitor.Stores
         /// </summary>
         /// <param name="path">The key path</param>
         /// <returns>The number of deleted entries</returns>
-        long Delete(string path);
-
-        /// <summary>
-        /// Delete data within the specified <paramref name="start"/> and <paramref name="end"/> indexes.
-        /// </summary>
-        /// <param name="path">The key path</param>
-        /// <param name="start">The start index</param>
-        /// <param name="end">The end index</param>
-        /// <param name="index">The index identifier</param>
-        /// <returns>The number of deleted entries</returns>
-        long Delete(string path, object start, object end, Enum index);
+        void Delete(string path);
 
         /// <summary>
         /// Get a list of keys that is contained within the provided namespace

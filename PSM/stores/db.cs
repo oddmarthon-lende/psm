@@ -366,19 +366,12 @@ namespace PSMonitor.Stores
         /// The constructor
         /// </summary>
         public DB() : this(true) { }
+        
 
         /// <summary>
         /// <see cref="IStore.Delete(string)"/>
         /// </summary>
-        public override long Delete(string path)
-        {
-            return Delete(path, null, null, null);
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Delete(string, object, object, Enum)"/>
-        /// </summary>
-        public override long Delete(string path, object start, object end, Enum index)
+        public override void Delete(string path)
         {
 
             using (SqlConnection connection = CreateConnection())
@@ -386,49 +379,21 @@ namespace PSMonitor.Stores
 
                 VerifyConnection(connection);
 
-                Path p = Path.Extract(path);
-
                 using (SqlCommand command = connection.CreateCommand())
                 {
 
                     command.CommandType = CommandType.StoredProcedure;
-                    command.CommandText = "usp_delete";
-
-                    p.ToCommandParameters(command);
-
-                    command.Parameters.Add(new SqlParameter("@Start", SqlDbType.Variant)
+                    command.CommandText = "usp_delete_path";
+                    
+                    command.Parameters.Add(new SqlParameter("@Path", SqlDbType.VarChar)
                     {
 
                         Direction = ParameterDirection.Input,
-                        SqlValue = start
+                        SqlValue = path
 
                     });
 
-                    command.Parameters.Add(new SqlParameter("@End", SqlDbType.Variant)
-                    {
-
-                        Direction = ParameterDirection.Input,
-                        SqlValue = end
-
-                    });
-
-                    command.Parameters.Add(new SqlParameter("@Span", SqlDbType.BigInt)
-                    {
-
-                        Direction = ParameterDirection.Input,
-                        SqlValue = null
-
-                    });
-
-                    command.Parameters.Add(new SqlParameter("@IndexColumn", SqlDbType.VarChar)
-                    {
-
-                        Direction = ParameterDirection.Input,
-                        SqlValue = index.ToString()
-
-                    });
-
-                    return command.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
                 }
 
             }

@@ -186,41 +186,20 @@ namespace PSMonitor.Stores
             }
         }
 
-        /// <summary>
-        /// <see cref="IStore.Delete(string)"/>
-        /// </summary>
-        public override long Delete(string path)
-        {
-            return Delete_(path, null, null, null);
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Delete(string, DateTime, DateTime, Enum)"/>
-        /// </summary>
-        public override long Delete(string path, object start, object end, Enum index)
-        {
-            return Delete_(path, start, end, index);
-        }
-
+        
         /// <summary>
         /// Can handle both methods above with null values.
         /// <see cref="Delete(string)"/>
-        /// <see cref="Delete(string, DateTime, DateTime)"/>
         /// </summary>
-        private long Delete_(string path, object start, object end, Enum index)
+        public override void  Delete(string path)
         {
-
-            long result = 0;
-
+            
             using (HttpClient client = CreateClient())
             {
 
-                
-                string uri = HttpUtility.UrlEncode(start != null && end != null && index != null ?
-                    String.Format("/data/{0}/{1}/{2}/{3}", path, (start is DateTime ? ToUnixTimestamp((DateTime)start) * 1000 : start), (end is DateTime ? ToUnixTimestamp((DateTime)end) * 1000 : end), index.GetType().FullName) :
-                    String.Format("/data/{0}/", path));
-                
-                client.DeleteAsync(uri).ContinueWith(async task =>
+                string uri = HttpUtility.UrlEncode(String.Format("/delete/{0}", path));
+
+                client.DeleteAsync(uri).ContinueWith(task =>
                 {
 
                     if (task.Status != TaskStatus.RanToCompletion)
@@ -238,15 +217,13 @@ namespace PSMonitor.Stores
                         using (HttpResponseMessage response = task.Result)
                         {
                             response.EnsureSuccessStatusCode();
-                            result = Convert.ToInt64(await response.Content.ReadAsStringAsync());
-                        }                            
+
+                        }
                     }
 
                 }).Wait();
 
             }
-
-            return result;
         }
 
         /// <summary>

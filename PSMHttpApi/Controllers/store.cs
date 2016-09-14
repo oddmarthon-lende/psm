@@ -196,23 +196,10 @@ namespace PSMonitor.Controllers
         /// <param name="path">The data path</param>
         /// <param name="context">The currently executing HTTP action context</param>
         /// <returns><see cref="IStore.Delete(string)"/></returns>
-        public static long Delete(string path, HttpActionContext context)
+        public static void Delete(string path, HttpActionContext context)
         {
             Unregister(GetConnectionId(context));
-            return PSM.Store().Delete(path);
-        }
-
-        /// <summary>
-        /// <see cref="IStore.Delete(string, DateTime, DateTime)"/>
-        /// </summary>
-        /// <param name="path">The data path</param>
-        /// <param name="start">The start time index</param>
-        /// <param name="end">The end time index</param>
-        /// <param name="context">The currently executing HTTP action context</param>
-        /// <returns><see cref="IStore.Delete(string, DateTime, DateTime)"/></returns>
-        public static long Delete(string path, object start, object end, Enum index, HttpActionContext context)
-        {
-            return PSM.Store().Delete(path, start, end, index);
+            PSM.Store().Delete(path);
         }
         
         /// <summary>

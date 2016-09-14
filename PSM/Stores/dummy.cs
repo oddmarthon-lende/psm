@@ -30,12 +30,7 @@ namespace PSMonitor.Stores
             }
         }
 
-        public override long Delete(string path)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override long Delete(string path, object start, object end, Enum index)
+        public override void Delete(string path)
         {
             throw new NotImplementedException();
         }

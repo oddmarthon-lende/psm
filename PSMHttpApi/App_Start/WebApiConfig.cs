@@ -23,7 +23,12 @@ namespace PSMonitor
             // Web API routes
             config.MapHttpAttributeRoutes();
             
-            config.Routes.MapHttpRoute("DataApi", "{controller}/{path}/{start}/{end}/{index}");
+            config.Routes.MapHttpRoute("DataApi", "{controller}/{path}/{start}/{end}/{index}", new
+            {
+                start = RouteParameter.Optional,
+                end = RouteParameter.Optional,
+                type = RouteParameter.Optional
+            });
 
             config.Routes.MapHttpRoute("KeysApi", "{controller}/{path}");
 

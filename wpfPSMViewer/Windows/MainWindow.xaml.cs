@@ -404,7 +404,7 @@ namespace PSMViewer
         {
 
             RelayCommand cmd = (RelayCommand)sender;
-            KeyItem key = (KeyItem)treeView.SelectedValue;
+            KeyItem key = treeView.Key;
             Window window = null;
 
             switch ((CommandType)cmd.Arguments[0].Value)
@@ -416,7 +416,10 @@ namespace PSMViewer
 
                     try
                     {
-                        PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Delete(key.Path);
+                        if(MessageBox.Show(String.Format("Do you want to delete the key:\n {0}", key.Path), "Delete", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                            if (MessageBox.Show("Are you sure?\nThis will delete all sub keys and data.", "Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                                PSMonitor.PSM.Store(Dispatcher.CurrentDispatcher).Delete(key.Path);
+
                         Commands["RefreshTree"].Execute(null);
                     }
                     catch(Exception e) {
