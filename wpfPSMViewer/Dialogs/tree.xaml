@@ -63,13 +63,13 @@
                             <ColumnDefinition Width="45*"/>
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel Orientation="Horizontal" Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center">
                             <StackPanel.Resources>
                                 
                                 <c:TreeIconConverter x:Key="iconConverter"/>
 
-                                <Style TargetType="{x:Type Image}">
-                                    <Setter Property="Source">
+                                <Style TargetType="{x:Type ContentControl}">
+                                    <Setter Property="Content">
                                         <Setter.Value>
                                             <MultiBinding Converter="{StaticResource iconConverter}">
                                                 <Binding RelativeSource="{RelativeSource AncestorType=TreeViewItem}" />
@@ -80,13 +80,13 @@
                                 </Style>
 
                             </StackPanel.Resources>
-                            <Image Margin="0,0,5,0" />
-                            <TextBlock Text="{Binding Name, Mode=OneWay}" ToolTip="{Binding Path}" />
+                            <ContentControl Margin="0,5,5,0" />
+                            <TextBlock Text="{Binding Name, Mode=OneWay}" ToolTip="{Binding Path}" Margin="0,5,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextIconColor}"/>
                         </StackPanel>
                         
                         <TextBlock Text=" " Grid.Column="1"/>
 
-                        <TextBlock Text="{Binding Type.Name, Mode=OneWay}" Grid.Column="2" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Type.Name, Mode=OneWay}" Grid.Column="2" FontWeight="Bold" VerticalAlignment="Center" Margin="0,5,0,0" Foreground="{StaticResource TextIconColor}"/>
 
                     </Grid>
                 </StackPanel>

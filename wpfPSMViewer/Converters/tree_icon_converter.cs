@@ -46,27 +46,22 @@ namespace PSMViewer.Converters
 
             if(value[0] is TreeViewItem)
             {
-
-                string path = "PSMViewer.Icons.{0}.png";
-                string fn = "bullet_key";
+                
+                object res = null;
 
                 TreeViewItem item = (TreeViewItem)value[0];
-                Image img = (Image)value[1];
+                ContentControl ctrl = (ContentControl)value[1];
                 KeyItem key = (KeyItem)item.DataContext;
 
                 if (key.Type == null)
                 {
-
-                    fn = !item.IsExpanded ? "folder" : "folder_key";
+                    
+                    res = !item.IsExpanded ? App.Current.TryFindResource("FolderClosedIcon") : App.Current.TryFindResource("FolderOpenIcon");
 
                     RoutedEventHandler handler = new RoutedEventHandler((sender, e) => {
 
-                        fn = !item.IsExpanded ? "folder" : "folder_key";
-
-                        using (Stream str = _assembly.GetManifestResourceStream(String.Format(path, fn)))
-                        {
-                            img.Source = BitmapFrame.Create(str);
-                        }
+                        res = !item.IsExpanded ? App.Current.TryFindResource("FolderClosedIcon") : App.Current.TryFindResource("FolderOpenIcon");
+                        ctrl.Content = res;
 
                     });
 
@@ -75,10 +70,8 @@ namespace PSMViewer.Converters
                     
                 }
 
-                using (Stream str = _assembly.GetManifestResourceStream(String.Format(path, fn)))
-                {
-                    return BitmapFrame.Create(str);
-                }
+                return res;
+
             }
             return null;
         }

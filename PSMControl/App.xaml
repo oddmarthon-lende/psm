@@ -4,6 +4,13 @@
              xmlns:local="clr-namespace:PSMControl"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/PSMonitor.Theme;component/Resources/blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/PSMonitor.Theme;component/Resources/icons.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
          
     </Application.Resources>
 </Application>

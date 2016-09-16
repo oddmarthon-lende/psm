@@ -302,11 +302,11 @@ namespace PSMViewer.Models
 
                 Variable variable;
 
-                foreach(Match match in Regex.Matches(path, @"\{.+?\}"))
+                foreach(Match match in Regex.Matches(path, @"\$.+?\b"))
                 {
                                            
                     string parent = match.Index > 0 ? path.Substring(0, match.Index - 1) : null;
-                    string name = match.Value.TrimStart('{').TrimEnd('}');
+                    string name = match.Value.TrimStart('$').TrimEnd('.');
 
                     variable = new Variable();
 
@@ -327,7 +327,7 @@ namespace PSMViewer.Models
                     }
 
                     variable.Name = name;
-                    variable.Position = components.IndexOf(match.Value);
+                    variable.Position = components.IndexOf(match.Value.TrimEnd('.'));
                     variable.Parent = parent == null ? null : KeyItem.Create(parent);
 
                     variables.Add(variable);
@@ -499,7 +499,7 @@ namespace PSMViewer.Models
                 if(Variables != null)
                     foreach(Variable v in Variables)
                     {
-                        if ( (Parent != null ? Parent.Path.Split('.').Length : 0) == v.Position)
+                        if ( Parent == v.Parent )
                         {
                             return v.Value;
                         }
@@ -571,7 +571,7 @@ namespace PSMViewer.Models
                     {
                         if(i == v.Position)
                         {
-                            components[i] = '{' + v.Name + '}';
+                            components[i] = '$' + v.Name;
                         }
                     }
 

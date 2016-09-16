@@ -14,7 +14,7 @@ namespace PSMViewer
     /// <summary>
     /// Interaction logic for log.xaml
     /// </summary>
-    public partial class EventLogWindow : Window
+    public partial class EventLogWindow : PSMonitor.Theme.Window
     {
         /// <summary>
         /// Event log entry data structure

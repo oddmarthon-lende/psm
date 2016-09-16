@@ -737,7 +737,7 @@ namespace PSMViewer.ViewModels
             Dispatcher.InvokeAsync(delegate
             {
 
-                while (_threads.Count > 50) ;
+                while (_threads.Count > 500) ;
 
                 t = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
 

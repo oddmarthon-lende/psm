@@ -6,138 +6,20 @@
              xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
              xmlns:v="clr-namespace:PSMViewer.Visualizations"
              xmlns:c="clr-namespace:PSMViewer.Converters"
-             StartupUri="Windows\MainWindow.xaml">
+             StartupUri="Windows\splash.xaml">
     
     <Application.Resources>
 
-        <Style TargetType="{x:Type TextBlock}">
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-            <Setter Property="TextWrapping" Value="NoWrap" />
-        </Style>
+        <ResourceDictionary>
 
+            <ResourceDictionary.MergedDictionaries>                
+                <ResourceDictionary Source="pack://application:,,,/PSMonitor.Theme;component/Resources/blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/PSMonitor.Theme;component/Resources/icons.xaml" />
+                <ResourceDictionary Source="Resources/styles.xaml" />
+                <ResourceDictionary Source="Resources/visualizationcontroltemplate.xaml" />
+            </ResourceDictionary.MergedDictionaries>           
 
-        <c:ReloadStatusToCursorConverter x:Key="CursorConverter" />
-        <c:ReloadStatusToBooleanConverter x:Key="BooleanConverter" />
-
-        <Image Source="{Binding Icon}" x:Key="Icon" x:Shared="False" />
-
-        <Style TargetType="{x:Type MenuItem}" x:Key="ChartsMenuItemStyle">
-            <Setter Property="CommandParameter" Value="{Binding}" />
-            <Setter Property="Header" Value="{Binding DisplayName}" />
-            <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            <Setter Property="Icon" Value="{StaticResource Icon}"/>
-        </Style>
-
-        
-
-        <ControlTemplate x:Key="WindowTemplate" TargetType="{x:Type Window}">
-            
-            <ControlTemplate.Resources>
-                <Style TargetType="{x:Type ToolBar}">
-                    <Setter Property="Background" Value="Transparent" />
-                </Style>
-                <Style TargetType="{x:Type DockPanel}">
-                    <Setter Property="Background" Value="Transparent" />
-                </Style>
-                <Style TargetType="{x:Type ToolBarTray}">
-                    <Setter Property="Background" Value="Transparent" />
-                </Style>
-                <Style TargetType="{x:Type Menu}">
-                    <Setter Property="Background" Value="Transparent" />
-                </Style>
-                
-            </ControlTemplate.Resources>
-            
-            <Border BorderThickness="1" BorderBrush="{TemplateBinding Foreground}">
-                
-                <Grid Background="{TemplateBinding Background}">
-                    
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto" />
-                        <RowDefinition Height="100*" />
-                    </Grid.RowDefinitions>                    
-
-                    <ContentPresenter Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="0" Margin="0" />
-
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Panel.ZIndex="1" Opacity=".5" >
-
-                        <StackPanel.Resources>
-                            <Style TargetType="{x:Type Button}">
-                                <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="BorderBrush" Value="Transparent" />
-                                <Setter Property="BorderThickness" Value="0" />
-                            </Style>
-                        </StackPanel.Resources>
-                        <Button Margin="5">
-                            <Image Source="..\icons\minimize_window.png" Width="16" Height="16"  />
-                        </Button>
-                        <Button Margin="5" >
-                            <Image Source="..\icons\maximize_window.png" Width="16" Height="16" />
-                        </Button>
-                        <Button Margin="5" >
-                            <Image Source="..\icons\close.png" Width="16" Height="16"  />
-                        </Button>
-
-                    </StackPanel>
-
-                </Grid>
-            </Border>
-        </ControlTemplate>
-              
-        <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}" >
-            
-            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{TemplateBinding Background}">
-                
-                <Grid.ColumnDefinitions>                    
-                    <ColumnDefinition Width="100*" />                    
-                </Grid.ColumnDefinitions>
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto" />
-                    <RowDefinition Height="100*" />
-                </Grid.RowDefinitions>
-                
-                <StackPanel  Grid.Column="0" Grid.Row="0" Margin="{TemplateBinding Margin}" Orientation="Vertical" Visibility="{TemplateBinding TitleVisibility}">
-                    <TextBlock FontSize="{TemplateBinding TitleFontSize}" FontWeight="{TemplateBinding TitleFontWeight}"  Text="{TemplateBinding Title}" TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" />
-                    <TextBlock FontSize="{TemplateBinding SubTitleFontSize}" FontWeight="{TemplateBinding TitleFontWeight}" Text="{TemplateBinding SubTitle}" TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" />
-                </StackPanel>                
-
-                <ContentPresenter Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1" Margin="0" />
-
-                <Grid Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="2" >
-                    
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="32" />
-                        <ColumnDefinition Width="100*" />
-                        <ColumnDefinition Width="32" />
-                    </Grid.ColumnDefinitions>
-
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="32" />
-                        <RowDefinition Height="100*" />
-                        <RowDefinition Height="32" />
-                    </Grid.RowDefinitions>
-
-                    <Grid.Resources>
-
-                        <ControlTemplate x:Key="ButtonControlTemplate" TargetType="{x:Type Button}">
-                            <ContentPresenter />
-                        </ControlTemplate>
-
-                        <Style TargetType="{x:Type Button}">
-                            <Setter Property="Template" Value="{StaticResource ButtonControlTemplate}" />
-                            <Setter Property="Margin" Value="2.5" />
-                        </Style>
-                        
-                    </Grid.Resources>
-                    
-                </Grid>
-
-                <toolkit:BusyIndicator Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" IsBusy="{TemplateBinding Status, Converter={StaticResource BooleanConverter}}" Foreground="Black" FontFamily="Segoe UI" FontSize="12" Background="Transparent" Panel.ZIndex="50" />
-
-            </Grid>
-            
-        </ControlTemplate>
+        </ResourceDictionary>
 
     </Application.Resources>
     

@@ -26,15 +26,12 @@ using System.Threading;
 using System.Windows.Data;
 using PSMViewer.Utilities;
 using Xceed.Wpf.Toolkit.PropertyGrid;
-using PSMonitor.Stores;
-using PSMViewer.Editors;
-using System.Windows.Media.Imaging;
-using PSMonitor;
+using System.Windows.Media;
 
 namespace PSMViewer
 {
 
-    public sealed partial class MainWindow : Window, INotifyPropertyChanged, IReload
+    public partial class MainWindow : PSMonitor.Theme.Window, INotifyPropertyChanged, IReload
     {
         
         
@@ -253,7 +250,6 @@ namespace PSMViewer
             Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             NameScope.SetNameScope(treeContextMenu, NameScope.GetNameScope(this));
 
-            Loaded += (sender, e) => this.OnReload(this);
             Closing += (sender, e) => Commands["Exit"].Execute(null);
             _windows.CollectionChanged += (sender, e) => OnPropertyChanged("Windows");
 
@@ -450,7 +446,9 @@ namespace PSMViewer
 
                 case CommandType.OPEN_VISUALIZATION_PROPERTIES:
 
-                    _graph.Commands["Properties"].Execute(null);
+                    if(_graph != null)
+                        _graph.Commands["Properties"].Execute(null);
+
                     break;
 
                 case CommandType.EVENT_LOG:
@@ -648,7 +646,8 @@ namespace PSMViewer
         /// </summary>
         public void Reload()
         {
-                        
+
+                                                
             if (!UserStore.DirectoryExists("windows"))
                 UserStore.CreateDirectory("windows");
 
@@ -728,6 +727,7 @@ namespace PSMViewer
                 using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"graph.xaml", FileMode.Open, FileAccess.Read))
                 {
                     _graph = ((VisualizationControl)XamlReader.Load(stream));
+                    _graph.Owner = this;
                 }
 
             }
@@ -747,7 +747,8 @@ namespace PSMViewer
             
             MainWindow mainWindow = (MainWindow)App.Current.MainWindow;
             Dispatcher d = mainWindow.Dispatcher;
-                        
+            VisualizationWindow w = null;
+              
             using (StreamReader reader = new StreamReader(stream))
             {
 
@@ -755,30 +756,24 @@ namespace PSMViewer
 
                         try {
 
-                            VisualizationWindow w = (VisualizationWindow)XamlReader.Parse((string)s);
+                            w = (VisualizationWindow)XamlReader.Parse((string)s);
                             Guid Id = w.Id;
 
-                            Thread.CurrentThread.Name = String.Format("{0} [{1}]", w.GetType().Name, Id);
+                            Thread.CurrentThread.Name = String.Format("{0} [{1}]", w.GetType().Name, Id);                            
 
-                            d.InvokeAsync(delegate
+                            if ((new List<Window>(mainWindow._windows)).Find((v) => { return ((VisualizationWindow)v).Id == Id; }) != null)
                             {
-
-                                if ((new List<Window>(mainWindow._windows)).Find((v) => { return ((VisualizationWindow)v).Id == Id; }) != null)
+                                w.Dispatcher.Invoke(delegate
                                 {
-                                    w.Dispatcher.Invoke(delegate
-                                    {
-                                        w.Id = Guid.NewGuid();
-                                    });
+                                    w.Id = Guid.NewGuid();
+                                });
 
-                                    MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
-                                }
+                                MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
+                            }
 
-                                mainWindow.OnReload(w);
-                                mainWindow._windows.Add(w);
+                            mainWindow._windows.Add(w);
 
-                            });
-
-                        }
+                    }
                         catch(Exception e)
                         {
                             e.Show();
@@ -791,7 +786,8 @@ namespace PSMViewer
 
                 thread.SetApartmentState(ApartmentState.STA);
                 thread.Start(reader.ReadToEnd());
-                    
+
+                while (w == null);               
 
             }
             
@@ -843,6 +839,8 @@ namespace PSMViewer
             if (ChartType != null && key != null && key.Type != null)
             {
 
+                
+
                 if (_graph != null && !_graph.GetType().Equals(ChartType))
                 {
                     _graph.Dispose();
@@ -850,6 +848,8 @@ namespace PSMViewer
                 }
 
                 _graph = _graph ?? (VisualizationControl)ChartType.New();
+
+                _graph.Defaults.Keys.Brush = (SolidColorBrush)App.Current.FindResource("TextIconColor");
 
                 visualizationGrid.Children.Clear();
 
@@ -868,13 +868,13 @@ namespace PSMViewer
 
                     _graph.Add(key, context.Entries);
                     
-                    string icon = (string)_graph.GetType().GetTypeInfo().GetCustomAttribute<IconAttribute>();
+                    //string icon = (string)_graph.GetType().GetTypeInfo().GetCustomAttribute<IconAttribute>();
                     
-                    if(icon != null || icon.Length >= 0)                    
-                        using (Stream stream = Application.GetResourceStream(new Uri(icon, UriKind.Relative)).Stream)
-                        {
-                            chartPropertiesButtonImage.Source = BitmapFrame.Create(stream);
-                        }
+                    //if(icon != null || icon.Length >= 0)                    
+                    //    using (Stream stream = Application.GetResourceStream(new Uri(icon, UriKind.Relative)).Stream)
+                    //    {
+                    //        chartPropertiesButtonImage.Source = BitmapFrame.Create(stream);
+                    //    }
 
                 }
             }

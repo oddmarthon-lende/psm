@@ -104,6 +104,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\PSMonitor.Theme\PSMonitor.Theme.csproj">
+      <Project>{b27ab5b8-65c5-437b-b835-4cb3409c0623}</Project>
+      <Name>PSMonitor.Theme</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PSM\PSM.csproj">
       <Project>{ef9840d4-db9f-416b-938b-3dcce9c70516}</Project>
       <Name>PSM</Name>

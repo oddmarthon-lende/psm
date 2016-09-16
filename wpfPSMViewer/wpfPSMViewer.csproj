@@ -56,22 +56,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="SciChart.Charting, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Charting.dll</HintPath>
-    </Reference>
-    <Reference Include="SciChart.Core, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="SciChart.Data, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="SciChart.Drawing.DirectX, Version=4.1.1.8645, Culture=neutral, PublicKeyToken=b55dd9efe817e823, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files (x86)\SciChart Ltd\SciChart SDK\Lib\net46\SciChart.Drawing.DirectX.dll</HintPath>
-    </Reference>
+    <Reference Include="PresentationFramework.Aero" />
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
@@ -119,6 +104,7 @@
     <Compile Include="propertywrapper.cs" />
     <Compile Include="settings.cs" />
     <Compile Include="Utilities\bindingwrapper.cs" />
+    <None Include="app.config" />
     <None Include="Visualizations\experiments\gauge.cs" />
     <None Include="Visualizations\experiments\dots.xaml.cs">
       <DependentUpon>dots.xaml</DependentUpon>
@@ -129,7 +115,7 @@
     <Compile Include="Visualizations\keyvalue_list.xaml.cs">
       <DependentUpon>keyvalue_list.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\experiments\replicator.cs" />
+    <None Include="Visualizations\experiments\replicator.cs" />
     <Compile Include="Utilities\tracker.cs" />
     <Compile Include="Dialogs\tree.xaml.cs">
       <DependentUpon>tree.xaml</DependentUpon>
@@ -156,9 +142,9 @@
       <DependentUpon>vtkLine.xaml</DependentUpon>
     </None>
     <None Include="Visualizations\experiments\sciChartBase.cs" />
-    <Compile Include="Visualizations\experiments\pie.xaml.cs">
+    <None Include="Visualizations\experiments\pie.xaml.cs">
       <DependentUpon>pie.xaml</DependentUpon>
-    </Compile>
+    </None>
     <None Include="Visualizations\experiments\column.xaml.cs">
       <DependentUpon>column.xaml</DependentUpon>
     </None>
@@ -176,7 +162,7 @@
     <None Include="Visualizations\experiments\glGauge.cs">
       <Generator>MSBuild:Compile</Generator>
     </None>
-    <Compile Include="Visualizations\experiments\glBase.cs" />
+    <None Include="Visualizations\experiments\glBase.cs" />
     <None Include="Visualizations\experiments\line_scichart.xaml.cs">
       <DependentUpon>line_scichart.xaml</DependentUpon>
     </None>
@@ -198,6 +184,9 @@
     <Compile Include="windowstate.cs" />
     <Compile Include="Windows\log.xaml.cs">
       <DependentUpon>log.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\splash.xaml.cs">
+      <DependentUpon>splash.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\visualizationwindow.xaml.cs">
       <DependentUpon>visualizationwindow.xaml</DependentUpon>
@@ -241,9 +230,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </None>
-    <Page Include="Visualizations\experiments\pie.xaml">
+    <Page Include="Resources\styles.xaml">
+      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Resources\visualizationcontroltemplate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <None Include="Visualizations\experiments\pie.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
     <None Include="Visualizations\experiments\column.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -286,6 +283,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Windows\splash.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\visualizationwindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -321,7 +322,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="Design\projectGuides.guides" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
@@ -332,18 +332,6 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock.Themes.Aero\Xceed.Wpf.AvalonDock.Themes.Aero.csproj">
-      <Project>{ba72cce0-a9fb-4995-b496-7fec5c87b85b}</Project>
-      <Name>Xceed.Wpf.AvalonDock.Themes.Aero</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock.Themes.Metro\Xceed.Wpf.AvalonDock.Themes.Metro.csproj">
-      <Project>{89286eb4-b4a1-418c-839a-067b00f442d8}</Project>
-      <Name>Xceed.Wpf.AvalonDock.Themes.Metro</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock.Themes.VS2010\Xceed.Wpf.AvalonDock.Themes.VS2010.csproj">
-      <Project>{b3fc3e21-5f2d-4581-aea2-59f671cffc21}</Project>
-      <Name>Xceed.Wpf.AvalonDock.Themes.VS2010</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ExtendedWPFToolkitSolution\Src\Xceed.Wpf.AvalonDock\Xceed.Wpf.AvalonDock.csproj">
       <Project>{db81988f-e0f2-45a0-a1fd-8c37f3d35244}</Project>
       <Name>Xceed.Wpf.AvalonDock</Name>
@@ -364,21 +352,13 @@
       <Project>{7a0b35c0-dd17-4964-8e9a-44d6cecdc692}</Project>
       <Name>OxyPlot</Name>
     </ProjectReference>
+    <ProjectReference Include="..\PSMonitor.Theme\PSMonitor.Theme.csproj">
+      <Project>{b27ab5b8-65c5-437b-b835-4cb3409c0623}</Project>
+      <Name>PSMonitor.Theme</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PSM\PSM.csproj">
       <Project>{ef9840d4-db9f-416b-938b-3dcce9c70516}</Project>
       <Name>PSM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\sharpgl-master\source\SharpGL\Core\SharpGL.SceneGraph\SharpGL.SceneGraph.csproj">
-      <Project>{47bcaa39-edad-4404-b6bd-4742b0abb523}</Project>
-      <Name>SharpGL.SceneGraph</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\sharpgl-master\source\SharpGL\Core\SharpGL.WPF\SharpGL.WPF.csproj">
-      <Project>{53e67055-13d2-4467-bb57-79589afac2cd}</Project>
-      <Name>SharpGL.WPF</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\sharpgl-master\source\SharpGL\Core\SharpGL\SharpGL.csproj">
-      <Project>{5ef45533-e2c7-46f2-b4a3-b8f36cd406e0}</Project>
-      <Name>SharpGL</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -1388,9 +1368,6 @@
     <Resource Include="Icons\zoom_out.png" />
   </ItemGroup>
   <ItemGroup>
-    <SplashScreen Include="splash.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Images\left.png" />
     <Resource Include="Images\right.png" />
   </ItemGroup>
@@ -1406,6 +1383,7 @@
   <ItemGroup>
     <Resource Include="Icons\minimize_window.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /i /Y "$(SolutionDir)$(ProjectName)\$(OutDir)*" "$(SolutionDir)build\Program Files\$(SolutionName)\bin\"</PostBuildEvent>

@@ -1,9 +1,10 @@
-﻿<Window x:Class="PSMViewer.EventLogWindow"
+﻿<theme:Window x:Class="PSMViewer.EventLogWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PSMViewer"
+        xmlns:theme="clr-namespace:PSMonitor.Theme;assembly=PSMonitor.Theme"        
         mc:Ignorable="d"
         Title="Event Log" Height="300" Width="300" x:Name="window" Icon="../icons/exclamation.png">
     
@@ -13,24 +14,16 @@
             <RowDefinition Height="auto" />
             <RowDefinition Height="100*" />
         </Grid.RowDefinitions>
-        
-        <ToolBarTray Grid.Row="0">
 
-            <ToolBar>
+        <Menu>
 
-                <Menu>
+            <MenuItem Header="File" >
+                <MenuItem Header="Clear" Click="Clear" />
+            </MenuItem>
 
-                    <MenuItem Header="File" >
-                        <MenuItem Header="Clear" Click="Clear" />
-                    </MenuItem>
-
-                </Menu>
-
-            </ToolBar>
-
-        </ToolBarTray>
+        </Menu>
 
         <DataGrid Grid.Row="1" ItemsSource="{Binding Events, ElementName=window}" AutoGenerateColumns="True" />
 
     </Grid>
-</Window>
+</theme:Window>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Stretch="Uniform">
+  <Canvas Name="svg4284" Canvas.Left="0" Canvas.Top="0" Width="30" Height="30">
+    <Canvas.RenderTransform>
+      <TranslateTransform X="0" Y="0"/>
+    </Canvas.RenderTransform>
+    <Canvas.Resources/>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <Rectangle xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Canvas.Left="9" Canvas.Top="6" Width="1" Height="1" Name="rect4290" Fill="#000000"/>
+    <Rectangle xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Canvas.Left="7" Canvas.Top="6" Width="1" Height="1" Name="rect4292" Fill="#000000"/>
+    <Rectangle xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Canvas.Left="5" Canvas.Top="6" Width="1" Height="1" Name="rect4294" Fill="#000000"/>
+    <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path4296" Fill="#000000">
+      <Path.Data>
+        <PathGeometry Figures="M 27 16.51 C 27 12.34 27 8.17 27 4 19 4 11 4 3 4 c 0 7.333333 0 14.666667 0 22 4.2896667 0 8.579333 0 12.869 0 1.633781 3.260337 5.81512 4.862033 9.210098 3.544999 3.428159 -1.180044 5.589047 -5.074169 4.756936 -8.607686 C 29.467375 19.181613 28.43444 17.584223 27 16.51 Z M 4 5 c 7.333333 0 14.666667 0 22 0 0 1 0 2 0 3 C 18.666667 8 11.333333 8 4 8 4 7 4 6 4 5 Z M 4 25 C 4 19.666667 4 14.333333 4 9 c 7.333333 0 14.666667 0 22 0 0 2.289667 0 4.579333 0 6.869 -3.193181 -1.77983 -7.56493 -0.730019 -9.616531 2.288968 C 14.977341 20.104201 14.611229 22.745036 15.436 25 11.624 25 7.812 25 4 25 Z m 18.5 4 c -3.291243 0.07842 -6.304896 -2.713149 -6.481048 -5.999868 -0.331387 -3.279232 2.224812 -6.498357 5.491128 -6.925241 3.191529 -0.565198 6.543116 1.648069 7.285292 4.800608 0.861102 3.069185 -0.925046 6.565841 -3.911924 7.673658 C 24.126828 28.84814 23.313393 29.000662 22.5 29 Z" FillRule="NonZero"/>
+      </Path.Data>
+    </Path>
+    <Polygon xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Points="108,642 108,643 112,643 112,647 113,647 113,643 117,643 117,642 113,642 113,638 112,638 112,642 " Name="polygon4298" FillRule="NonZero" Fill="#000000">
+      <Polygon.RenderTransform>
+        <TranslateTransform X="-90" Y="-620"/>
+      </Polygon.RenderTransform>
+    </Polygon>
+  </Canvas>
+</Viewbox>

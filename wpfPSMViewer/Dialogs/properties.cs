@@ -32,7 +32,7 @@ namespace PSMViewer
     /// <summary>
     /// A simple properties window that display a property grid
     /// </summary>
-    public class PropertiesWindow : Window
+    public class PropertiesWindow : PSMonitor.Theme.Window
     {
 
         public static event System.Action<PropertiesWindow> Created;

@@ -361,7 +361,6 @@ namespace PSMViewer.Visualizations
                 case CommandType.EDIT_COL:
                 case CommandType.EDIT_ROWS:
                                         
-                    window.WindowStyle = WindowStyle.ToolWindow;
                     window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                     window.Owner = this.Owner;
                     window.Width = Math.Sqrt(this.Owner.Width * this.Owner.Height);

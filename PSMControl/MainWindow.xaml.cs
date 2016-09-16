@@ -16,7 +16,7 @@ namespace PSMControl
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : PSMonitor.Theme.Window
     {
 
         private TaskbarIcon _trayicon = new TaskbarIcon();
@@ -68,37 +68,38 @@ namespace PSMControl
 
                 try
                 {
-                    Dispatcher.Invoke(delegate {
 
-                        switch (type)
-                        {
-                            case EventLogEntryType.Error:
-                            case EventLogEntryType.Warning:
+                    if (IsVisible)
+                        Dispatcher.InvokeAsync(delegate {
 
-                                box = errorOutputBox;
-                                statusText.Text = type + " : " + message;
+                            switch (type)
+                            {
+                                case EventLogEntryType.Error:
+                                case EventLogEntryType.Warning:
+
+                                    box = errorOutputBox;
+                                    statusText.Text = type + " : " + message;
                                 
-                                break;
+                                    break;
 
-                            default:
+                                default:
 
-                                if (!IsVisible)
-                                    return;
+                                
 
-                                box = informationOutputBox;
+                                    box = informationOutputBox;
 
-                                break;
+                                    break;
 
-                        }
+                            }
 
-                        box.AppendText(DateTime.Now.ToString("o") + " : " + message + "\n");
+                            box.AppendText(DateTime.Now.ToString("o") + " : " + message + "\n");
 
-                        if (Mouse.LeftButton != MouseButtonState.Pressed && box.LineCount > 0)
-                            box.ScrollToLine(box.LineCount - 1);
+                            if (Mouse.LeftButton != MouseButtonState.Pressed && box.LineCount > 0)
+                                box.ScrollToLine(box.LineCount - 1);
 
-                    });
-                }
-                catch(System.Threading.ThreadInterruptedException) { }
+                        });
+                    }
+                    catch(System.Threading.ThreadInterruptedException) { }
                 
 
             };

@@ -1,0 +1,19 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style TargetType="{x:Type TextBlock}">
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+    </Style>
+
+    <Image Source="{Binding Icon}" x:Key="Icon" x:Shared="False" />
+
+    <Style TargetType="{x:Type MenuItem}" x:Key="ChartsMenuItemStyle">
+        <Setter Property="CommandParameter" Value="{Binding}" />
+        <Setter Property="Header" Value="{Binding DisplayName}" />
+        <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <Setter Property="Icon" Value="{StaticResource Icon}"/>
+        <Setter Property="Template" Value="{DynamicResource MenuItemControlTemplate}" />
+    </Style>
+
+</ResourceDictionary>

@@ -35,12 +35,7 @@ namespace PSMViewer
     /// A collection of <see cref="VisualizationControl"/>
     /// </summary>
     public class VisualizationControlList : ObservableCollection<VisualizationControl> { }
-
-    /// <summary>
-    /// Collection of <see cref="KeyItem.Variable"/>
-    /// </summary>
-    public class VariableDefinitionList : ObservableCollection<VariableDefinition> { }
-
+    
     /// <summary>
     /// A wrapper for <see cref="System.Windows.Controls.RowDefinition"/>.
     /// Used to hide all properties other the <see cref="System.Windows.Controls.RowDefinition.Height"/> for the user in the properties window.
@@ -121,88 +116,6 @@ namespace PSMViewer
     }
 
     /// <summary>
-    /// 
-    /// </summary>
-    public class VariableDefinition : INotifyPropertyChanged
-    {
-
-        private string _name;
-        /// <summary>
-        /// The variable name
-        /// </summary>
-        public string Name
-        {
-
-            get { return _name; }
-
-            set {
-
-                _name = value;
-                OnPropertyChanged();
-
-            }
-
-        }
-
-        private VariableDefinitionList _list;
-
-        private uint _position;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
-        /// </summary>
-        /// <param name="propertyName"></param>
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
-        }
-        
-        /// <summary>
-        /// The variable position
-        /// </summary>
-        public uint Position
-        {
-
-            get { return _position; }
-
-            set
-            {
-                _position = value;
-
-                while (HasPosition(_position))
-                    _position++;
-
-                OnPropertyChanged();
-            }
-        }
-
-        private bool HasPosition(uint pos) {
-
-            if(_list != null)
-                foreach (VariableDefinition def in _list)
-                    if (def.Position == pos)
-                        return true;
-
-            return false;
-
-        }
-
-        public VariableDefinition()
-        {
-
-        }
-
-        public VariableDefinition(VariableDefinitionList list)
-        {
-            _list = list;
-        }
-
-    }
-
-    /// <summary>
     /// An observable collection of <see cref="RowDefinition"/>'s
     /// </summary>
     public class RowDefinitionList        : ObservableCollection<RowDefinition> { }
@@ -215,7 +128,7 @@ namespace PSMViewer
     /// <summary>
     /// A window that can contain many <see cref="VisualizationControl"/>
     /// </summary>
-    public partial class VisualizationWindow : Window, IReload, INotifyPropertyChanged, IPropertyProvider, IDisposable
+    public partial class VisualizationWindow : PSMonitor.Theme.Window, IReload, INotifyPropertyChanged, IPropertyProvider, IDisposable
     {
         
         
@@ -278,24 +191,6 @@ namespace PSMViewer
                 _children.CollectionChanged += Children_CollectionChanged;
 
                 OnPropertyChanged("Children");
-            }
-        }
-
-        private VariableDefinitionList _variable_definitions;
-        /// <summary>
-        /// The variable definitions in the window
-        /// </summary>
-        public VariableDefinitionList VariableDefinitions
-        {
-            get {
-                return _variable_definitions;
-            }
-            set {
-
-                _variable_definitions = value;
-
-                if(_variable_definitions != null)
-                    _variable_definitions.CollectionChanged += Children_CollectionChanged;
             }
         }
         
@@ -488,15 +383,7 @@ namespace PSMViewer
                 if (vars == null)
                     return null;
 
-                return VariableDefinitions.Select((d) => {
-
-                    foreach (Models.KeyItem.Variable v in vars)
-                        if (v.Position == d.Position && v.Name == d.Name)
-                            return v;
-
-                    return null;
-
-                });
+                return vars;
           }
         }
 
@@ -617,7 +504,6 @@ namespace PSMViewer
 
             ColumnDefinitions = new ColumnDefinitionList();
             RowDefinitions    = new RowDefinitionList();
-            VariableDefinitions = new VariableDefinitionList();
             Children          = new VisualizationControlList();
             Title             = String.Format("<{0}> [{1}]", GetType().Name, Id);
 
@@ -647,10 +533,10 @@ namespace PSMViewer
                         switch (visibility)
                         {
                             case Visibility.Visible:
-                                WindowStyle = WindowStyle.SingleBorderWindow;
+                                //WindowStyle = WindowStyle.SingleBorderWindow;
                                 break;
                             default:
-                                WindowStyle = WindowStyle.None;
+                                //WindowStyle = WindowStyle.None;
                                 break;
                         }
 
@@ -781,19 +667,7 @@ namespace PSMViewer
         private void Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
 
-            if(sender == VariableDefinitions)
-            {
-                
-                if (e.NewItems != null)
-                {
-
-                    foreach(VariableDefinition def in e.NewItems)
-                        def.PropertyChanged += VariableDef_PropertyChanged;
-
-                }
-
-            }
-            else if (sender == RowDefinitions)
+            if (sender == RowDefinitions)
             {
 
                 if (e.Action == NotifyCollectionChangedAction.Reset)
@@ -1123,8 +997,7 @@ namespace PSMViewer
                         Owner = this,
                         Width = SystemParameters.FullPrimaryScreenWidth * .5,
                         Height = SystemParameters.FullPrimaryScreenHeight * .5,
-                        WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                        WindowStyle = WindowStyle.ToolWindow
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen
                     });
 
                     PropertyGrid grid = ((PropertiesWindow)window).PropertyGrids.ToArray()[1];
@@ -1218,17 +1091,17 @@ namespace PSMViewer
                 IconProperty,
                 CommandBindingsProperty,
                 InputBindingsProperty,
-                WindowStyleProperty,
                 TopmostProperty,
                 NameProperty,
                 CaptureRightClickProperty,
                 ShowActivatedProperty,
                 StatusProperty,
                 TemplateProperty,
-                WindowStyleProperty,
                 VisibilityProperty,
                 CursorProperty,
-                AllowsTransparencyProperty
+                AllowsTransparencyProperty,
+                WindowStyleProperty,
+                StyleProperty
 
             };
 
@@ -1243,35 +1116,11 @@ namespace PSMViewer
         
         public void Refresh()
         {
-
-            ObservableCollection<KeyItem.Variable> variables = KeyItem.GetGlobalVariables();
-
-            if (variables != null)
-                variables.Clear();
-
+            
             foreach (VisualizationControl widget in Children)
             {
-
-                MultiControl[] controls = new MultiControl[widget.Controls.Count];
-                widget.Controls.CopyTo(controls, 0);
-
-                foreach (MultiControl control in controls)
-                {
-
-                    widget.Remove(control.Key);
-
-                    KeyItem key = KeyItem.Create(control.Key.StaticPath);
-                    control.Key.CopyTo(key);
-
-                    widget.Add(key, control.Entries);
-
-                }
-
                 widget.Refresh();
             }
-
-            OnPropertyChanged("Variables");
-            OnPropertyChanged("VariablesVisibility");
 
         }
 
@@ -1283,7 +1132,7 @@ namespace PSMViewer
             
             foreach (VisualizationControl chart in Children)
             {
-                this.OnReload(chart);
+                chart.Reload();
             }
    
         }

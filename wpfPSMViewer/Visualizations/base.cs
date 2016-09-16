@@ -868,7 +868,6 @@ namespace PSMViewer.Visualizations
 
                     window = new Dialogs.KeyEditor(this);
                     window.Title += String.Format(" [{0}]", Title);
-                    window.WindowStyle = WindowStyle.ToolWindow;
                     window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
                     window.Owner = this.Owner;
                     window.Width = Math.Sqrt(this.Owner.Width * this.Owner.Height);
@@ -903,15 +902,12 @@ namespace PSMViewer.Visualizations
                     
                     window = ((grid = new PropertiesWindow(this, Properties.ToArray())
                     {
-                        WindowStyle = WindowStyle.ToolWindow,
                         Title = String.Format("Properties [{0}]", this.Title),
                         ShowInTaskbar = false,
                         Owner = this.Owner,
                         Width = Math.Sqrt(this.Owner.Width * this.Owner.Height)
 
                     }));
-
-                    //grid.PropertyGrids.ToArray()[0].PropertyValueChanged += (s, a) => Refresh();
                     
                     window.Height = window.Width;
                     window.ShowDialog();
@@ -1264,56 +1260,58 @@ namespace PSMViewer.Visualizations
         public virtual bool Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
         {
 
-            VariableDefinitionList variables;
+            //VariableDefinitionList variables;
 
             if (key == null) return false;
 
-            try
-            {
+            //try
+            //{
 
-                if(Owner != null && Owner is VisualizationWindow) {
+            //    if(Owner != null && Owner is VisualizationWindow) {
 
-                    variables = ((VisualizationWindow)Owner).VariableDefinitions;
+            //        variables = ((VisualizationWindow)Owner).VariableDefinitions;
 
-                    if (variables.Count > 0)
-                    {
+            //        if (variables.Count > 0)
+            //        {
 
-                        string[] path = key.StaticPath.Split('.');
-                        bool changed = false;
+            //            string[] path = key.StaticPath.Split('.');
+            //            bool changed = false;
 
-                        foreach (VariableDefinition variable in variables)
-                        {
+            //            foreach (VariableDefinition variable in variables)
+            //            {
 
-                            if (variable.Position <= (path.Length - 1))
-                            {
-                                path[variable.Position] = "{" + variable.Name + "}";
-                                changed = true;
-                            }
-                        }
+            //                if (variable.Position <= (path.Length - 1))
+            //                {
+            //                    path[variable.Position] = "{" + variable.Name + "}";
+            //                    changed = true;
+            //                }
+            //            }
 
-                        if (changed)
-                        {
+            //            if (changed)
+            //            {
 
-                            KeyItem k = KeyItem.Create(String.Join(".", path));
-                            key.CopyTo(k);
-                            key = k;
+            //                KeyItem k = KeyItem.Create(String.Join(".", path));
+            //                key.CopyTo(k);
+            //                key = k;
 
-                        }
+            //            }
                         
 
-                    }
+            //        }
 
-                }
+            //    }
                 
-            }
-            catch (Exception e) {
-                Logger.Error(e);
-            }
+            //}
+            //catch (Exception e) {
+            //    Logger.Error(e);
+            //}
             
             if (key.Type == null)
             {
                 return false;
             }
+
+            Defaults.Keys.CopyTo(key);
 
             MultiControl control = GetControl(key);
 

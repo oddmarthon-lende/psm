@@ -18,7 +18,7 @@ namespace PSMViewer.Dialogs
     /// <summary>
     /// Interaction logic for modify_data_title.xaml
     /// </summary>
-    public partial class KeyEditor : Window
+    public partial class KeyEditor : PSMonitor.Theme.Window
     {
         /// <summary>
         /// 
@@ -113,13 +113,11 @@ namespace PSMViewer.Dialogs
 
                 Key = key;
 
-                string[] path = key.Path.Split('.');
+                string[] path = key.StaticPath.Split('.');
 
                 foreach(string p in path)
                 {
-
                     Components.Add(new Component(p, key.Title, this));
-
                 }
 
         }
@@ -246,7 +244,7 @@ namespace PSMViewer.Dialogs
         private void Add_Button_Click(object sender, RoutedEventArgs e)
         {
 
-            if (this._widget != null && treeView.Key != null && treeView.Key.Type != null)
+            if (this._widget != null && path_field.Text.Length > 0)
             {
                 KeyItemW itemw = KeyItemW.Create(path_field.Text);
                 int i = 0;
