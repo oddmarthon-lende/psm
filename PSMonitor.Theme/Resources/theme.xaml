@@ -7,6 +7,8 @@
         <ResourceDictionary Source="scrollbar.xaml" />
         <ResourceDictionary Source="menuitem.xaml" />
         <ResourceDictionary Source="datagrid.xaml" />
+        <ResourceDictionary Source="groupbox.xaml" />
+        <ResourceDictionary Source="textbox.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style TargetType="{x:Type Menu}">
@@ -51,6 +53,9 @@
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource MainColorLight}" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="False">
+                <Setter Property="Background" Value="Transparent" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -110,22 +115,25 @@
 
     <Style TargetType="{x:Type ScrollBar}">
         <Setter Property="Stylus.IsFlicksEnabled" Value="false" />
-        <Setter Property="Foreground" Value="{DynamicResource MainColorLight}" />
+        <Setter Property="Foreground" Value="{DynamicResource MainColorDark}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Width" Value="8" />
         <Setter Property="Template" Value="{StaticResource ScrollBarTemplate}" />
 
     </Style>
 
-    <Style TargetType="{x:Type TextBox}">
+    <Style TargetType="{x:Type Label}">
         <Setter Property="Foreground" Value="{DynamicResource TextIconColor}" />
-        <Setter Property="Background" Value="{DynamicResource MainColorLight}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource MainColorDark}" />
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Template" Value="{StaticResource TextBoxControlTemplate}" />
     </Style>
 
     <Style TargetType="{x:Type GroupBox}">
         <Setter Property="BorderBrush" Value="{DynamicResource MainColorLight}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Template" Value="{StaticResource GroupBoxControlTemplate}" />
     </Style>
 
     <Style TargetType="{x:Type DataGridColumnHeader}">
@@ -145,6 +153,8 @@
         <Setter Property="BorderBrush" Value="{DynamicResource MainColorLight}" />
         <Setter Property="Foreground" Value="{DynamicResource TextIconColor}" />
         <Setter Property="Background" Value="{DynamicResource MainColor}" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{x:Null}" />
+        <Setter Property="VerticalGridLinesBrush" Value="{x:Null}" />
     </Style>
 
     <Style TargetType="{x:Type DataGridRowHeader}">
@@ -155,8 +165,11 @@
 
     <Style TargetType="{x:Type DataGridCell}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderThickness" Value="0,0,0,0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
+    
+    
 
 
 </ResourceDictionary>

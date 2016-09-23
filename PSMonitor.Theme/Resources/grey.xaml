@@ -1,0 +1,14 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="MainColor" Color="#FFF5F5F5" />
+    <SolidColorBrush x:Key="MainColorLight" Color="#55FFFFFF" />
+    <SolidColorBrush x:Key="MainColorDark" Color="#FFC5CBD3" />
+    <SolidColorBrush x:Key="AccentColor" Color="#FFFF6700" />
+    <SolidColorBrush x:Key="TextIconColor" Color="#FF0077BE" />
+    
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="theme.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>

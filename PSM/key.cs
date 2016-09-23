@@ -1,20 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PSMonitor.Stores
 {
 
     public enum KeyValueConversionMode
     {
+
         None,
         Add,
         Subtract,
         Multiply,
-        Divide
+        Divide,
+        Mapping // Not implemented
 
     }
 
@@ -183,6 +181,10 @@ namespace PSMonitor.Stores
                         break;
                     case KeyValueConversionMode.Subtract:
                         v -= Conversion.Value;
+                        break;
+
+                    case KeyValueConversionMode.Mapping:
+                        v = 0;
                         break;
                 }
 

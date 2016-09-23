@@ -1,15 +1,12 @@
 ﻿using PSMonitor;
 using System;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using Hardcodet.Wpf.TaskbarNotification;
 using System.Reflection;
-using System.Windows.Media.Imaging;
 
 namespace PSMControl
 {

@@ -38,19 +38,7 @@
 
     <Window.ContextMenu>
 
-        <ContextMenu x:Name="treeContextMenu">
-
-            <ContextMenu.Resources>
-
-                <Style BasedOn="{StaticResource ChartsMenuItemStyle}" x:Key="SetChartTypeStyle" TargetType="{x:Type MenuItem}">
-                    <Setter Property="Command" Value="{Binding Commands[SetChartType], ElementName=window}"/>
-                </Style>
-
-            </ContextMenu.Resources>
-
-            <MenuItem Header="Chart Type" ItemsSource="{x:Static v:VisualizationControl.List}" IsVisibleChanged="ChartTypeMenuItem_IsVisibleChanged" ItemContainerStyle="{DynamicResource SetChartTypeStyle}" />
-
-        </ContextMenu>
+        <ContextMenu x:Name="treeContextMenu" />
 
     </Window.ContextMenu>
 

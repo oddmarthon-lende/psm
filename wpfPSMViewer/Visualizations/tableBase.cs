@@ -123,6 +123,18 @@ namespace PSMViewer.Visualizations
             DependencyProperty.Register("Threshold", typeof(Threshold), typeof(TableBase), new PropertyMetadata(null));
 
 
+
+        public bool Alarm
+        {
+            get { return (bool)GetValue(AlarmProperty); }
+            set { SetValue(AlarmProperty, value); }
+        }
+        public static readonly DependencyProperty AlarmProperty =
+            DependencyProperty.Register("Alarm", typeof(bool), typeof(TableBase), new PropertyMetadata(false));
+
+
+
+
         public TableBase()
         {
 

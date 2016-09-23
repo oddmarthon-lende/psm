@@ -16,13 +16,12 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Collections.Concurrent;
-using System.Reflection;
 using System.Windows.Media;
 
 namespace PSMViewer.Models
 {
 
-   
+
 
     /// <summary>
     /// The <see cref="Key"/> wrapper class.
@@ -31,13 +30,15 @@ namespace PSMViewer.Models
     {
         
         private static ConcurrentDictionary<object, ObservableCollection<Variable>> _variables_global = new ConcurrentDictionary<object, ObservableCollection<Variable>>();
-
+        
         /// <summary>
         /// 
         /// </summary>
         public KeyItemW W { get; set; } = null;
 
-        private Color _color = Colors.Black;
+        private static Random _random = new Random((int)DateTime.Now.Ticks);
+
+        private Color? _color;
 
         /// <summary>
         /// 
@@ -46,12 +47,17 @@ namespace PSMViewer.Models
         {
             get
             {
-                return _color;
+
+                if (!_color.HasValue)
+                    _color = Color.FromArgb(255, (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D));
+
+                return _color.Value;
             }
 
             set
             {
                 _color = value;
+
                 OnPropertyChanged("Color");
                 OnPropertyChanged("Brush");
             }
@@ -64,7 +70,7 @@ namespace PSMViewer.Models
         {
             get
             {
-                return new SolidColorBrush(_color);
+                return new SolidColorBrush(Color);
             }
         }
 
@@ -601,23 +607,28 @@ namespace PSMViewer.Models
 
         }
 
+        private void _init()
+        {
+            Title = new KeyItemTitle(this);
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>
-        public KeyItem() : base(null, null) { Title = new KeyItemTitle(this); }
+        public KeyItem() : base(null, null) { _init(); }
                
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="key">The <see cref="Key"/> to wrap</param>
-        public KeyItem(Key key) : base(key.Name, key.Type) { Title = new KeyItemTitle(this); }
+        public KeyItem(Key key) : base(key.Name, key.Type) { _init(); }
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="key">The key name</param>
         /// <param name="type">The data type for values</param>
-        public KeyItem(string key, Type type) : base(key, type) { Title = new KeyItemTitle(this); }
+        public KeyItem(string key, Type type) : base(key, type) { _init(); }
 
         /// <summary>
         /// Creates a new <see cref="KeyItem"/> from a <c>string</c>
@@ -666,7 +677,7 @@ namespace PSMViewer.Models
 
                         if (v_global.Name == v_local.Name && v_global.Position == v_local.Position)
                         {
-                            if ((v_global.Parent == null ? "" : v_global.Parent.StaticPath) != (v_local.Parent == null ? "" : v_local.Parent.StaticPath))
+                            if (v_global.Parent != v_local.Parent)
                             {
                                 throw new KeyItemVariableException("Variables cannot have different parent nodes in the same context.");
                             }
@@ -720,7 +731,6 @@ namespace PSMViewer.Models
             this.Conversion.CopyTo(other.Conversion);
             this.Title.CopyTo(other.Title);
             other.Color = this.Color;
-            other.W = this.W;
            
         }
 

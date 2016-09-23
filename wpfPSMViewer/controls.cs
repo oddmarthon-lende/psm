@@ -706,6 +706,10 @@ namespace PSMViewer.ViewModels
                         ctrl.Status = ReloadStatus.Idle;
 
                     });
+                else
+                {
+
+                }
 
 
             }
@@ -816,9 +820,7 @@ namespace PSMViewer.ViewModels
         private void ProcessQueue()
         {          
 
-            ConcurrentQueue<Entry> queue;
-
-            ProcessQueueOperation = null;
+            ConcurrentQueue<Entry> queue;            
 
             if (!_data.TryGetValue(Selected.Parent.Path, out queue))
                 return;            
@@ -895,8 +897,9 @@ namespace PSMViewer.ViewModels
                 }
 
             }
-            
-            
+
+            ProcessQueueOperation = null;
+
         }
         
         /// <summary>

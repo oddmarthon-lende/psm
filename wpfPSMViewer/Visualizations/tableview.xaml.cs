@@ -293,7 +293,7 @@ namespace PSMViewer.Visualizations
         public static readonly DependencyProperty SplitPositionProperty =
             DependencyProperty.Register("SplitPosition", typeof(int), typeof(TableView), new PropertyMetadata(0), (value) => {
 
-                if((int)value <= 0)
+                if((int)value >= 0)
                     return true;
 
                 return false;
@@ -384,7 +384,7 @@ namespace PSMViewer.Visualizations
         /// </summary>
         public override void Refresh()
         {
-
+            
             _rows.Clear();
             _columns.Clear();
             _cells.Clear();
@@ -394,23 +394,17 @@ namespace PSMViewer.Visualizations
 
                 Path p = PSMonitor.Path.Extract(control.Key.Path);
 
-                KeyItem r = control.Key.Parent != null ? control.Key.Parent : null;
-                KeyItem c = KeyItem.Create(String.Join(".", p.Components.ToArray(), p.Length + SplitPosition - 1, Math.Abs(SplitPosition) + 1));
+                int count = p.Count();
+                int pos = Math.Min(Math.Max(0, count), SplitPosition);
+
+                KeyItem r = KeyItem.Create(String.Join(".", p.Components.ToArray(), 0, pos));
+                KeyItem c = KeyItem.Create(String.Join(".", p.Components.ToArray(), pos, count - pos));
 
                 r.Color = Colors.LightGray;
                 c.Color = Colors.LightGray;
 
                 string s = c.Path;
-
-                for (uint i = 0; i < Math.Abs(SplitPosition); i++)
-                {
-                    if (r.Parent != null)
-                    {
-                        r = r.Parent;
-                    }
-                    else
-                        break;
-                }
+                                
 
                 if (_rowKeyCache.Contains(r))
                     r = _rowKeyCache.Find((k) => { return k == r; });

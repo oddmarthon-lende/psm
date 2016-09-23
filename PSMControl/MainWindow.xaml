@@ -11,7 +11,7 @@
         Icon="Icons\database_link.png"
         Title="PSMControl" Height="600" Width="800">
     
-    <Grid >
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="100*" />
             <RowDefinition Height="auto" />

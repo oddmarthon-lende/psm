@@ -105,7 +105,7 @@ namespace PSMonitor.Powershell
                     Key = sender.Key,
                     Value = sender.Data.BaseObject,
                     Type = sender.Data.BaseObject.GetType(),
-                    Timestamp = DateTime.Now
+                    Timestamp = sender.Timestamp ?? DateTime.Now
 
                 });
 

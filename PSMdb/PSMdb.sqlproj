@@ -93,7 +93,7 @@
     <Build Include="Tables\namespaces.sql" />
     <Build Include="Stored Procedures\usp_insert.sql" />
     <Build Include="Stored Procedures\usp_get_many.sql" />
-    <None Include="Stored Procedures\usp_delete_key.sql" />
+    <Build Include="Stored Procedures\usp_delete_key.sql" />
     <Build Include="Stored Procedures\usp_clean.sql" />
     <Build Include="Stored Procedures\usp_create_table.sql" />
     <Build Include="Stored Procedures\usp_delete_path.sql" />

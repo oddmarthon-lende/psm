@@ -86,6 +86,15 @@ namespace PSMonitor.Powershell
             get; set;
         }
 
+        [Parameter(
+            Position = 2,
+            Mandatory = false,
+            HelpMessage = "An optional timestamp")]
+        public DateTime? Timestamp
+        {
+            get; set;
+        }
+
         protected override void ProcessRecord()
         {
             if (Data == null)

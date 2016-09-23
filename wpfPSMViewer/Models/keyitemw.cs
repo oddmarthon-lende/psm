@@ -203,7 +203,7 @@ namespace PSMViewer.Models
         {
 
             List<IKeyItem> keys = new List<IKeyItem>();
-            Path p = PSMonitor.Path.Extract(path);
+            Path p = PSMonitor.Path.Extract(KeyItem.Create(path).Path);
             int i = 0;
             List<string> components = p.Components.ToList();
             KeyItemW item = new KeyItemW() { _path = path };

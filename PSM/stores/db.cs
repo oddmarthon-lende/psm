@@ -643,15 +643,17 @@ namespace PSMonitor.Stores
 
                     switch (indexTypeCode)
                     {
-
+                        
                         case TypeCode.DateTime:
 
-                            entries = (from entry in entries where (DateTime)entry.Index > (DateTime)path.StartIndex select entry).ToArray();
+                            entries = (from entry in entries where entry.Index != null && Type.GetTypeCode(entry.Index.GetType()) == indexTypeCode && 
+                                       (DateTime)entry.Index > (DateTime)path.StartIndex select entry).ToArray();
                             break;
 
                         case TypeCode.Int64:
 
-                            entries = (from entry in entries where (long)entry.Index > (long)path.StartIndex select entry).ToArray();
+                            entries = (from entry in entries where entry.Index != null && Type.GetTypeCode(entry.Index.GetType()) == indexTypeCode && 
+                                       (long)entry.Index > (long)path.StartIndex select entry).ToArray();
                             break;
 
                         default:
@@ -659,6 +661,9 @@ namespace PSMonitor.Stores
                             break;
 
                     }
+
+                    if (entries != null && entries.Length == 0)
+                        entries = null;
 
                 }
 

@@ -297,7 +297,7 @@ namespace PSMViewer.Visualizations
         /// 
         /// </summary>
         [ExpandableObject]
-        public SolidColorBrush Brush { get; set; } = Brushes.Black;
+        public SolidColorBrush Brush { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -308,7 +308,9 @@ namespace PSMViewer.Visualizations
         {
             Conversion.CopyTo(item.Conversion);
             Title.CopyTo(item.Title);
-            item.Color = Brush.Color;
+
+            if(Brush != null)
+                item.Color = Brush.Color;
         }
     }
 
@@ -1260,56 +1262,7 @@ namespace PSMViewer.Visualizations
         public virtual bool Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
         {
 
-            //VariableDefinitionList variables;
-
-            if (key == null) return false;
-
-            //try
-            //{
-
-            //    if(Owner != null && Owner is VisualizationWindow) {
-
-            //        variables = ((VisualizationWindow)Owner).VariableDefinitions;
-
-            //        if (variables.Count > 0)
-            //        {
-
-            //            string[] path = key.StaticPath.Split('.');
-            //            bool changed = false;
-
-            //            foreach (VariableDefinition variable in variables)
-            //            {
-
-            //                if (variable.Position <= (path.Length - 1))
-            //                {
-            //                    path[variable.Position] = "{" + variable.Name + "}";
-            //                    changed = true;
-            //                }
-            //            }
-
-            //            if (changed)
-            //            {
-
-            //                KeyItem k = KeyItem.Create(String.Join(".", path));
-            //                key.CopyTo(k);
-            //                key = k;
-
-            //            }
-                        
-
-            //        }
-
-            //    }
-                
-            //}
-            //catch (Exception e) {
-            //    Logger.Error(e);
-            //}
-            
-            if (key.Type == null)
-            {
-                return false;
-            }
+            if (key == null || key.Type == null) return false;
 
             Defaults.Keys.CopyTo(key);
 

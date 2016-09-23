@@ -13,7 +13,7 @@
         <ResourceDictionary>
 
             <ResourceDictionary.MergedDictionaries>                
-                <ResourceDictionary Source="pack://application:,,,/PSMonitor.Theme;component/Resources/blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/PSMonitor.Theme;component/Resources/grey.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/PSMonitor.Theme;component/Resources/icons.xaml" />
                 <ResourceDictionary Source="Resources/styles.xaml" />
                 <ResourceDictionary Source="Resources/visualizationcontroltemplate.xaml" />

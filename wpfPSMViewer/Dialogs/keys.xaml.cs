@@ -2,6 +2,8 @@
 using PSMViewer.Models;
 using PSMViewer.ViewModels;
 using PSMViewer.Visualizations;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -20,6 +22,9 @@ namespace PSMViewer.Dialogs
     /// </summary>
     public partial class KeyEditor : PSMonitor.Theme.Window
     {
+
+        private static Dictionary<KeyItem, KeyItem> _cache = new Dictionary<KeyItem, KeyItem>();
+
         /// <summary>
         /// 
         /// </summary>
@@ -46,11 +51,15 @@ namespace PSMViewer.Dialogs
                     if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
                 }
 
+                private SolidColorBrush _colorLight = (SolidColorBrush)App.Current.FindResource("MainColorLight");
+
+                private SolidColorBrush _colorDark = (SolidColorBrush)App.Current.FindResource("MainColorDark");
+
                 public SolidColorBrush Foreground {
 
                     get
                     {
-                        return Title.Position == Index ? Brushes.White : Brushes.Black; 
+                        return Title.Position == Index ? _colorLight : _colorDark; 
                     }
 
                 }
@@ -60,7 +69,7 @@ namespace PSMViewer.Dialogs
 
                     get
                     {
-                        return Title.Position == Index ? Brushes.Black : Brushes.White;
+                        return Title.Position == Index ? _colorDark : _colorLight;
                     }
 
                 }
@@ -179,6 +188,7 @@ namespace PSMViewer.Dialogs
         public static readonly DependencyProperty CanAddProperty =
             DependencyProperty.Register("CanAdd", typeof(bool), typeof(KeyEditor), new PropertyMetadata(true));
 
+
         /// <summary>
         /// 
         /// </summary>
@@ -246,19 +256,32 @@ namespace PSMViewer.Dialogs
 
             if (this._widget != null && path_field.Text.Length > 0)
             {
-                KeyItemW itemw = KeyItemW.Create(path_field.Text);
-                int i = 0;
-                bool [] success = this._widget.Add(itemw);
-
-                foreach (KeyItem key in itemw.Children)
+                try
                 {
-                    if (success[i++] && key != null && key.Type != null)
-                    {
-                        this._widget.Defaults.Keys.CopyTo(key);
-                        Items.Add(new Item(this._widget.GetControl(key).Key));
-                    }
+                    KeyItemW itemw = KeyItemW.Create(path_field.Text);
+                    int i = 0;
+                    bool[] success = this._widget.Add(itemw);
 
+                    foreach (KeyItem key in itemw.Children)
+                    {
+                        if (success[i++] && key != null && key.Type != null)
+                        {
+                            this._widget.Defaults.Keys.CopyTo(key);
+                            Items.Add(new Item(this._widget.GetControl(key).Key));
+                        }
+
+                        if (!_cache.ContainsKey(key))
+                            _cache.Add(key, key);
+                        else
+                            _cache[key].CopyTo(key);
+
+                    }
                 }
+                catch(Exception error)
+                {
+                    System.Windows.MessageBox.Show(error.Message, "Something went wrong", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                
             }           
 
         }

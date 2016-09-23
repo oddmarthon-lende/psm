@@ -72,7 +72,7 @@
                                         theme:ShowSystemMenuBehavior.LeftButtonShowAt="{Binding ElementName=WindowContent}"/>
                         </Button>
                     
-                        <TextBlock Text="{TemplateBinding Title}" Height="25" Padding="5" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="0"/>
+                        <TextBlock Text="{TemplateBinding Title}" Foreground="{DynamicResource TextIconColor}" FontSize="12"  Height="25" Padding="5" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="0"/>
                         
                     </StackPanel>
                     
@@ -92,7 +92,7 @@
                         <ContentPresenter x:Name="WindowContent"/>
                     </AdornerDecorator>
 
-                    <ResizeGrip x:Name="WindowResizeGrip" HorizontalAlignment="Right" IsTabStop="false" Visibility="Visible" VerticalAlignment="Bottom" Grid.Row="1" Width="16" Height="16" />
+                    <ResizeGrip x:Name="WindowResizeGrip" HorizontalAlignment="Right" Foreground="{DynamicResource TextIconColor}" IsTabStop="false" Visibility="Visible" VerticalAlignment="Bottom" Grid.Row="1" Width="16" Height="16" />
 
 
 

@@ -84,7 +84,9 @@ namespace PSMViewer
                             int i = 0;
                             foreach (IReload r in _objects)
                             {
-                                if ((ReloadStatus)((DispatcherObject)r).GetValue("Status") != ReloadStatus.Idle)
+                                ReloadStatus s = (ReloadStatus)((DispatcherObject)r).GetValue("Status");
+                                
+                                if (s == ReloadStatus.Loading)
                                     i++;
                             }
 
