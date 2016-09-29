@@ -91,6 +91,7 @@
     <Compile Include="envelope.cs" />
     <Compile Include="execution_context.cs" />
     <Compile Include="commands.cs" />
+    <Compile Include="keyvalueconversion.cs" />
     <Compile Include="measure_frequency.cs" />
     <Compile Include="path.cs" />
     <Compile Include="powershell.cs" />
