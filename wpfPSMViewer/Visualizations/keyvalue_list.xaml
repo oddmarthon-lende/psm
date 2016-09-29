@@ -10,6 +10,7 @@
 
         <Grid.Resources>
             <c:TextHighlightColorConverter x:Key="ColorConverter" Parent="{x:Reference _vc}" />
+            <c:EntryToStringConverter x:Key="EntryConverter" />
         </Grid.Resources>
         
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
@@ -42,8 +43,15 @@
                                                 <ColumnDefinition Width="50*" />
                                                 <ColumnDefinition Width="50*" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Foreground="{Binding Converter={StaticResource ColorConverter}}" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding Value, UpdateSourceTrigger=PropertyChanged}"  Padding="5" />
-                                            <TextBlock Grid.Column="1" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Text="{Binding Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" ToolTip="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Padding="5" />
+                                            <TextBlock Grid.Column="0" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Foreground="{Binding Converter={StaticResource ColorConverter}}" ToolTip="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Padding="5" >
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource EntryConverter}">
+                                                        <Binding Path="DataContext.Key" UpdateSourceTrigger="PropertyChanged" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" />
+                                                        <Binding Path="Value" UpdateSourceTrigger="PropertyChanged" StringFormat="o" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                            <TextBlock Grid.Column="1" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Text="{Binding Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" ToolTip="{Binding Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" Padding="5" />
                                         </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

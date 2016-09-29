@@ -11,6 +11,7 @@
 
         <Grid.Resources>
             <c:TextHighlightColorConverter x:Key="ColorConverter" Parent="{x:Reference _vc}" />
+            <c:EntryToStringConverter x:Key="EntryConverter" />
         </Grid.Resources>
         
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
@@ -37,8 +38,23 @@
                                 <DataTemplate>
                                     <Grid>
                                         <Rectangle Width="auto" Height="auto" Fill="{Binding Brush, UpdateSourceTrigger=PropertyChanged}" Margin="1" />
-                                            <TextBlock Foreground="{Binding Entry, Converter={StaticResource ColorConverter}, UpdateSourceTrigger=PropertyChanged}" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" ToolTip="{Binding Value, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" Padding="5" Margin="1" Grid.IsSharedSizeScope="False" />
-                                    </Grid>
+                                            <TextBlock Foreground="{Binding Entry, Converter={StaticResource ColorConverter}, UpdateSourceTrigger=PropertyChanged}" Padding="5" Margin="1" Grid.IsSharedSizeScope="False">
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource EntryConverter}" UpdateSourceTrigger="PropertyChanged">
+                                                        <Binding Path="Control.Key" UpdateSourceTrigger="PropertyChanged" />
+                                                        <Binding Path="Value" StringFormat="o" UpdateSourceTrigger="PropertyChanged" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                                <TextBlock.ToolTip>
+                                                    <StackPanel Orientation="Vertical">
+                                                        <Label>Value</Label>
+                                                        <TextBlock Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" />
+                                                        <Label>Time</Label>
+                                                        <TextBlock Text="{Binding Entry.Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" />
+                                                    </StackPanel>
+                                                </TextBlock.ToolTip>
+                                            </TextBlock>
+                                        </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
 

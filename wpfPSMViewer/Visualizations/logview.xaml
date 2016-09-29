@@ -11,6 +11,7 @@
 
         <ItemsControl.Resources>
             <c:TextHighlightColorConverter x:Key="ColorConverter" Parent="{x:Reference _vc}" />
+            <c:EntryToStringConverter x:Key="EntryConverter" />
         </ItemsControl.Resources>
 
         <ItemsControl.ItemsPanel>
@@ -34,7 +35,22 @@
 
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Foreground="{Binding Converter={StaticResource ColorConverter}}" Text="{Binding Value}" Padding="5" Margin="1" Background="#55FFFFFF" />
+                                    <TextBlock Foreground="{Binding Converter={StaticResource ColorConverter}}" Padding="5" Margin="1" Background="#55FFFFFF">
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource EntryConverter}">
+                                                <Binding Path="DataContext.Key" UpdateSourceTrigger="PropertyChanged" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" />
+                                                <Binding UpdateSourceTrigger="PropertyChanged" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                        <TextBlock.ToolTip>
+                                            <StackPanel Orientation="Vertical">
+                                                <Label>Value</Label>
+                                                <TextBlock Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" />
+                                                <Label>Time</Label>
+                                                <TextBlock Text="{Binding Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" />
+                                            </StackPanel>
+                                        </TextBlock.ToolTip>
+                                    </TextBlock>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
 

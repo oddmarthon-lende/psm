@@ -85,6 +85,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Converters\entryconverter.cs" />
     <Compile Include="Converters\oxycolor_solidcolorbrush.cs" />
     <Compile Include="Converters\oxythickness_double.cs" />
     <Compile Include="Converters\reloadstatustoboolean.cs" />
@@ -103,6 +104,7 @@
     <Compile Include="Models\ikeyitem.cs" />
     <Compile Include="Models\keyitemtitle.cs" />
     <Compile Include="Models\keyitemw.cs" />
+    <Compile Include="Models\keyitemvariable.cs" />
     <Compile Include="multicontrols.cs" />
     <Compile Include="propertywrapper.cs" />
     <Compile Include="settings.cs" />
