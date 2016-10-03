@@ -15,15 +15,90 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Xceed.Wpf.Toolkit;
 
-namespace PSMViewer.Dialogs
+namespace PSMViewer.Dialogs.Commands
 {
+    
+    public class KeyEditorCopyCommand : ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object parameter)
+        {
+            return true;
+        }
+
+        public KeyEditor Editor { get; set; }
+
+        public void Execute(object parameter)
+        {
+
+            DataGridCell cell = (DataGridCell)parameter;
+            DataGridColumn column = cell.Column;
+            KeyEditor.Item item = (KeyEditor.Item)cell.DataContext;
+            
+            foreach(KeyEditor.Item it in Editor.Items)
+            {
+
+                if (item == it)
+                    continue;
+
+                switch (column.DisplayIndex)
+                {
+
+                    case 0:
+
+                        it.Key.Title.Position = item.Key.Title.Position;
+                        break;
+
+                    case 1:
+
+                        it.Key.Title.Mode = item.Key.Title.Mode;
+                        break;
+
+                    case 2:
+
+                        it.Key.Title.Alias = item.Key.Title.Alias;
+                        break;
+
+                    case 3:
+
+                        it.Key.Conversion.Mode = item.Key.Conversion.Mode;
+                        break;
+
+                    case 4:
+
+                        it.Key.Conversion.Value = item.Key.Conversion.Value;
+                        break;
+
+                    case 5:
+
+                        it.Key.Color = item.Key.Color;
+                        break;
+
+
+                }
+
+            }
+
+            ((DependencyObject)Editor.Content).UpdateBindingTargets(ComboBox.SelectedValueProperty, TextBlock.TextProperty);
+        }
+    }
+
+}
+
+namespace PSMViewer.Dialogs
+{    
+
     /// <summary>
     /// Interaction logic for modify_data_title.xaml
     /// </summary>
     public partial class KeyEditor : PSMonitor.Theme.Window
-    {
+    {        
 
         private static Dictionary<KeyItem, KeyItem> _cache = new Dictionary<KeyItem, KeyItem>();
+
+        public Commands.KeyEditorCopyCommand CopyCommand { get; private set; }
 
         /// <summary>
         /// 
@@ -51,15 +126,15 @@ namespace PSMViewer.Dialogs
                     if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
                 }
 
-                private SolidColorBrush _colorLight = (SolidColorBrush)App.Current.FindResource("MainColorLight");
+                private SolidColorBrush _color0 = (SolidColorBrush)App.Current.FindResource("MainColorDark");
 
-                private SolidColorBrush _colorDark = (SolidColorBrush)App.Current.FindResource("MainColorDark");
+                private SolidColorBrush _color1 = (SolidColorBrush)App.Current.FindResource("TextIconColor");
 
                 public SolidColorBrush Foreground {
 
                     get
                     {
-                        return Title.Position == Index ? _colorLight : _colorDark; 
+                        return Title.Position == Index ? _color0 : _color1; 
                     }
 
                 }
@@ -69,7 +144,7 @@ namespace PSMViewer.Dialogs
 
                     get
                     {
-                        return Title.Position == Index ? _colorDark : _colorLight;
+                        return Title.Position == Index ? _color1 : _color0;
                     }
 
                 }
@@ -200,6 +275,7 @@ namespace PSMViewer.Dialogs
 
             foreach (MultiControl control in _widget.Controls)
                 Items.Add(new Item(control.Key));
+
         }
 
         /// <summary>
@@ -218,11 +294,59 @@ namespace PSMViewer.Dialogs
         /// </summary>
         public KeyEditor()
         {
+
             InitializeComponent();
+
             this.OnReload(treeView);
+
             treeView.MouseDoubleClick += TreeView_MouseDoubleClick;
+
             Icon = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("PSMViewer.Icons.application_form_edit.png"));
+
+            CopyCommand = new Commands.KeyEditorCopyCommand() { Editor = this };
+
         }
+
+        private void keys_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+
+            DataGrid dg = sender as DataGrid;
+            if (dg != null)
+            {
+                DataGridRow dgr = (DataGridRow)(dg.ItemContainerGenerator.ContainerFromIndex(dg.SelectedIndex));
+                Item item = (Item)dgr.DataContext;
+
+                if (e.Key == Key.Delete && !dgr.IsEditing)
+                {
+                    
+                    if (this._widget != null)
+                    {
+
+                        if (item.Key.W == null && this._widget.Remove(item.Key))
+                            Items.Remove(item);
+                        else if (item.Key.W != null)
+                        {
+                            if (System.Windows.MessageBox.Show("This item was added using wildcards, do you want to remove all items added by the wildcard?", "Cannot remove item", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                            {
+                                this._widget.Remove(item.Key.W);
+
+                                foreach (Item it in Items.ToArray())
+                                {
+                                    if (item.Key.W.Children.Contains(it.Key))
+                                        Items.Remove(it);
+
+                                }
+                            }
+                        }
+
+                    }
+
+                    e.Handled = true;
+                }
+            }
+
+        }
+                
 
         /// <summary>
         /// 
@@ -285,59 +409,7 @@ namespace PSMViewer.Dialogs
             }           
 
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Remove_Button_Click(object sender, RoutedEventArgs e)
-        {
-
-            Item item = ((Item)((Button)sender).DataContext);
-            
-            if (this._widget != null)
-            {
-
-                if(item.Key.W == null && this._widget.Remove(item.Key))
-                    Items.Remove(item);
-                else if(item.Key.W != null)
-                {
-                    if (System.Windows.MessageBox.Show("This item was added using wildcards, do you want to remove all items added by the wildcard?", "Cannot remove item", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                    {
-                        this._widget.Remove(item.Key.W);
-
-                        foreach(Item it in Items.ToArray())
-                        {
-                            if (item.Key.W.Children.Contains(it.Key))
-                                Items.Remove(it);
-
-                        }
-                    }
-                }
-
-            }
-                
-
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void CopyToAll_Button_Click(object sender, RoutedEventArgs e)
-        {
-            Item item = ((Item)((Button)sender).DataContext);
-
-            foreach(Item t in Items)
-            {
-                if(t != item)
-                    item.Key.CopyTo(t.Key);
-            }
-
-            ((DependencyObject)this.Content).UpdateBindingTargets(ComboBox.SelectedValueProperty, Xceed.Wpf.Toolkit.DoubleUpDown.ValueProperty);
-
-        }
+        
+        
     }
 }

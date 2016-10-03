@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ControlDoubleClickBehavior.cs" />
+    <Compile Include="FullscreenBooleanToVisibilityConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -72,6 +73,8 @@
     <Compile Include="Window.cs" />
     <Compile Include="WindowCloseCommand.cs" />
     <Compile Include="WindowDragBehavior.cs" />
+    <Compile Include="WindowEnterFullscreenCommand.cs" />
+    <Compile Include="WindowExitFullscreenCommand.cs" />
     <Compile Include="WindowMaximizeCommand.cs" />
     <Compile Include="WindowMinimizeCommand.cs" />
     <Compile Include="WindowResizeBehavior.cs" />

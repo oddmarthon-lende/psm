@@ -9,7 +9,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:theme="clr-namespace:PSMonitor.Theme;assembly=PSMonitor.Theme"
         mc:Ignorable="d" Cursor="{Binding Status, Converter={StaticResource CursorConverter}}"
-        Height="600" Width="800" Icon="..\icons\application_view_tile.png"  ShowInTaskbar="True" Topmost="False" x:Name="window">
+        Height="600" Width="800" Icon="..\icons\application_view_tile.png"  ShowInTaskbar="True" Topmost="False" x:Name="window" CanEnterFullscreen="True">
 
     <Window.InputBindings>
 
@@ -29,7 +29,7 @@
     <Grid>
 
         <Grid.Resources>
-
+            <theme:FullscreenBooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         </Grid.Resources>
 
         <Grid.RowDefinitions>
@@ -42,9 +42,8 @@
             <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
-
-
+        <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  Visibility="{Binding IsFullscreen, Converter={StaticResource BooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
+            
             <Menu>
 
                 <MenuItem Header="File">

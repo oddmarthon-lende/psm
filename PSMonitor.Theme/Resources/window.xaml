@@ -24,12 +24,16 @@
         <Setter Property="Width" Value="25"/>
     </Style>
 
-    <ControlTemplate x:Key="CustomizedWindow" TargetType="{x:Type Window}">
+    <ControlTemplate x:Key="CustomizedWindow" TargetType="{x:Type theme:Window}">
 
         <ControlTemplate.Resources>
             <theme:WindowMinimizeCommand x:Key="MinimizeCommand" />
             <theme:WindowMaximizeCommand x:Key="MaximizeCommand" />
             <theme:WindowCloseCommand x:Key="CloseCommand" />
+            <theme:WindowEnterFullscreenCommand x:Key="EnterFullscreenCommand" />
+            <theme:WindowExitFullscreenCommand x:Key="ExitFullscreenCommand" />
+            <theme:FullscreenBooleanToVisibilityConverter x:Key="FullscreenBooleanToVisibilityConverter" />
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         </ControlTemplate.Resources>
 
         <Border x:Name="windowBorder" BorderBrush="{DynamicResource MainColorLight}" BorderThickness="{TemplateBinding BorderThickness}" Background="{DynamicResource MainColor}">
@@ -54,14 +58,14 @@
                         <RowDefinition Height="100*" />
                     </Grid.RowDefinitions>
 
-                    <Rectangle x:Name="titleBarBackground" Fill="{DynamicResource MainColorDark}" Grid.Row="0" Height="25"
+                    <Rectangle Visibility="{Binding IsFullscreen, Converter={StaticResource FullscreenBooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" x:Name="titleBarBackground" Fill="{DynamicResource MainColorDark}" Grid.Row="0" Height="25"
                             theme:WindowDragBehavior.LeftMouseButtonDrag="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
                             theme:ControlDoubleClickBehavior.ExecuteCommand="{StaticResource MaximizeCommand}"
                             theme:ControlDoubleClickBehavior.ExecuteCommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
                             theme:ShowSystemMenuBehavior.TargetWindow="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
                             theme:ShowSystemMenuBehavior.RightButtonShow="true"/>
 
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsFullscreen, Converter={StaticResource FullscreenBooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
 
                         <Button Grid.Column="0" Template="{StaticResource TitleBarButtonTemplate}"
                                         theme:ControlDoubleClickBehavior.ExecuteCommand="{StaticResource CloseCommand}"                                               
@@ -75,8 +79,8 @@
                         <TextBlock Text="{TemplateBinding Title}" Foreground="{DynamicResource TextIconColor}" FontSize="12"  Height="25" Padding="5" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Row="0"/>
                         
                     </StackPanel>
-                    
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="0">
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="0" Visibility="{Binding IsFullscreen, Converter={StaticResource FullscreenBooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
 
                         <StackPanel.Resources>
                            
@@ -84,6 +88,7 @@
 
                         <Button Command="{StaticResource MinimizeCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Padding="5,15,5,5" Template="{StaticResource TitleBarButtonTemplate}" Content="{StaticResource MinimizeWindowIcon}" Width="{Binding Height, ElementName=titleBarBackground}" Height="{Binding Height, ElementName=titleBarBackground}" />
                         <Button Command="{StaticResource MaximizeCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Padding="5" Template="{StaticResource TitleBarButtonTemplate}" Content="{StaticResource MaximizeWindowIcon}" Width="{Binding Height, ElementName=titleBarBackground}" Height="{Binding Height, ElementName=titleBarBackground}" />
+                        <Button Visibility="{Binding CanEnterFullscreen, Converter={StaticResource BooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" Command="{StaticResource EnterFullscreenCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Padding="5" Template="{StaticResource TitleBarButtonTemplate}" Content="{StaticResource EnterFullscreenIcon}" Width="{Binding Height, ElementName=titleBarBackground}" Height="{Binding Height, ElementName=titleBarBackground}" />
                         <Button Command="{StaticResource CloseCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Padding="5" Template="{StaticResource TitleBarButtonTemplate}" Content="{StaticResource CloseWindowIcon}" Width="{Binding Height, ElementName=titleBarBackground}" Height="{Binding Height, ElementName=titleBarBackground}" />
 
                     </StackPanel>
@@ -92,9 +97,15 @@
                         <ContentPresenter x:Name="WindowContent"/>
                     </AdornerDecorator>
 
-                    <ResizeGrip x:Name="WindowResizeGrip" HorizontalAlignment="Right" Foreground="{DynamicResource TextIconColor}" IsTabStop="false" Visibility="Visible" VerticalAlignment="Bottom" Grid.Row="1" Width="16" Height="16" />
+                    <ResizeGrip x:Name="WindowResizeGrip" HorizontalAlignment="Right" Foreground="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" IsTabStop="False" Visibility="{Binding IsFullscreen, Converter={StaticResource FullscreenBooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" VerticalAlignment="Bottom" Grid.Row="1" Width="16" Height="16" />
 
-
+                    <Button Content="{StaticResource ExitFullscreenIcon}" HorizontalAlignment="Right" VerticalAlignment="Bottom" IsTabStop="False" Grid.Row="1" Margin="18" Width="18" Height="18" Command="{StaticResource ExitFullscreenCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" Visibility="{Binding IsFullscreen, Converter={StaticResource BooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}" >
+                        <Button.Template>
+                            <ControlTemplate TargetType="{x:Type Button}">
+                                <ContentPresenter />
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                 </Grid>
                 
@@ -118,9 +129,15 @@
                 </MultiTrigger.Conditions>
                 <Setter Property="Visibility" TargetName="WindowResizeGrip" Value="Visible"/>
             </MultiTrigger>
-            <Trigger Property="IsActive" Value="True">
-                <Setter Property="BorderBrush" Value="{DynamicResource AccentColor}" TargetName="windowBorder" />
-            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsActive" Value="True" />
+                    <Condition Property="IsFullscreen" Value="False" />
+                </MultiTrigger.Conditions>
+                <MultiTrigger.Setters>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentColor}" TargetName="windowBorder" />
+                </MultiTrigger.Setters>
+            </MultiTrigger>
             <Trigger Property="IsActive" Value="False">
                 <Setter Property="BorderBrush" Value="{DynamicResource MainColorLight}" TargetName="windowBorder" />
             </Trigger>
