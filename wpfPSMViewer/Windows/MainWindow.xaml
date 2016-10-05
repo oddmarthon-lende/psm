@@ -13,7 +13,7 @@
         xmlns:dg="http://schemas.xceed.com/wpf/xaml/datagrid"
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:c="clr-namespace:PSMViewer.Converters"
-        xmlns:theme="clr-namespace:PSMonitor.Theme;assembly=PSMonitor.Theme"        
+        xmlns:theme="clr-namespace:PSMonitor.Theme;assembly=PSMonitor.Theme"
         mc:Ignorable="d" 
         Cursor="{Binding Status, Converter={StaticResource CursorConverter}}"
         Title="Data Viewer" x:Name="window"  SnapsToDevicePixels="True" Icon="..\icons\database_table.png" Drop="window_Drop" AllowDrop="True" >

@@ -10,9 +10,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Timers;
+
 namespace PSMonitor.Stores
 {
 
@@ -221,6 +224,41 @@ namespace PSMonitor.Stores
         protected ConcurrentDictionary<object, ConcurrentBag<Path>> Receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
 
         /// <summary>
+        /// If <c>true</c>, this object has been disposed.
+        /// </summary>
+        protected bool _disposed = false;
+
+        /// <summary>
+        /// Frequency counter for packets\envelopes received
+        /// </summary>
+        protected Frequency _freqIn = new Frequency(Frequency.RateUnit.MINUTES, Frequency.RateUnit.SECONDS);
+
+        /// <summary>
+        /// Frequency counter for packets\envelopes sent
+        /// </summary>
+        protected Frequency _freqOut = new Frequency(Frequency.RateUnit.MINUTES, Frequency.RateUnit.SECONDS);
+
+        /// <summary>
+        /// Holds the envelopes that are waiting to be dispatched to the database.
+        /// </summary>
+        protected ConcurrentQueue<Envelope> _queue;
+
+        /// <summary>
+        /// The threads created by this instance
+        /// </summary>
+        protected IReadOnlyCollection<Thread> _threads;
+
+        /// <summary>
+        /// The ID of this instance
+        /// </summary>
+        protected Guid _id = Guid.NewGuid();
+
+        public Store()
+        {
+            _queue = new ConcurrentQueue<Envelope>();
+        }
+
+        /// <summary>
         /// <see cref="IStore.Delete(string)"/>
         /// </summary>
         public abstract void Delete(string path);
@@ -239,7 +277,14 @@ namespace PSMonitor.Stores
         /// <summary>
         /// <see cref="IStore.Write(Envelope)"/>
         /// </summary>
-        public abstract void Write(Envelope envelope);
+        public virtual void Write(Envelope envelope)
+        {
+            if (!_disposed)
+            {
+                _queue.Enqueue(envelope);
+                _freqIn.Mark(1);
+            }
+        }
 
         /// <summary>
         /// <see cref="IStore.Register(object, string, object, RealTimeData)"/>
@@ -337,8 +382,67 @@ namespace PSMonitor.Stores
 
             }
 
+            _disposed = true;
+
         }
+
+        /// <summary>
+        /// Balances the queue and drops packets if the frequency is too high
+        /// </summary>
+        /// <param name="ctx">The <see cref="DB"/> instance</param>
+        protected static void Balance(object ctx)
+        {
+
+            Store context = (Store)ctx;
+
+            while (!context._disposed)
+            {
                 
+                try
+                {
+
+                    Thread.Sleep((int)Frequency.RateUnit.MINUTES);
+
+                    double frequency_in = context._freqIn.Rate(Frequency.RateUnit.MINUTES);
+                    double frequency_out = context._freqOut.Rate(Frequency.RateUnit.MINUTES);
+
+                    Debug.WriteLine(String.Format("Store.Balance() : Frequency In - {0}, Out - {1} per minute : Queue Size - {2} ", frequency_in, frequency_out, context._queue.Count));
+
+                    double factor = frequency_in / frequency_out;
+
+                    if (factor > 1.0)
+                    {
+                        Envelope env;
+
+                        int count = double.IsInfinity(factor) ? context._queue.Count : context._queue.Count - (int)(context._queue.Count / factor);
+
+                        for (int i = 0; i < count; i++)
+                        {
+                            context._queue.TryDequeue(out env);
+                        }
+
+                        Debug.WriteLine(String.Format("Store.Balance() : Dropped - {0} ", count));
+
+                    }
+
+
+                }
+                catch (ThreadInterruptedException e)
+                {
+                    Debug.WriteLine(e.Message);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    Logger.Error(e);
+                }
+
+
+
+            }
+
+        }
+
     }
 
 }

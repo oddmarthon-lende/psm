@@ -90,22 +90,7 @@ namespace PSMonitor.Stores
         /// The serializer used to convert data to JSON
         /// </summary>
         private static DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(Envelope[]));
-
-        /// <summary>
-        /// Queue of data waiting to be sent over the http connection
-        /// </summary>
-        private ConcurrentQueue<Envelope> _dispatch_queue = new ConcurrentQueue<Envelope>();
-
-        /// <summary>
-        /// The threads created by this instance
-        /// </summary>
-        private IReadOnlyCollection<Thread> _threads;
-
-        /// <summary>
-        /// Set to <c>true</c> when this instance is disposed,
-        /// </summary>
-        private bool _disposed = false;
-
+        
         /// <summary>
         /// The url to connect to
         /// </summary>
@@ -120,12 +105,7 @@ namespace PSMonitor.Stores
         /// The sleeptime for the threads
         /// </summary>
         private int _sleepTime = 1000;
-
-        /// <summary>
-        /// Just a unique identifier used to name the threads
-        /// </summary>
-        private Guid _id = Guid.NewGuid();
-
+        
         /// <summary>
         /// Constructor
         /// </summary>
@@ -139,6 +119,8 @@ namespace PSMonitor.Stores
             List<Thread> threads = new List<Thread>();
 
             threads.Add(new Thread(Dispatch));
+            threads.Add(new Thread(Balance));
+
             threads.ForEach(thread => {
                 thread.Name = String.Format("HTTP Store [{0}] Thread #{1}", _id, threads.IndexOf(thread));
                 thread.Start(this);
@@ -231,9 +213,7 @@ namespace PSMonitor.Stores
         /// </summary>
         public override void Dispose()
         {
-
-            _disposed = true;
-
+            
             _hub.Dispose();            
 
             foreach(Thread thread in _threads) {
@@ -361,18 +341,7 @@ namespace PSMonitor.Stores
             return client;
 
         }
-
-        /// <summary>
-        /// <see cref="IStore.Write(Envelope)"/>
-        /// </summary>
-        public override void Write(Envelope data)
-        {
-            
-            if (!_disposed)
-                _dispatch_queue.Enqueue(data);
-            
-        }
-
+        
         /// <summary>
         /// Entry point for the thread that dispatches data.
         /// </summary>
@@ -383,14 +352,10 @@ namespace PSMonitor.Stores
             HTTP context = (HTTP)ctx;
             Envelope envelope;
             Envelope[] data = null;
-
-            int count = 0;
-
+            
             while (!context._disposed)
             {
-
-                count = context._dispatch_queue.Count;
-
+                
                 try
                 {
 
@@ -398,14 +363,13 @@ namespace PSMonitor.Stores
 
                     HttpClient client = context.CreateClient();
 
-                    if (!context._dispatch_queue.IsEmpty)
+                    if (!context._queue.IsEmpty)
                     {
-
-
+                        
                         using (MemoryStream stream = new MemoryStream())
                         {
 
-                            data = context._dispatch_queue.ToArray();
+                            data = context._queue.ToArray();
 
                             json.WriteObject(stream, data);
                             stream.Seek(0, SeekOrigin.Begin);
@@ -444,7 +408,14 @@ namespace PSMonitor.Stores
                                         Logger.Error(String.Format("Server responded with {0} {1}", response.StatusCode, response.ReasonPhrase));
 
                                 }
-                                
+
+                                context._freqOut.Mark(data.Length);
+
+                                for (int y = 0; data != null && y < data.Length; y++)
+                                    while (!context._queue.TryDequeue(out envelope));
+
+                                data = null;
+
                             }).Wait();
                         }
 
@@ -461,10 +432,7 @@ namespace PSMonitor.Stores
                 {
                     Logger.Error(e.Message);
                 }
-
-                for (int y = 0; data != null && y < (count - data.Length); y++)
-                    while (!context._dispatch_queue.TryDequeue(out envelope));
-
+                
             }
 
         }

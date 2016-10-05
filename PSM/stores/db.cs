@@ -304,32 +304,9 @@ namespace PSMonitor.Stores
         }
         
         /// <summary>
-        /// Holds the envelopes that are waiting to be dispatched to the database.
-        /// </summary>
-        protected ConcurrentQueue<Envelope> _queue;
-
-        /// <summary>
-        /// Holds the threads created by this instance
-        /// </summary>
-        protected IReadOnlyCollection<Thread> _threads;
-
-
-        /// <summary>
-        /// Holds a time when cleanup was executed.
-        /// </summary>
-        private static DateTime cleanup_Starttime = new DateTime(1970, 1, 1, 0, 0, 0);
-
-        /// <summary>
         /// The number of milliseconds to wait
         /// </summary>
         private int _sleepTime = 1000;
-
-        /// <summary>
-        /// If <c>true</c>, this object has been disposed.
-        /// </summary>
-        private bool _disposed = false;
-
-        private Guid _id = Guid.NewGuid();
 
         #endregion
 
@@ -337,15 +314,14 @@ namespace PSMonitor.Stores
         {
             
             Options = new Configuration();
-
-            _queue = new ConcurrentQueue<Envelope>();
-            
+ 
             List<Thread> threads = new List<Thread>();
 
             if (StartThreads == true)
             {
 
                 threads.Add(new Thread(Dispatch));
+                threads.Add(new Thread(Balance));
 
             }
 
@@ -464,17 +440,6 @@ namespace PSMonitor.Stores
 
             return new Entries(p, (IndexType)index, connection, command, true);
         }                
-
-        /// <summary>
-        /// <see cref="IStore.Write(Envelope)"/>
-        /// </summary>
-        public override void Write(Envelope data)
-        {
-
-            if (!_disposed)
-                _queue.Enqueue(data);
-
-        }
         
         /// <summary>
         /// <see cref="IStore.Keys(string)"/>
@@ -703,8 +668,6 @@ namespace PSMonitor.Stores
 
             DB context = (DB)instance;
 
-
-
             while (!context._disposed)
             {
 
@@ -761,7 +724,6 @@ namespace PSMonitor.Stores
         /// <param name="ctx">The <see cref="DB"/> instance that the thread belongs to.</param>
         protected static void Dispatch(object ctx)
         {
-
             DB context = (DB)ctx;
             Envelope envelope;
             int count = 0;
@@ -794,7 +756,7 @@ namespace PSMonitor.Stores
                                 {
 
                                     while (!context._queue.TryDequeue(out envelope));
-
+                                    
                                     foreach (Entry entry in envelope.Entries)
                                     {
 
@@ -846,8 +808,10 @@ namespace PSMonitor.Stores
                                             Logger.Error(error);
                                             continue;
                                         }
-
+                                       
                                     }
+                                    
+                                    context._freqOut.Mark(1);
 
                                 }
 
@@ -867,8 +831,7 @@ namespace PSMonitor.Stores
                     Logger.Error(e);
                 }
                 
-                for(int y = 0; y < (count - i); y++)
-                    while (!context._queue.TryDequeue(out envelope));
+                
 
             }
 
