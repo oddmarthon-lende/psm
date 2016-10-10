@@ -19,7 +19,9 @@
         Title="Data Viewer" x:Name="window"  SnapsToDevicePixels="True" Icon="..\icons\database_table.png" Drop="window_Drop" AllowDrop="True" >
 
     <Window.Resources>
-        
+
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
     </Window.Resources>
 
     <Window.InputBindings>
@@ -80,6 +82,13 @@
 
                 </MenuItem>
 
+                <MenuItem Header="View">
+                    <MenuItem Header="Toolbars">
+                        <MenuItem Header="Navigation" IsCheckable="True" x:Name="view_toolbars_navigation_mi" />
+                        <MenuItem Header="Shortcuts" IsCheckable="True" x:Name="view_toolbars_shortcuts_mi" />
+                    </MenuItem>
+                </MenuItem>
+
                 <MenuItem Header="Tools" >
                     <MenuItem Header="Event Log" Command="{Binding Commands[EventLog], ElementName=window}"  />
                     <Separator />
@@ -115,11 +124,11 @@
                 </MenuItem>
             </Menu>
             
-            <DockPanel>
+            <DockPanel x:Name="dock">
 
                 <ToolBarTray DockPanel.Dock="Top" IsHitTestVisible="True" >
 
-                    <ToolBar>
+                    <ToolBar Visibility="{Binding IsChecked, ElementName=view_toolbars_navigation_mi, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}">
 
                         <Button ToolTip="Event Log" Command="{Binding Commands[EventLog], ElementName=window}" Content="{StaticResource ErrorIcon}" />
                         <Button ToolTip="Reset" Command="{Binding Commands[Reset], ElementName=window}" Content="{StaticResource ResetIcon}" />
@@ -129,7 +138,7 @@
 
                     </ToolBar>
 
-                    <ToolBar>
+                    <ToolBar Visibility="{Binding IsChecked, ElementName=view_toolbars_shortcuts_mi, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}">
 
                         <Button ToolTip="New Window" Command="{Binding Commands[NewWindow], ElementName=window}" Content="{StaticResource PlusIcon}" />
                         <Button ToolTip="Save" Command="{Binding Commands[Save], ElementName=window}" Content="{StaticResource SaveIcon}" />

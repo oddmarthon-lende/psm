@@ -29,7 +29,8 @@
     <Grid>
 
         <Grid.Resources>
-            <theme:FullscreenBooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <theme:FullscreenBooleanToVisibilityConverter x:Key="FBooleanToVisibilityConverter" />
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         </Grid.Resources>
 
         <Grid.RowDefinitions>
@@ -42,7 +43,7 @@
             <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  Visibility="{Binding IsFullscreen, Converter={StaticResource BooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
+        <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"  Visibility="{Binding IsFullscreen, Converter={StaticResource FBooleanToVisibilityConverter}, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}">
             
             <Menu>
 
@@ -65,6 +66,14 @@
                     <MenuItem Header="Delete" InputGestureText="Ctrl+Delete" Command="{Binding Commands[Delete]}" />
                 </MenuItem>
 
+                <MenuItem Header="View">
+                    <MenuItem Header="Toolbars">
+                        <MenuItem IsCheckable="True" Header="Navigation" x:Name="view_toolbars_navigation_mi" />
+                        <MenuItem IsCheckable="True" Header="Time Window" x:Name="view_toolbars_time_window_mi"/>
+                        <MenuItem IsCheckable="True" Header="Variables" x:Name="view_toolbars_variables_mi"/>
+                    </MenuItem>
+                </MenuItem>
+                
                 <MenuItem Header="Edit" >
 
                     <MenuItem.Resources>
@@ -102,11 +111,11 @@
 
             </Menu>
 
-            <DockPanel Visibility="{Binding ControlsVisibility}">
+            <DockPanel Visibility="{Binding ControlsVisibility}" x:Name="dock">
 
                 <ToolBarTray DockPanel.Dock="Top">
 
-                    <ToolBar Visibility="{Binding VariablesVisibility}" Width="Auto" x:Name="variableToolbar" >
+                    <ToolBar Visibility="{Binding IsChecked, ElementName=view_toolbars_variables_mi, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}" Width="Auto" x:Name="variableToolbar" >
 
                         <ItemsControl ItemsSource="{Binding Variables, UpdateSourceTrigger=PropertyChanged}" >
 
@@ -128,7 +137,7 @@
 
                     </ToolBar>
 
-                    <ToolBar Width="Auto">
+                    <ToolBar Width="Auto" Visibility="{Binding IsChecked, ElementName=view_toolbars_navigation_mi, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}">
 
                         <Button ToolTip="Reset" Command="{Binding Commands[Reset], ElementName=window}" Content="{StaticResource ResetIcon}" />
                         <Button ToolTip="Previous" Command="{Binding Commands[Previous], ElementName=window}" Content="{StaticResource GoBackIcon}" />
@@ -137,7 +146,7 @@
 
                     </ToolBar>
 
-                    <ToolBar Width="Auto" x:Name="zoomToolbar">
+                    <ToolBar Width="Auto" x:Name="zoomToolbar" Visibility="{Binding IsChecked, ElementName=view_toolbars_time_window_mi, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}">
 
                         <ToolBar.Resources>
                             <Style TargetType="{x:Type ToggleButton}">

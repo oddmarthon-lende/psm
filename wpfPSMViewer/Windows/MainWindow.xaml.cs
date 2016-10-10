@@ -238,6 +238,27 @@ namespace PSMViewer
 
         private VisualizationControl _graph = null;
 
+        public Visibility[] ToolbarsVisibility
+        {
+            get
+            {
+                return dock.Find<ToolBar>().Select((t) => { return t.Visibility; }).ToArray();
+            }
+
+            set
+            {
+
+                Visibility[] vb = value;
+                ToolBar[] tbs = dock.Find<ToolBar>();
+
+                for (int i = 0; i < vb.Length; i++)
+                {
+                    tbs[i].Visibility = vb[i];
+                }
+
+            }
+        }
+
         /// <summary>
         /// The MainWindow Constructor
         /// </summary>

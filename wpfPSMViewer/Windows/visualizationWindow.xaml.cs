@@ -398,25 +398,7 @@ namespace PSMViewer
                 _options.StoreOptions = value;
             }
         }
-
-        /// <summary>
-        /// Used to show hide the variable dropdown lists
-        /// </summary>
-        public Visibility VariablesVisibility {
-
-            get
-            {
-
-                if(Variables != null)
-                    foreach(Models.KeyItem.Variable v in Variables)
-                    {
-                        return System.Windows.Visibility.Visible;
-                    }
-
-                return System.Windows.Visibility.Collapsed;
-            }
-        }
-
+        
         private string _zoomInterval;
         public string ZoomInterval
         {
@@ -488,6 +470,27 @@ namespace PSMViewer
         private TimeSpan _timeSpan { get; set;}
 
         private int _page = 0;
+
+        public Visibility[] ToolbarsVisibility
+        {
+            get
+            {
+                return dock.Find<ToolBar>().Select((t) => { return t.Visibility; }).ToArray();
+            }
+
+            set
+            {
+
+                Visibility[] vb = value;
+                ToolBar[] tbs = dock.Find<ToolBar>();
+
+                for(int i = 0; i < vb.Length; i++)
+                {
+                    tbs[i].Visibility = vb[i];
+                }
+
+            }
+        }
 
         #endregion
 

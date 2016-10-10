@@ -6,6 +6,7 @@
 
 using PSMViewer.ViewModels;
 using System;
+using System.Windows;
 
 namespace PSMViewer
 {
@@ -18,11 +19,14 @@ namespace PSMViewer
 
         public Settings Options { get; set; } = null;
 
+        public Visibility[] ToolbarsVisibility { get; set; }
+
         public MainWindowSavedState() : base() { }
 
         public MainWindowSavedState(MainWindow window) : base(window)
         {
             Options = window.Options;
+            ToolbarsVisibility = window.ToolbarsVisibility;
         }
 
         public void Restore(MainWindow window)
@@ -30,6 +34,11 @@ namespace PSMViewer
             if (Options != null)
             {
                 window.Options = Options;
+            }
+
+            if(ToolbarsVisibility != null)
+            {
+                window.ToolbarsVisibility = ToolbarsVisibility;
             }
 
             base.Restore(window);
