@@ -97,9 +97,12 @@ namespace PSMViewer.Visualizations
             {
 
                 if (c.Entries.Count > 0)
+                {
                     SetAxis(AxisPosition.Bottom, c.Entries[0].Index.GetType());
+                    break;
+                }
 
-                break;
+                
             }
 
             Model.InvalidatePlot(true);

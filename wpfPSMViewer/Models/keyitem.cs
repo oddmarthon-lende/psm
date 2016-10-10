@@ -394,7 +394,7 @@ namespace PSMViewer.Models
         /// <param name="path">The path</param>
         /// <param name="ctx">The variable context</param>
         /// <returns>The <see cref="KeyItem"/> that was created from the provided path.</returns>
-        public static KeyItem Create(string path, object ctx = null)
+        public static KeyItem Create(string path, object ctx = null, uint depth = 0)
         {
 
             if (path == null || path.Length == 0)
@@ -459,26 +459,37 @@ namespace PSMViewer.Models
 
             item.Context = ctx;
             item.Variables = vars;
-            item._parent = KeyItem.Create(p);
+            item._parent = KeyItem.Create(p, ctx, depth + 1);
             item._path = path;
 
-            Key[] keys = PSM.Store(ctx).Keys(item._parent != null ? item._parent.Path : "");
-
-            foreach (Key k in keys)
+            if (depth == 0)
             {
-                if(item.Name == k.Name)
+
+                string parent = item._parent != null ? item._parent.Path : "";
+
+                Key[] keys = _subKeyCache.ContainsKey(parent) ? _subKeyCache[parent] : PSM.Store(ctx).Keys(parent);
+
+                if (!_subKeyCache.ContainsKey(parent))
+                    _subKeyCache.Add(parent, keys);
+
+                foreach (Key k in keys)
                 {
-                    item = new KeyItem(key, k.Type)
+                    if (item.Name == k.Name)
                     {
-                        Context = ctx,
-                        Variables = vars.Count > 0 ? vars : null,
-                        _parent = item._parent
-                    };
+                        item = new KeyItem(key, k.Type)
+                        {
+                            Context = ctx,
+                            Variables = vars.Count > 0 ? vars : null,
+                            _parent = item._parent
+                        };
+                    }
                 }
             }
 
             return item;
         }
+
+        private static Dictionary<string, Key[]> _subKeyCache = new Dictionary<string, Key[]>();
 
         /// <summary>
         /// Copy properties to other item

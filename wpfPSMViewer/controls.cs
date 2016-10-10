@@ -673,43 +673,34 @@ namespace PSMViewer.ViewModels
 
             base.Append(item);
         }
-
-        private static ConcurrentDictionary<Controls, Thread> _threads = new ConcurrentDictionary<Controls, Thread>();
-
+        
         private static void ProcessReload(object ctx)
         {
 
             Controls ctrl = (Controls)ctx;
-            IEnumerable<EntryItem> entries;
-            Thread t;
+            EntryItem[] entries;
             
             try
             {
                 Debug.WriteLine("Loading... {0}", ctrl.Selected);
 
-                entries = ctrl.Reload(ctrl.Selected);
-                while (!_threads.TryRemove(ctrl, out t)) ;                
+                entries = ctrl.Reload(ctrl.Selected).ToArray();
 
-                if(!_threads.ContainsKey(ctrl))
-                    ctrl.Dispatcher.InvokeAsync(delegate
-                    {
-                        ctrl.Entries.Clear();
-
-                        foreach (EntryItem entry in entries)
-                        {
-                            ctrl.Entries.Add(entry);
-                        }
-
-                        if (ctrl.Page == 0)
-                            ctrl.Register();
-
-                        ctrl.Status = ReloadStatus.Idle;
-
-                    });
-                else
+                ctrl.Dispatcher.InvokeAsync(delegate
                 {
+                    ctrl.Entries.Clear();
 
-                }
+                    foreach (EntryItem entry in entries)
+                    {
+                        ctrl.Entries.Add(entry);
+                    }
+
+                    if (ctrl.Page == 0)
+                        ctrl.Register();
+
+                    ctrl.Status = ReloadStatus.Idle;
+
+                });
 
 
             }
@@ -732,23 +723,19 @@ namespace PSMViewer.ViewModels
         /// </summary>
         public override void Reload()
         {
-            Thread t;
 
+            Thread thread;
+
+            if (Status == ReloadStatus.Loading)
+                return;
+            
             Unregister();
             
             Status = ReloadStatus.Loading;
-
-            Dispatcher.InvokeAsync(delegate
-            {
-
-                while (_threads.Count > 500) ;
-
-                t = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
-
-                while (!_threads.TryAdd(this, t)) ;
-
-                t.Start(this);
-            });
+            
+            thread = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
+            
+            thread.Start(this);
 
 
         }

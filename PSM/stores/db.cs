@@ -267,7 +267,7 @@ namespace PSMonitor.Stores
             /// <summary>
             /// <see cref="PSMonitor.Path.Extract(string)"/>
             /// </summary>
-            public static new Path Extract(string path)
+            public static new Path Create(string path)
             {
                 return new Path(PSMonitor.Path.Extract(path));
             }
@@ -408,7 +408,7 @@ namespace PSMonitor.Stores
 
             VerifyConnection(connection);
 
-            Path p = Path.Extract(path);
+            Path p = Path.Create(path);
 
             SqlCommand command = connection.CreateCommand();
 
@@ -455,12 +455,13 @@ namespace PSMonitor.Stores
                 List<Key> keys = new List<Key>();
                 string[] p = path.Trim(' ', '.').Split('.');
                 long? id = null;
+                Path p_ = Path.Create(path);
 
                 using (SqlCommand command = connection.CreateCommand())
                 {
 
                     command.CommandType = CommandType.Text;
-                    command.CommandText = "select * from [namespaces];";
+                    command.CommandText = "select * from [namespaces] where [Namespace] like '" + p_.Namespace + "%';";
 
                     using (SqlDataReader reader = command.ExecuteReader())
                     {

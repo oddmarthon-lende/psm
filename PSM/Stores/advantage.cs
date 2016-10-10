@@ -129,7 +129,7 @@ namespace PSMonitor.Stores
             /// <returns></returns>
             public static new ParameterizedPath Extract(string path)
             {
-                return new ParameterizedPath(Path.Extract(path));
+                return new ParameterizedPath(Path.Create(path));
             }
 
         }

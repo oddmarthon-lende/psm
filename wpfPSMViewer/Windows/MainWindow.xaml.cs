@@ -27,6 +27,7 @@ using System.Windows.Data;
 using PSMViewer.Utilities;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Windows.Media;
+using System.Threading.Tasks;
 
 namespace PSMViewer
 {
@@ -482,12 +483,16 @@ namespace PSMViewer
                     {
                         DefaultExt = MainWindow.DefaultExt,
                         Filter = MainWindow.Filter,
-                        RestoreDirectory = true
+                        RestoreDirectory = true,
+                        Multiselect = true
                     };
 
                     if (dialog.ShowDialog().Value == true)
                     {
-                        Import(dialog.OpenFile());
+                        foreach(Stream s in dialog.OpenFiles())
+                        {
+                            Import(s);
+                        }
                     }
 
                     break;
@@ -742,13 +747,14 @@ namespace PSMViewer
         /// Imports a window into a new thread from the provided stream that contains the XAML to deserialize
         /// </summary>
         /// <param name="stream">The serialized text stream containing the XAML to deserialize</param>
-        private static void Import(Stream stream)
+        private static async Task<VisualizationWindow> Import(Stream stream)
         {
             
             MainWindow mainWindow = (MainWindow)App.Current.MainWindow;
             Dispatcher d = mainWindow.Dispatcher;
             VisualizationWindow w = null;
-              
+            Exception error = null;
+
             using (StreamReader reader = new StreamReader(stream))
             {
 
@@ -773,10 +779,10 @@ namespace PSMViewer
 
                             mainWindow._windows.Add(w);
 
-                    }
+                        }
                         catch(Exception e)
                         {
-                            e.Show();
+                            error = e;
                             return;
                         }
 
@@ -787,7 +793,15 @@ namespace PSMViewer
                 thread.SetApartmentState(ApartmentState.STA);
                 thread.Start(reader.ReadToEnd());
 
-                while (w == null);               
+                while (w == null)
+                {
+                    if (error != null)
+                        throw error;
+
+                    Thread.Sleep(100);
+                }
+
+                return w;              
 
             }
             

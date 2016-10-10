@@ -18,34 +18,31 @@ AS
 	else if(@IndexColumn = 'Index')
 	begin
 		
-		set @q = 'select  ([RowNumber_Reverse] - 1) as [Index], [Value], [Timestamp] from (select ROW_NUMBER() over (order by [Timestamp] desc) as RowNumber, ROW_NUMBER() over (order by [Timestamp] asc) as [RowNumber_Reverse], *
-			from [tbl_' + @basetype + '] where [KeyId] = @keyid) as Result
-			where ';
+		
+		set @q = ';with p as
+				  (
+					select [Id] from [tbl_' + @basetype + ']
+						where [KeyId] = @keyid ';
+
+		if(@End is not null)
+		begin
+			set @q = @q + 'order by [Id] desc
+						offset cast(@Start as bigint) rows
+						fetch next (cast(@End as bigint) - cast(@Start as bigint) + 1) rows only ';
+		end
+						
+		set @q = @q + ')
+				  select p.Id as [Index], t.Value, t.Timestamp from [tbl_' + @basetype + '] t
+						inner join p on (t.Id = p.Id) ';
 
 		if(@End is null)
 		begin
-			set @q = @q + '([RowNumber_Reverse] - 1)';
-		end
-		else
-		begin
-			set @q = @q + '(RowNumber - 1)';
+			set @q = @q + 'where  p.Id > @Start ';
 		end
 
-		set @q = @q + ' >';
 
-		if(@End is not null)
-		begin
-			set @q = @q + '=';
-		end
-
-		set @q = @q + ' @Start';
-
-		if(@End is not null)
-		begin
-			set @q = @q + ' and (RowNumber - 1) <= @End';
-		end
-
-		set @q = @q + ' order by RowNumber';
+		set @q = @q + 'order by t.[Id] desc;';
+						
 
 		
 

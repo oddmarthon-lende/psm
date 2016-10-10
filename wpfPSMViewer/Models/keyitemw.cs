@@ -176,7 +176,7 @@ namespace PSMViewer.Models
 
         private void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            this.OnReload(this);
+            this.OnReload(this, Logger.Error);
         }
 
         /// <summary>
