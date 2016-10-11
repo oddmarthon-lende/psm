@@ -199,7 +199,7 @@ namespace PSMViewer.Models
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static KeyItemW Create(string path)
+        public static KeyItemW Create(string path, List<string> ignored = null)
         {
 
             List<IKeyItem> keys = new List<IKeyItem>();
@@ -208,14 +208,51 @@ namespace PSMViewer.Models
             List<string> components = p.Components.ToList();
             KeyItemW item = new KeyItemW() { _path = path };
             bool _w = false;
+            Regex comma_seperated_expression_identification_test = new Regex(@"\{(.+?)\}", RegexOptions.Compiled);
 
-            if (path.IndexOf('*') == -1)
+            ignored = ignored ?? new List<string>();
+
+            if (path.IndexOf('*') == -1 && !comma_seperated_expression_identification_test.IsMatch(path) && !ignored.Contains(path))
                 keys.Add(KeyItem.Create(path));
 
             foreach (string c in components.ToArray())
             {
 
-                if (c.Contains("*"))
+                Match exp_matches = comma_seperated_expression_identification_test.Match(c);
+
+                if (exp_matches != null && exp_matches.Success)
+                {
+
+                    string[] wildcard_expression_components = exp_matches.Groups[1].Value.Trim(' ', '\t').Split(',').Select((s) => { return s.Trim(' ', '\t'); }).ToArray();
+
+                    // Check for text that starts with - and add it to ignored list
+                    foreach(string c2 in wildcard_expression_components)
+                    {
+
+                        if(c2.IndexOf('-') == 0)
+                        {
+                            components[i] = c2.TrimStart('-');
+                            ignored.Add(String.Join(".", components));
+                        }
+
+                    }
+
+
+                    foreach (string c2 in wildcard_expression_components)
+                    {
+
+                        if (c2.IndexOf('-') == 0)
+                            continue;
+
+                        components[i] = c2;
+                        keys.AddRange(KeyItemW.Create(String.Join(".", components), ignored).Children);
+
+                    }
+
+                    _w = true;
+
+                }
+                else if (c.Contains("*"))
                 {
 
                     string ns = String.Join(".", components.GetRange(0, i));
@@ -231,7 +268,7 @@ namespace PSMViewer.Models
                             continue;
 
                         components[i] = k.Name;
-                        keys.AddRange(KeyItemW.Create(String.Join(".", components)).Children);
+                        keys.AddRange(KeyItemW.Create(String.Join(".", components), ignored).Children);
 
                     }
 

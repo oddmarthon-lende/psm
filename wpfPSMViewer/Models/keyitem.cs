@@ -88,8 +88,9 @@ namespace PSMViewer.Models
 
                 if (base.Type == null && _type == null && !_typeConfirmed)
                 {
+                    string parent = _parent != null ? _parent.Path : "";
 
-                    Key[] keys = PSM.Store(Dispatcher).Keys(_parent != null ? _parent.Path : "");
+                    Key[] keys = _subKeyCache.ContainsKey(parent) ? _subKeyCache[parent] : PSM.Store(Dispatcher).Keys(parent);
 
                     foreach (Key k in keys)
                     {

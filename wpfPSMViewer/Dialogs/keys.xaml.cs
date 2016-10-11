@@ -326,7 +326,7 @@ namespace PSMViewer.Dialogs
                             Items.Remove(item);
                         else if (item.Key.W != null)
                         {
-                            if (System.Windows.MessageBox.Show("This item was added using wildcards, do you want to remove all items added by the wildcard?", "Cannot remove item", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                            if (System.Windows.MessageBox.Show("This item was added using a path expression, do you want to remove all items added by the expression?", "Cannot remove item", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                             {
                                 this._widget.Remove(item.Key.W);
 
