@@ -26,30 +26,51 @@ namespace PSMViewer.Models
     /// <summary>
     /// The <see cref="Key"/> wrapper class.
     /// </summary>
-    public partial class KeyItem : Key, IReload, INotifyPropertyChanged, IKeyItem
+    public partial class KeyItem : Key, IReload, INotifyPropertyChanged, IKeyItem, IDisposable
     {
         
+        /// <summary>
+        /// 
+        /// </summary>
         private static ConcurrentDictionary<object, ObservableCollection<Variable>> _variables_global = new ConcurrentDictionary<object, ObservableCollection<Variable>>();
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private static ConcurrentDictionary<string, Key[]> _subKeyCache = new ConcurrentDictionary<string, Key[]>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static void ClearCache()
+        {
+            _subKeyCache.Clear();
+        }
+
         /// <summary>
         /// 
         /// </summary>
         public KeyItemW W { get; set; } = null;
 
-        private static Random _random = new Random((int)DateTime.Now.Ticks);
+        protected static Random _random = new Random((int)DateTime.Now.Ticks);
 
-        private Color? _color;
+        internal Color? _color;
 
         /// <summary>
         /// 
         /// </summary>
-        public Color Color
+        public virtual Color Color
         {
             get
             {
 
                 if (!_color.HasValue)
+                {
+                    if (W != null)
+                        return W.Color;
+
                     _color = Color.FromArgb(255, (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D));
+                }
 
                 return _color.Value;
             }
@@ -181,7 +202,7 @@ namespace PSMViewer.Models
         /// </summary>
         public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
 
-        private KeyItem _parent = null;
+        protected KeyItem _parent = null;
 
         /// <summary>
         /// Gets a reference to the parent key if there is any
@@ -235,7 +256,7 @@ namespace PSMViewer.Models
         /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
         /// </summary>
         /// <param name="propertyName"></param>
-        protected virtual void OnPropertyChanged(string propertyName)
+        internal virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
@@ -266,7 +287,7 @@ namespace PSMViewer.Models
                     {
                         if ( Parent == v.Parent )
                         {
-                            return v.Value;
+                            return v.Value ?? "";
                         }
                     }
 
@@ -274,11 +295,11 @@ namespace PSMViewer.Models
             }
         }
 
-        private string _path = null;
+        protected string _path = null;
         /// <summary>
         /// Gets the full path to this key.
         /// </summary>
-        public string Path
+        public virtual string Path
         {
             get
             {
@@ -289,7 +310,7 @@ namespace PSMViewer.Models
                     KeyItem parent = this.Parent;
                     List<string> names = new List<string>();
 
-                    names.Add(this.Name);
+                   names.Add(this.Name??"");
 
                     while (parent != null && parent.Name != null)
                     {
@@ -300,7 +321,7 @@ namespace PSMViewer.Models
                             break;
                         }
 
-                        names.Add(parent.Name);
+                        names.Add(parent.Name??"");
                         parent = parent.Parent;
                     }
 
@@ -310,14 +331,14 @@ namespace PSMViewer.Models
 
                 }
 
-                return _path ?? this.Name;
+                return _path ?? this.Name ?? "";
             }
         }
 
         /// <summary>
         /// Gets the static path, without any variable values
         /// </summary>
-        public string StaticPath
+        public virtual string StaticPath
         {
 
             get
@@ -350,7 +371,7 @@ namespace PSMViewer.Models
 
         }
 
-        private object _context = null;
+        protected object _context = null;
         /// <summary>
         /// The variable context
         /// </summary>
@@ -370,7 +391,7 @@ namespace PSMViewer.Models
         {
             Title = new KeyItemTitle(this);
         }
-
+        
         /// <summary>
         /// Constructor
         /// </summary>
@@ -471,7 +492,7 @@ namespace PSMViewer.Models
                 Key[] keys = _subKeyCache.ContainsKey(parent) ? _subKeyCache[parent] : PSM.Store(ctx).Keys(parent);
 
                 if (!_subKeyCache.ContainsKey(parent))
-                    _subKeyCache.Add(parent, keys);
+                    while(!_subKeyCache.TryAdd(parent, keys));
 
                 foreach (Key k in keys)
                 {
@@ -486,17 +507,27 @@ namespace PSMViewer.Models
                     }
                 }
             }
+            
+            foreach (Variable v in vars)
+            {
+                v.PropertyChanged -= item.V_PropertyChanged;
+                v.PropertyChanged += item.V_PropertyChanged;
+            }
 
             return item;
         }
 
-        private static Dictionary<string, Key[]> _subKeyCache = new Dictionary<string, Key[]>();
+        private void V_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged("Path");
+            OnPropertyChanged("Name");
+        }        
 
         /// <summary>
         /// Copy properties to other item
         /// </summary>
         /// <param name="other"></param>
-        public void CopyTo(IKeyItem other)
+        public virtual void CopyTo(IKeyItem other)
         {
             this.Conversion.CopyTo(other.Conversion);
             this.Title.CopyTo(other.Title);
@@ -507,7 +538,7 @@ namespace PSMViewer.Models
         /// <summary>
         /// Reloads the children
         /// </summary>
-        public void Reload()
+        public virtual void Reload()
         {
 
             _children.Clear();
@@ -523,7 +554,7 @@ namespace PSMViewer.Models
         /// <see cref="IReload.Next"/>
         /// </summary>
         /// <returns></returns>
-        public bool Next()
+        public virtual bool Next()
         {
             return false;
         }
@@ -532,7 +563,7 @@ namespace PSMViewer.Models
         /// <see cref="IReload.Previous"/>
         /// </summary>
         /// <returns></returns>
-        public bool Previous()
+        public virtual bool Previous()
         {
             return false;
         }
@@ -596,5 +627,13 @@ namespace PSMViewer.Models
             return StaticPath.GetHashCode();
         }
 
+        public virtual void Dispose()
+        {
+            if(Variables != null)
+                foreach (Variable v in Variables)
+                {
+                    v.PropertyChanged -= V_PropertyChanged;
+                }
+        }
     }
 }

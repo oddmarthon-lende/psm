@@ -194,6 +194,27 @@ namespace PSMViewer.Visualizations
             return key;
         }
 
+        /// <summary>
+        /// Convert to <see cref="KeyItemW"/>
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns>A new <see cref="KeyItem"/></returns>
+        public static KeyItemW ToKeyItemW(KeyItemPath p)
+        {
+
+            KeyItemW key = KeyItemW.Create(p.Path);
+
+            if (p.Position.HasValue)
+                key.Title.Position = p.Position.Value;
+
+            key.Color = p.Color.Value;
+            key.Conversion = p.Conversion;
+            key.Title.Mode = p.Mode;
+            key.Title.Alias = p.Alias;
+
+            return key;
+        }
+
         public KeyItemPath(IKeyItem key)
         {
             Path = key.StaticPath;
@@ -634,7 +655,51 @@ namespace PSMViewer.Visualizations
         /// <summary>
         /// 
         /// </summary>
-        private Dictionary<string, KeyItemW> _wCache = new Dictionary<string, KeyItemW>();
+        private Dictionary<string, KeyItemW> _groups = new Dictionary<string, KeyItemW>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public KeyItemPathList GroupPaths
+        {
+
+            get
+            {
+
+                KeyItemPathList list = new KeyItemPathList();
+
+                foreach (var w in _groups)
+                {
+                    list.Add(new KeyItemPath(w.Value));
+                }
+
+                return list;
+            }
+
+            set
+            {
+
+                foreach (KeyItemPath p in value)
+                {
+
+                    if (!_groups.ContainsKey(p.Path))
+                        Add(KeyItemPath.ToKeyItemW(p));
+                }
+
+            }
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<KeyItemW> Groups
+        {
+            get
+            {
+                return _groups.Values;
+            }
+        }
        
         /// <summary>
         /// Holds the key paths.
@@ -664,7 +729,7 @@ namespace PSMViewer.Visualizations
                     if(p.W != null)
                     {
 
-                        if(!_wCache.ContainsKey(p.W))
+                        if(!_groups.ContainsKey(p.W))
                             Add(KeyItemW.Create(p.W));
                     }
                 }
@@ -676,7 +741,7 @@ namespace PSMViewer.Visualizations
 
                     if (p.W != null)
                     {
-                        KeyItemW w = _wCache[p.W];
+                        KeyItemW w = _groups[p.W];
 
                         foreach(KeyItem k2 in w.Children)
                         {
@@ -1192,18 +1257,23 @@ namespace PSMViewer.Visualizations
             bool[] results = new bool[key.Children.Count];
             int i = 0;
 
-            if(!_wCache.ContainsKey(key.StaticPath))
+            if(!_groups.ContainsKey(key.StaticPath) && key.HasWildcards)
             {
                 key.Children.CollectionChanged += Key_Children_CollectionChanged;
 
                 foreach (KeyItem k in key.Children)
                     results[i++] = Add(k);
 
-                key.AutoRefresh = true;
-                
-                if (key.HasWildcards && results.Sum<bool>((b) => { return Convert.ToInt32(b); }) > 0)
-                    _wCache.Add(key.StaticPath, key);
-            }            
+                key.AutoRefresh = key.HasWildcards;
+
+                if (key.HasWildcards)
+                    _groups.Add(key.StaticPath, key);
+            }
+            else if(!key.HasWildcards)
+            {
+                foreach (KeyItem k in key.Children)
+                    Add(k);
+            }
 
             return results;
 
@@ -1229,6 +1299,7 @@ namespace PSMViewer.Visualizations
         /// <param name="key"></param>
         public virtual bool Remove(KeyItemW key)
         {
+
             key.AutoRefresh = false;
 
             foreach (KeyItem k in key.Children)
@@ -1236,7 +1307,7 @@ namespace PSMViewer.Visualizations
 
             key.Children.CollectionChanged -= Key_Children_CollectionChanged;
 
-            return _wCache.Remove(key.StaticPath);
+            return _groups.Remove(key.StaticPath);
         }
 
         /// <summary>
@@ -1245,10 +1316,11 @@ namespace PSMViewer.Visualizations
         /// <param name="key"></param>
         public virtual bool Remove(IKeyItem key)
         {
-            if (key is KeyItem)
-                return Remove((KeyItem)key);
-            else if (key is KeyItemW)
+            
+            if (key is KeyItemW)
                 return Remove((KeyItemW)key);
+            else if (key is KeyItem)
+                return Remove((KeyItem)key);
 
             return false;
         }
@@ -1270,7 +1342,7 @@ namespace PSMViewer.Visualizations
 
             if (control == null)
             {
-
+                Defaults.Keys.CopyTo(key);
                 control = new MultiControl(key, this.OnReload, collection);
                 _controls.Add(control);
 
@@ -1314,26 +1386,24 @@ namespace PSMViewer.Visualizations
         {
 
             Dispatcher.InvokeAsync(this.Refresh);
-            this.OnReload(this);           
+            this.OnReload(this);
 
-            foreach (MultiControl m in (from s in _controls select s))
-            {
-                if (e.OldItems != null && (from KeyItem k in e.OldItems where k.Path == m.Key.Path select k).ElementAtOrDefault(0) == null)
-                    Remove(m.Key);
-            }
+            if(e.OldItems != null)
+                foreach (KeyItem k in e.OldItems)
+                {
+                    Remove(k);
 
-            if (e.NewItems == null) return;
+                }
 
-            foreach (KeyItem k in e.NewItems)
-            {
-                Defaults.Keys.CopyTo(k);
-
-                if (k.Type != null && (from s in _controls where s.Key.Path == k.Path select s).ElementAtOrDefault(0) == null)
+            if (e.NewItems != null)
+                foreach (KeyItem k in e.NewItems)
+                {
+                    Defaults.Keys.CopyTo(k);
                     Add(k);
 
-            }
+                }
 
-            if (RefreshOperation == null)
+            if (RefreshOperation == null && (e.OldItems != null || e.NewItems != null))
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
         }
@@ -1411,6 +1481,11 @@ namespace PSMViewer.Visualizations
 
             }
 
+            foreach (KeyItemW w in _groups.Select((c) => { return c.Value; }))
+            {
+                w.Reload();
+            }
+
             foreach (MultiControl m in _controls)
             {
 
@@ -1422,9 +1497,8 @@ namespace PSMViewer.Visualizations
                 KeyItem key = m.Key;
 
                 m.Reload();
-                key.Reload();
 
-            }
+            }            
 
             if (RefreshOperation == null)
                 RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);

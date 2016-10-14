@@ -41,7 +41,7 @@ namespace PSMViewer.Models
             /// <summary>
             /// The index of the value to get from the <see cref="Keys"/> 
             /// </summary>
-            private int _index = 0;
+            private int _index = -1;
 
             public event PropertyChangedEventHandler PropertyChanged;
 
@@ -53,6 +53,18 @@ namespace PSMViewer.Models
             {
                 PropertyChangedEventHandler handler = PropertyChanged;
                 if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            }
+
+            /// <summary>
+            /// Conveniance method
+            /// </summary>
+            protected bool SetField<TField>(ref TField field, TField value, [CallerMemberName] string propertyName = "")
+            {
+                if (EqualityComparer<TField>.Default.Equals(field, value)) return false;
+                field = value;
+                OnPropertyChanged(propertyName);
+
+                return true;
             }
 
             /// <summary>
@@ -69,11 +81,10 @@ namespace PSMViewer.Models
                 set
                 {
 
-                    _index = Math.Max(Math.Min(value, Keys.Count - 1), 0);
-
-                    OnPropertyChanged();
-                    OnPropertyChanged("Value");
-                    OnPropertyChanged("Path");
+                    if(SetField(ref _index, Math.Max(Math.Min(value, Keys.Count - 1), 0)))
+                    {
+                        OnPropertyChanged("Value");
+                    }
 
                     foreach (KeyValuePair<object, ObservableCollection<Variable>> p in _variables_global)
                     {
@@ -87,7 +98,6 @@ namespace PSMViewer.Models
 
                                 if (v.Position > this.Position)
                                 {
-                                    v.OnPropertyChanged("SelectedIndex");
                                     v.Reload();
                                 }
 
@@ -167,10 +177,7 @@ namespace PSMViewer.Models
             /// <summary>
             /// Constructor
             /// </summary>
-            public Variable()
-            {
-                this.OnReload(this);
-            }
+            public Variable() { }
 
             /// <summary>
             /// <see cref="object.ToString"/>
@@ -223,7 +230,6 @@ namespace PSMViewer.Models
                     variable.Parent = parent == null ? null : KeyItem.Create(parent);
 
                     variables.Add(variable);
-                    variable.Reload();
                 }
 
                 return variables;
@@ -232,20 +238,46 @@ namespace PSMViewer.Models
             public void Reload()
             {
 
-                Dispatcher.Invoke(delegate
+                
+                string parent = Parent == null ? "" : Parent.Path;
+                int i = 0;
+                int count = Keys.Count;
+                bool changed = false;
+
+                foreach (Key k in (_subKeyCache.ContainsKey(parent) ? _subKeyCache[parent] : PSM.Store(Dispatcher).Keys(parent)))
                 {
 
-                    Keys.Clear();
+                    if(i < count)
+                    {
 
-                    foreach (Key k in PSM.Store(Dispatcher).Keys(Parent == null ? "" : Parent.Path))
+                        if (Keys[i] != k)
+                        {
+                            Keys[i] = k;
+                            changed = i == SelectedIndex;
+                        }
+                    }
+                    else
                     {
                         Keys.Add(k);
                     }
 
-                    OnPropertyChanged("Value");
-                    OnPropertyChanged("Path");
+                    i++;
 
-                });
+                }
+
+                count = Keys.Count;
+
+                changed = count > i;
+
+                for (; count > i; count--)
+                {
+                    Keys.RemoveAt(count - 1);
+                }
+
+                if (changed)
+                {
+                    OnPropertyChanged("Value");
+                }               
 
             }
 

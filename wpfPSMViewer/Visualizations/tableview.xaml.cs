@@ -336,7 +336,7 @@ namespace PSMViewer.Visualizations
                     
                     window = new KeyEditor(Columns.Where((c) => { return c.Key != null; }).Select((c, i) =>
                     {
-                        return new KeyEditor.Item(c.Key);
+                        return new KeyEditor.KeyEditorItem(c.Key);
                     }).ToArray());
 
                     window.Title = String.Format("Edit Columns [{0}]", Title);
@@ -347,7 +347,7 @@ namespace PSMViewer.Visualizations
                     
                     window = new KeyEditor(Rows.Select((r, i) =>
                     {
-                        return new KeyEditor.Item(r.Key);
+                        return new KeyEditor.KeyEditorItem(r.Key);
                     }).ToArray());
 
                     window.Title = String.Format("Edit Rows [{0}]", Title);

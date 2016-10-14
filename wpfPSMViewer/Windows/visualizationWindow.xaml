@@ -129,7 +129,7 @@
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
                                         <Label Target="{Binding ElementName=list}" HorizontalAlignment="Left" Content="{Binding Name}" />
-                                        <ComboBox ItemsSource="{Binding Keys}" x:Name="list" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}" SelectionChanged="variable_combos_SelectionChanged" />
+                                        <ComboBox ItemsSource="{Binding Keys}" x:Name="list" IsSynchronizedWithCurrentItem="True" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}" SelectionChanged="variable_combos_SelectionChanged" PreviewMouseDown="variable_combos_PreviewMouseDown" />
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

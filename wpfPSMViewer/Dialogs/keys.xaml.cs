@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Xceed.Wpf.Toolkit;
+using System.Threading;
 
 namespace PSMViewer.Dialogs.Commands
 {
@@ -35,9 +36,9 @@ namespace PSMViewer.Dialogs.Commands
 
             DataGridCell cell = (DataGridCell)parameter;
             DataGridColumn column = cell.Column;
-            KeyEditor.Item item = (KeyEditor.Item)cell.DataContext;
+            KeyEditor.KeyEditorItem item = (KeyEditor.KeyEditorItem)cell.DataContext;
             
-            foreach(KeyEditor.Item it in Editor.Items)
+            foreach(KeyEditor.KeyEditorItem it in Editor.Items)
             {
 
                 if (item == it)
@@ -93,17 +94,15 @@ namespace PSMViewer.Dialogs
     /// <summary>
     /// Interaction logic for modify_data_title.xaml
     /// </summary>
-    public partial class KeyEditor : PSMonitor.Theme.Window
-    {        
-
-        private static Dictionary<KeyItem, KeyItem> _cache = new Dictionary<KeyItem, KeyItem>();
-
+    public partial class KeyEditor : PSMonitor.Theme.Window, IReload
+    {
+        
         public Commands.KeyEditorCopyCommand CopyCommand { get; private set; }
 
         /// <summary>
         /// 
         /// </summary>
-        public class Item
+        public class KeyEditorItem
         {
 
             /// <summary>
@@ -111,25 +110,49 @@ namespace PSMViewer.Dialogs
             /// </summary>
             public class Component : INotifyPropertyChanged
             {
-
+                /// <summary>
+                /// 
+                /// </summary>
                 public string Name { get; private set; }
 
+                /// <summary>
+                /// 
+                /// </summary>
                 public KeyItemTitle Title { get; private set; }
 
-                public Item Item { get; private set; }
+                /// <summary>
+                /// 
+                /// </summary>
+                public KeyEditorItem Item { get; private set; }
 
+                /// <summary>
+                /// 
+                /// </summary>
                 public event PropertyChangedEventHandler PropertyChanged;
 
+                /// <summary>
+                /// 
+                /// </summary>
+                /// <param name="propertyName"></param>
                 protected virtual void OnPropertyChanged(string propertyName)
                 {
                     PropertyChangedEventHandler handler = PropertyChanged;
                     if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
                 }
 
+                /// <summary>
+                /// 
+                /// </summary>
                 private SolidColorBrush _color0 = (SolidColorBrush)App.Current.FindResource("MainColorDark");
 
+                /// <summary>
+                /// 
+                /// </summary>
                 private SolidColorBrush _color1 = (SolidColorBrush)App.Current.FindResource("TextIconColor");
 
+                /// <summary>
+                /// 
+                /// </summary>
                 public SolidColorBrush Foreground {
 
                     get
@@ -139,6 +162,9 @@ namespace PSMViewer.Dialogs
 
                 }
 
+                /// <summary>
+                /// 
+                /// </summary>
                 public SolidColorBrush Background
                 {
 
@@ -149,6 +175,9 @@ namespace PSMViewer.Dialogs
 
                 }
 
+                /// <summary>
+                /// 
+                /// </summary>
                 public uint Index
                 {
 
@@ -156,9 +185,15 @@ namespace PSMViewer.Dialogs
                     {
                         return (uint)Item.Components.IndexOf(this);
                     }
-            }
+                }
 
-                public Component(string name, KeyItemTitle title, Item item)
+                /// <summary>
+                /// 
+                /// </summary>
+                /// <param name="name"></param>
+                /// <param name="title"></param>
+                /// <param name="item"></param>
+                public Component(string name, KeyItemTitle title, KeyEditorItem item)
                 {
 
                     Name = name;
@@ -166,6 +201,9 @@ namespace PSMViewer.Dialogs
                     Item = item;
                 }
 
+                /// <summary>
+                /// 
+                /// </summary>
                 public void Select()
                 {
                     Title.Position = Index;
@@ -175,6 +213,17 @@ namespace PSMViewer.Dialogs
                         c.OnPropertyChanged("Foreground");
                         c.OnPropertyChanged("Background");
                     }
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string GroupName
+            {
+                get
+                {
+                    return Key.W != null ? Key.W.StaticPath : Key is KeyItemW ? "Groups" : "Metrics";
                 }
             }
 
@@ -192,7 +241,7 @@ namespace PSMViewer.Dialogs
             /// Constructor
             /// </summary>
             /// <param name="key"></param>
-            public Item(IKeyItem key)
+            public KeyEditorItem(IKeyItem key)
             {
 
                 Key = key;
@@ -204,15 +253,18 @@ namespace PSMViewer.Dialogs
                     Components.Add(new Component(p, key.Title, this));
                 }
 
-        }
+            }
 
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public ObservableCollection<Item> Items { get; private set; } = new ObservableCollection<Item>();
+        public ObservableCollection<KeyEditorItem> Items { get; private set; } = new ObservableCollection<KeyEditorItem>();
         
+        /// <summary>
+        /// 
+        /// </summary>
         private VisualizationControl _widget;
 
         /// <summary>
@@ -257,6 +309,33 @@ namespace PSMViewer.Dialogs
             get { return (bool)GetValue(CanAddProperty); }
             set { SetValue(CanAddProperty, value); }
         }
+
+        public CancellationTokenSource CancellationTokenSource
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public ReloadStatus Status
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -270,23 +349,18 @@ namespace PSMViewer.Dialogs
         /// <param name="widget"></param>
         public KeyEditor(VisualizationControl widget) : this()
         {
-
             _widget = widget;
-
-            foreach (MultiControl control in _widget.Controls)
-                Items.Add(new Item(control.Key));
-
+            Reload();
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="items"></param>
-        public KeyEditor(params Item[] items) : this()
+        public KeyEditor(params KeyEditorItem[] items) : this()
         {
-
-            foreach (Item item in items)
-                Items.Add(item);            
+            foreach (KeyEditorItem item in items)
+                Items.Add(item);
         }
 
         /// <summary>
@@ -299,11 +373,9 @@ namespace PSMViewer.Dialogs
 
             this.OnReload(treeView);
 
-            treeView.MouseDoubleClick += TreeView_MouseDoubleClick;
-
             Icon = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("PSMViewer.Icons.application_form_edit.png"));
 
-            CopyCommand = new Commands.KeyEditorCopyCommand() { Editor = this };
+            CopyCommand = new Commands.KeyEditorCopyCommand() { Editor = this };            
 
         }
 
@@ -314,7 +386,7 @@ namespace PSMViewer.Dialogs
             if (dg != null)
             {
                 DataGridRow dgr = (DataGridRow)(dg.ItemContainerGenerator.ContainerFromIndex(dg.SelectedIndex));
-                Item item = (Item)dgr.DataContext;
+                KeyEditorItem item = (KeyEditorItem)dgr.DataContext;
 
                 if (e.Key == Key.Delete && !dgr.IsEditing)
                 {
@@ -322,42 +394,25 @@ namespace PSMViewer.Dialogs
                     if (this._widget != null)
                     {
 
-                        if (item.Key.W == null && this._widget.Remove(item.Key))
-                            Items.Remove(item);
+                        if (item.Key.W == null && this._widget.Remove(item.Key)) { }
                         else if (item.Key.W != null)
                         {
                             if (System.Windows.MessageBox.Show("This item was added using a path expression, do you want to remove all items added by the expression?", "Cannot remove item", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                             {
-                                this._widget.Remove(item.Key.W);
-
-                                foreach (Item it in Items.ToArray())
-                                {
-                                    if (item.Key.W.Children.Contains(it.Key))
-                                        Items.Remove(it);
-
-                                }
+                                this._widget.Remove(item.Key.W);                                
                             }
                         }
 
                     }
 
                     e.Handled = true;
+                    Reload();
                 }
             }
 
         }
                 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            Add_Button_Click(null, null);
-        }
-
+        
         /// <summary>
         /// 
         /// </summary>
@@ -366,7 +421,7 @@ namespace PSMViewer.Dialogs
         private void TextBlock_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
 
-            Item.Component component = (Item.Component)((TextBlock)e.OriginalSource).DataContext;
+            KeyEditorItem.Component component = (KeyEditorItem.Component)((TextBlock)e.OriginalSource).DataContext;
             component.Select();
         }
 
@@ -375,31 +430,15 @@ namespace PSMViewer.Dialogs
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Add_Button_Click(object sender, RoutedEventArgs e)
+        private void Add(object sender = null, RoutedEventArgs e = null)
         {
 
             if (this._widget != null && path_field.Text.Length > 0)
             {
                 try
                 {
-                    KeyItemW itemw = KeyItemW.Create(path_field.Text);
-                    int i = 0;
-                    bool[] success = this._widget.Add(itemw);
-
-                    foreach (KeyItem key in itemw.Children)
-                    {
-                        if (success[i++] && key != null && key.Type != null)
-                        {
-                            this._widget.Defaults.Keys.CopyTo(key);
-                            Items.Add(new Item(this._widget.GetControl(key).Key));
-                        }
-
-                        if (!_cache.ContainsKey(key))
-                            _cache.Add(key, key);
-                        else
-                            _cache[key].CopyTo(key);
-
-                    }
+                    this._widget.Add(KeyItemW.Create(path_field.Text));
+                    Reload();                    
                 }
                 catch(Exception error)
                 {
@@ -409,7 +448,30 @@ namespace PSMViewer.Dialogs
             }           
 
         }
-        
-        
+
+        public void Reload()
+        {
+
+            if (this._widget == null)
+                return;
+
+            Items.Clear();
+
+            foreach (KeyItemW group in _widget.Groups)
+                Items.Add(new KeyEditorItem(group));
+
+            foreach (MultiControl control in _widget.Controls)
+                Items.Add(new KeyEditorItem(control.Key));
+        }
+
+        public bool Next()
+        {
+            return false;
+        }
+
+        public bool Previous()
+        {
+            return false;
+        }
     }
 }

@@ -15,83 +15,8 @@ using System.Runtime.CompilerServices;
 
 namespace PSMViewer.Models
 {
-    public class KeyItemW : IKeyItem, INotifyPropertyChanged, IDisposable
+    public class KeyItemW : KeyItem, INotifyPropertyChanged, IDisposable
     {
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public KeyItemW W { get; set; } = null;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public KeyValueConversion Conversion { get; private set; } = new KeyValueConversion();
-
-        KeyItemTitle _title;
-        /// <summary>
-        /// 
-        /// </summary>
-        public KeyItemTitle Title
-        {
-            get
-            {
-                return _title;
-            }
-        }
-
-        private string _path;
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Path
-        {
-            get
-            {
-                return _path;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string StaticPath
-        {
-            get
-            {
-                return _path;
-            }
-        }
-
-        private Color _color = Colors.Black;
-        /// <summary>
-        /// 
-        /// </summary>
-        public Color Color
-        {
-            get
-            {
-                return _color;
-            }
-
-            set
-            {
-                _color = value;
-                OnPropertyChanged("Color");
-                OnPropertyChanged("Brush");
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public SolidColorBrush Brush
-        {
-            get
-            {
-                return new SolidColorBrush(_color);
-            }
-        }
 
         private bool _auto = false;
         /// <summary>
@@ -115,85 +40,79 @@ namespace PSMViewer.Models
             }
         }
 
-        public bool HasWildcards { get; private set; } = false;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
-
-        private ObservableCollection<IKeyItem> _children = new ObservableCollection<IKeyItem>();
-        /// <summary>
-        ///
-        /// </summary>
-        public ObservableCollection<IKeyItem> Children
+        public new string Name
         {
             get
             {
-                return _children;
+                return _parent.Name;
             }
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public Dispatcher Dispatcher { get; private set; } = Dispatcher.CurrentDispatcher;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="TField"></typeparam>
-        /// <param name="field"></param>
-        /// <param name="value"></param>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
-        protected bool SetField<TField>(ref TField field, TField value, [CallerMemberName] string propertyName = "")
+        public override string Path
         {
-            if (EqualityComparer<TField>.Default.Equals(field, value)) return false;
-            field = value;
-            OnPropertyChanged(propertyName);
-
-            return true;
+            get
+            {
+                _path = null;
+                return base.Path.TrimEnd('.');
+            }
         }
 
+        public override Color Color
+        {
+            get
+            {
+                return base.Color;
+            }
+
+            set
+            {
+                base.Color = value;
+
+                foreach(KeyItem k in Children)
+                {
+                    if(!k._color.HasValue)
+                    {
+                        k.OnPropertyChanged("Color");
+                        k.OnPropertyChanged("Brush");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public override string StaticPath
+        {
+            get
+            {
+                return _parent.StaticPath;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool HasWildcards { get; private set; } = false;
+
+        /// <summary>
+        /// 
+        /// </summary>
         private System.Timers.Timer _timer = new System.Timers.Timer(15000);
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public KeyItemW()
+        public KeyItemW() : base()
         {
-
-            _title = new KeyItemTitle(this);
-            _timer.Elapsed += timer_Elapsed;            
+            _timer.Elapsed += Update;
             
         }
-
-        private void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            this.OnReload(this, Logger.Error);
-        }
-
-        /// <summary>
-        /// Triggers the <see cref="INotifyPropertyChanged.PropertyChanged"/> event
-        /// </summary>
-        /// <param name="propertyName"></param>
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public ReloadStatus Status { get; set; } = ReloadStatus.Idle;
-        
+                        
         /// <summary>
         /// Create a new wildcard item
         /// </summary>
@@ -202,19 +121,23 @@ namespace PSMViewer.Models
         public static KeyItemW Create(string path, List<string> ignored = null)
         {
 
+            KeyItemW item = new KeyItemW() { _parent = KeyItem.Create(path), _path = null  };
+
+            Path p = PSMonitor.Path.Extract(item.Path);
+
             List<IKeyItem> keys = new List<IKeyItem>();
-            Path p = PSMonitor.Path.Extract(KeyItem.Create(path).Path);
-            int i = 0;
             List<string> components = p.Components.ToList();
-            KeyItemW item = new KeyItemW() { _path = path };
-            bool _w = false;
+            
             Regex comma_seperated_expression_identification_test = new Regex(@"\{(.+?)\}", RegexOptions.Compiled);
+            
+            int i = 0;
+            bool _w = false;
 
             ignored = ignored ?? new List<string>();
 
             if (path.IndexOf('*') == -1 && !comma_seperated_expression_identification_test.IsMatch(path) && !ignored.Contains(path))
                 keys.Add(KeyItem.Create(path));
-
+            
             foreach (string c in components.ToArray())
             {
 
@@ -237,7 +160,6 @@ namespace PSMViewer.Models
 
                     }
 
-
                     foreach (string c2 in wildcard_expression_components)
                     {
 
@@ -257,7 +179,7 @@ namespace PSMViewer.Models
 
                     string ns = String.Join(".", components.GetRange(0, i));
                     Wildcard wildcard = new Wildcard(c, RegexOptions.IgnoreCase);
-
+                                        
                     foreach (Key k in PSM.Store(Dispatcher.CurrentDispatcher).Keys(ns))
                     {
                         if (!wildcard.IsMatch(k.Name))
@@ -285,46 +207,43 @@ namespace PSMViewer.Models
                 k.W = _w ? item : null;
                 item.Children.Add(k);
             }
-            
+
+            item._parent.PropertyChanged += item.Update;
+
+
             return item;
         }
 
-        /// <summary>
-        /// <see cref="IReload.Next"/>
-        /// </summary>
-        /// <returns></returns>
-        public bool Next()
+        private void Update(object sender = null, object e = null)
         {
-            return false;
-        }
-
-        /// <summary>
-        /// <see cref="IReload.Previous"/>
-        /// </summary>
-        /// <returns></returns>
-        public bool Previous()
-        {
-            return false;
+            this.OnReload(this, Logger.Error);
         }
 
         /// <summary>
         /// <see cref="IReload.Reload"/>
         /// </summary>
-        public void Reload()
+        public override void Reload()
         {
 
-            KeyItemW item = KeyItemW.Create(Path);
-
-            foreach (KeyItem k in item.Children)
+            using (KeyItemW item = KeyItemW.Create(StaticPath))
             {
-                if (!Children.Contains(k))
-                    Children.Add(k);
-            }
 
-            foreach (KeyItem k in Children)
-            {
-                if (!item.Children.Contains(k))
-                    Children.Remove(k);
+                foreach (KeyItem k in Children.ToArray())
+                {
+                    if (!item.Children.Contains(k))
+                        Children.Remove(k);
+                }
+
+                foreach (KeyItem k in item.Children)
+                {
+
+                    k.W = k.W != null ? this : null;
+
+                    if (!Children.Contains(k))
+                        Children.Add(k);
+                    
+                }
+
             }
 
         }
@@ -332,16 +251,21 @@ namespace PSMViewer.Models
         /// <summary>
         /// <see cref="IDisposable.Dispose"/>
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
+            
+            _timer.Stop();
             _timer.Dispose();
+            _parent.Dispose();
+
+            base.Dispose();
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="other"></param>
-        public void CopyTo(IKeyItem other)
+        public override void CopyTo(IKeyItem other)
         {
             this.Conversion.CopyTo(other.Conversion);
             this.Title.CopyTo(other.Title);

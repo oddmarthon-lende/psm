@@ -28,7 +28,13 @@
                 <x:Type TypeName="s:KeyValueConversionMode"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
-        
+
+        <CollectionViewSource Source="{Binding Items, ElementName=_window}" x:Key="viewSource" >
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="GroupName" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+
     </Window.Resources>
 
     <Grid>
@@ -51,10 +57,8 @@
                 <ToolBar Visibility="{Binding TreeVisibility, ElementName=_window}" >
                     <Label>Path : </Label>
                     <TextBox Text="{Binding Key.Path, Mode=OneWay, ElementName=treeView}" MinWidth="200" Width="auto" x:Name="path_field"/>
-                    <Button Height="20" Width="20" Grid.Column="1" Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Click="Add_Button_Click" IsEnabled="{Binding CanAdd, ElementName=_window}" Content="{StaticResource PlusIcon}" />
-                </ToolBar>
-
-                
+                    <Button Height="20" Width="20" Grid.Column="1" Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Click="Add" IsEnabled="{Binding CanAdd, ElementName=_window}" Content="{StaticResource PlusIcon}" />
+                </ToolBar>               
 
             </ToolBarTray>
         </DockPanel>
@@ -64,8 +68,45 @@
         </GroupBox>
 
 
-        <DataGrid ItemsSource="{Binding Items, ElementName=_window}" PreviewKeyDown="keys_PreviewKeyDown" 
+        <DataGrid ItemsSource="{Binding Source={StaticResource viewSource}}" PreviewKeyDown="keys_PreviewKeyDown" 
                   AutoGenerateColumns="False" CanUserAddRows="False" CanUserReorderColumns="True" CanUserDeleteRows="True" Grid.Row="1" Grid.Column="1" x:Name="keys">
+
+            <DataGrid.GroupStyle>
+                <!-- Style for groups at top level. -->
+                <GroupStyle>
+                    <GroupStyle.ContainerStyle>
+                        <Style TargetType="{x:Type GroupItem}">
+                            <Setter Property="Margin" Value="0,0,0,5"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type GroupItem}">
+                                        <Expander IsExpanded="True">
+                                            <Expander.Header>
+                                                <DockPanel>
+                                                    <TextBlock FontWeight="Bold" Text="{Binding Path=Name}" Margin="5,0,0,0" Width="auto"/>
+                                                </DockPanel>
+                                            </Expander.Header>
+                                            <Expander.Content>
+                                                <ItemsPresenter />
+                                            </Expander.Content>
+                                        </Expander>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </GroupStyle.ContainerStyle>
+                </GroupStyle>
+                <!-- Style for groups under the top level. -->
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <DockPanel Background="{DynamicResource AccentColor}">
+                                <TextBlock Text="{Binding Path=Name}" Margin="30,0,0,0" Width="auto"/>
+                            </DockPanel>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </DataGrid.GroupStyle>
 
             <DataGrid.Resources>
                 
@@ -134,7 +175,7 @@
                     </DataGridTemplateColumn.CellEditingTemplate>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Key.Path}" />
+                            <TextBlock Text="{Binding Key.StaticPath}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

@@ -215,7 +215,7 @@ namespace PSMViewer
 
                 }
 
-                obj.Dispatcher.Invoke(delegate
+                obj.Dispatcher.InvokeAsync(delegate
                 {
                     obj.Status = ReloadStatus.Idle;
                 });

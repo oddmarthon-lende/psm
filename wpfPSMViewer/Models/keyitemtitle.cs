@@ -22,6 +22,9 @@ namespace PSMViewer.Models
     {
 
         private KeyItemTitleMode _mode = KeyItemTitleMode.Component;
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyItemTitleMode Mode
         {
             get
@@ -37,8 +40,14 @@ namespace PSMViewer.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public IKeyItem Key { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string Value
         {
             get
@@ -64,6 +73,9 @@ namespace PSMViewer.Models
         }
 
         private string _alias;
+        /// <summary>
+        /// 
+        /// </summary>
         public string Alias
         {
             get
@@ -81,14 +93,24 @@ namespace PSMViewer.Models
 
         private uint? _position = null;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="propertyName"></param>
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public uint Position
         {
 
@@ -112,12 +134,20 @@ namespace PSMViewer.Models
 
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="item"></param>
         public KeyItemTitle(IKeyItem item)
         {
             Key = item;
             item.PropertyChanged += Item_PropertyChanged;
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="other"></param>
         public KeyItemTitle(KeyItemTitle other) : this(other.Key)
         {
             this.Mode = other.Mode;
@@ -125,21 +155,47 @@ namespace PSMViewer.Models
             this.Position = other.Position;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            OnPropertyChanged("Name");
+            switch(Mode)
+            {
+                case KeyItemTitleMode.Component:
+                case KeyItemTitleMode.Full:
+                    OnPropertyChanged("Value");
+                    break;
+            }
+            
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private string[] GetComponents()
         {
             return Key.Path.Split('.');
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return Value;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static bool operator ==(KeyItemTitle a, KeyItemTitle b)
         {
             if (System.Object.ReferenceEquals(a, b)) return true;
@@ -148,11 +204,22 @@ namespace PSMViewer.Models
             return a.Value == b.Value;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static bool operator !=(KeyItemTitle a, KeyItemTitle b)
         {
             return !(a == b);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public override bool Equals(object obj)
         {
             if (obj == null)
@@ -164,11 +231,19 @@ namespace PSMViewer.Models
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override int GetHashCode()
         {
             return Value.GetHashCode();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="other"></param>
         public void CopyTo(KeyItemTitle other)
         {
             other.Mode = this.Mode;
@@ -178,6 +253,9 @@ namespace PSMViewer.Models
 
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class KeyItemVariableException : Exception
     {
         public KeyItemVariableException(string msg) : base(msg)

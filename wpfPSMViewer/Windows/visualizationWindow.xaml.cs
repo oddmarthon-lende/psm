@@ -1222,8 +1222,18 @@ namespace PSMViewer
         /// <param name="e"></param>
         private void variable_combos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Reload();
+            Refresh();
+            this.OnReload(this);
         }
 
+        private void variable_combos_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            ComboBox combo = (ComboBox)sender;
+            KeyItem.Variable variable = (KeyItem.Variable)combo.DataContext;
+
+            if (!combo.IsDropDownOpen)
+                variable.Reload();
+            
+        }
     }
 }

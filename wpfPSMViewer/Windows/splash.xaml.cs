@@ -95,7 +95,7 @@ namespace PSMViewer
 
                             Thread.Sleep(1000);
                         }
-
+                        
                         Dispatcher.Invoke(Close);
 
                         foreach(Window w in _objects)
