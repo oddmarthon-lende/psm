@@ -9,7 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PSMonitor
+namespace PSM
 {
     /// <summary>
     /// Path Data Object

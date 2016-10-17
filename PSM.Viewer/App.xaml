@@ -1,0 +1,26 @@
+﻿<Application x:Class="PSM.Viewer.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:PSM.Viewer"
+             xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+             xmlns:v="clr-namespace:PSM.Viewer.Visualizations"
+             xmlns:c="clr-namespace:PSM.Viewer.Converters"
+             StartupUri="Windows\splash.xaml">
+    
+    <Application.Resources>
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>                
+                <ResourceDictionary Source="pack://application:,,,/PSM.Theme;component/Resources/grey.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/PSM.Theme;component/Resources/icons.xaml" />
+                <ResourceDictionary Source="Resources/styles.xaml" />
+                <ResourceDictionary Source="Resources/visualizationcontroltemplate.xaml" />
+            </ResourceDictionary.MergedDictionaries>           
+
+        </ResourceDictionary>
+
+    </Application.Resources>
+    
+</Application>

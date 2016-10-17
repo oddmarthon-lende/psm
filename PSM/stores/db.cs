@@ -16,7 +16,7 @@ using System.Collections;
 using System.Linq;
 using System.ComponentModel;
 
-namespace PSMonitor.Stores
+namespace PSM.Stores
 {
 
     /// <summary>
@@ -236,9 +236,9 @@ namespace PSMonitor.Stores
         {
 
             /// <summary>
-            /// <see cref="Store.Path.Path(PSMonitor.Path)"/>
+            /// <see cref="Store.Path.Path(global::PSM.Path)"/>
             /// </summary>
-            public Path(PSMonitor.Path path) : base(path) { }
+            public Path(global::PSM.Path path) : base(path) { }
 
             /// <summary>
             /// Converts a data record to <see cref="Entry" />
@@ -265,15 +265,15 @@ namespace PSMonitor.Stores
             }
 
             /// <summary>
-            /// <see cref="PSMonitor.Path.Extract(string)"/>
+            /// <see cref="global::PSM.Path.Extract(string)"/>
             /// </summary>
             public static new Path Create(string path)
             {
-                return new Path(PSMonitor.Path.Extract(path));
+                return new Path(global::PSM.Path.Extract(path));
             }
 
             /// <summary>
-            /// Adds the <see cref="PSMonitor.Path.Namespace"/> and <see cref="PSMonitor.Path.Key"/> as parameters to the provided <see cref="SqlCommand"/>.
+            /// Adds the <see cref="global::PSM.Path.Namespace"/> and <see cref="global::PSM.Path.Key"/> as parameters to the provided <see cref="SqlCommand"/>.
             /// </summary>
             /// <param name="command">The command to add the parameters to.</param>
             public void ToCommandParameters(SqlCommand command)

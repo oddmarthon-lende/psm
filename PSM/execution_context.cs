@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-namespace PSMonitor.Powershell
+namespace PSM.Powershell
 {
     
     

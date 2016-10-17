@@ -12,7 +12,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace PSMonitor.Stores
+namespace PSM.Stores
 {
 
     /// <summary>

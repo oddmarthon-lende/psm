@@ -1,0 +1,17 @@
+﻿<theme:Window x:Class="PSM.Viewer.Splash"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:theme="http://www.bakerhughes.com/wpf/psm/theme"
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen"
+        Title="Loading..." Height="600" Width="800" Topmost="True" ShowInTaskbar="False">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="100*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <ContentControl Grid.Row="0" Content="{StaticResource BakerHughesLogo}" Width="auto" Height="auto" Margin="200, 155, 200, 155" />
+        <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="10" Foreground="{StaticResource TextIconColor}" Background="{StaticResource MainColorDark}" BorderThickness="0" BorderBrush="Transparent" VerticalAlignment="Bottom" Margin="0,0,0,20"/>
+    </Grid>
+</theme:Window>

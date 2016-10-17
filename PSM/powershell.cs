@@ -1,4 +1,4 @@
-﻿using PSMonitor.Stores;
+﻿using PSM.Stores;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PSMonitor.Powershell
+namespace PSM.Powershell
 {
 
     public class Powershell : IDisposable
@@ -99,7 +99,7 @@ namespace PSMonitor.Powershell
         private object OnData(Envelope data)
         {
 
-            IStore store = PSM.Store();
+            IStore store = Store.Get();
 
             if (data == null)
                 return null;

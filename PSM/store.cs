@@ -16,10 +16,10 @@ using System.Reflection;
 using System.Threading;
 using System.Timers;
 
-namespace PSMonitor.Stores
+namespace PSM.Stores
 {
 
-    public class Setup : PSMonitor.Setup
+    public class Setup : global::PSM.Setup
     {
 
         public static TResult Get<T, TResult>(string name, bool allowEmpty = false)
@@ -177,9 +177,9 @@ namespace PSMonitor.Stores
         public virtual IOptions Options { get; protected set; } = new Configuration();
 
         /// <summary>
-        /// Extends the <see cref="PSMonitor.Path"/> with some additional properties
+        /// Extends the <see cref="global::PSM.Path"/> with some additional properties
         /// </summary>
-        protected class Path : PSMonitor.Path
+        protected class Path : global::PSM.Path
         {
 
             /// <summary>
@@ -200,8 +200,8 @@ namespace PSMonitor.Stores
             /// <summary>
             /// The constructor
             /// </summary>
-            /// <param name="path">The <see cref="PSMonitor.Path"/> to extend.</param>
-            public Path(PSMonitor.Path path)
+            /// <param name="path">The <see cref="global::PSM.Path"/> to extend.</param>
+            public Path(global::PSM.Path path)
             {
                 this.Namespace = path.Namespace;
                 this.Key = path.Key;
@@ -209,11 +209,11 @@ namespace PSMonitor.Stores
             }
 
             /// <summary>
-            /// <see cref="PSMonitor.Path.Extract(string)"/>
+            /// <see cref="global::PSM.Path.Extract(string)"/>
             /// </summary>
             public static new Path Extract(string path)
             {
-                return new Path(PSMonitor.Path.Extract(path));
+                return new Path(global::PSM.Path.Extract(path));
             }
 
         }
@@ -370,14 +370,14 @@ namespace PSMonitor.Stores
         public virtual void Dispose()
         {
 
-            foreach (KeyValuePair<object, IStore> pair in PSM._instances.ToArray())
+            foreach (KeyValuePair<object, IStore> pair in PSM.Store._instances.ToArray())
             {
 
                 IStore store;
 
                 if (pair.Value == this)
                 {
-                    while(!PSM._instances.TryRemove(pair.Key, out store));
+                    while(!PSM.Store._instances.TryRemove(pair.Key, out store));
                 }                    
 
             }

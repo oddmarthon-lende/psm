@@ -1,0 +1,29 @@
+﻿<theme:Window x:Class="PSM.Viewer.EventLogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PSM.Viewer"
+        xmlns:theme="http://www.bakerhughes.com/wpf/psm/theme"
+        mc:Ignorable="d"
+        Title="Event Log" Height="300" Width="300" x:Name="window" Icon="../icons/exclamation.png">
+    
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="100*" />
+        </Grid.RowDefinitions>
+
+        <Menu>
+
+            <MenuItem Header="File" >
+                <MenuItem Header="Clear" Click="Clear" />
+            </MenuItem>
+
+        </Menu>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Events, ElementName=window}" AutoGenerateColumns="True" />
+
+    </Grid>
+</theme:Window>

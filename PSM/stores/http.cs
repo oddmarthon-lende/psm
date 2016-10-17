@@ -20,7 +20,7 @@ using System.Linq;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 
-namespace PSMonitor.Stores
+namespace PSM.Stores
 {
     /// <summary>
     /// A store that connects over HTTP
@@ -556,7 +556,7 @@ namespace PSMonitor.Stores
                 this.Index = indexClass;
 
                 ServerTime = DateTime.Now;
-                DefaultValue = PSM.Store().Default.ToString();
+                DefaultValue = PSM.Store.Get().Default.ToString();
 
             }
 

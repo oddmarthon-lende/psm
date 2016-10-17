@@ -8,7 +8,7 @@ using System;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace PSMonitor
+namespace PSM
 {
 
     /// <summary>

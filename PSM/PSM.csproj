@@ -7,7 +7,7 @@
     <ProjectGuid>{EF9840D4-DB9F-416B-938B-3DCCE9C70516}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PSMonitor</RootNamespace>
+    <RootNamespace>PSM</RootNamespace>
     <AssemblyName>PSM</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

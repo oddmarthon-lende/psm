@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System;
 using System.Reflection;
 
-namespace PSMonitor
+namespace PSM
 {
 
     public delegate void Log(string msg, EventLogEntryType type);

@@ -3,18 +3,14 @@
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
 /// 
-using System.Collections.Generic;
 using System;
 using System.IO;
-using System.Timers;
-using System.Collections;
 using System.Collections.Concurrent;
-using PSMonitor.Stores;
+using PSM.Stores;
 using System.Configuration;
 using System.Reflection;
-using System.Threading;
 
-namespace PSMonitor
+namespace PSM
 {
     /// <summary>
     /// The realtime data handler delegate that is invoked when new data arrives.
@@ -45,7 +41,7 @@ namespace PSMonitor
 
             if (!File.Exists(path))
             {
-                using (Stream original = _assembly.GetManifestResourceStream("PSMonitor.psm.config"))
+                using (Stream original = _assembly.GetManifestResourceStream("PSM.psm.config"))
                 {
                     using (FileStream file = new FileStream(path, FileMode.CreateNew))
                     {
@@ -82,8 +78,8 @@ namespace PSMonitor
 
     }
 
-    public sealed class PSM
-    {   
+    public sealed class Store
+    {
 
         internal static ConcurrentDictionary<object, IStore> _instances = new ConcurrentDictionary<object, IStore>();
                 
@@ -93,7 +89,7 @@ namespace PSMonitor
         /// <param name="context">The context, used to have multiple stores running in different threads.</param>
         /// <param name="store">The store type, when using this parameter once, this will change the store for the context.</param>
         /// <returns>The store instance</returns>
-        public static IStore Store(object context = null, Type store = null)
+        public static IStore Get(object context = null, Type store = null)
         {
 
             IStore instance = null;

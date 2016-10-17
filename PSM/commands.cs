@@ -6,7 +6,7 @@
 using System;
 using System.Management.Automation;
 
-namespace PSMonitor.Powershell
+namespace PSM.Powershell
 {
     
     public delegate void IntervalChanged(SetIntervalCommand sender);
