@@ -1,4 +1,9 @@
-﻿using System;
+﻿/// <copyright file="keyitemtitle.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using System;
 using System.ComponentModel;
 
 namespace PSM.Viewer.Models
@@ -17,7 +22,7 @@ namespace PSM.Viewer.Models
     public class KeyItemTitle : INotifyPropertyChanged
     {
 
-        private KeyItemTitleMode _mode = KeyItemTitleMode.Component;
+        private KeyItemTitleMode? _mode;
         /// <summary>
         /// 
         /// </summary>
@@ -25,12 +30,27 @@ namespace PSM.Viewer.Models
         {
             get
             {
-                return _mode;
+                return _mode.HasValue ? _mode.Value : Key.W != null ? Key.W.Title.Mode : KeyItemTitleMode.Full;
             }
 
             set
             {
                 _mode = value;
+
+                if(Key.W != null && Key.W.Title._mode == _mode)
+                {
+                    _mode = null;
+                }
+
+                foreach(KeyItem key in Key.Children)
+                {
+                    if(!key.Title._mode.HasValue)
+                    {
+                        key.Title.OnPropertyChanged("Mode");
+                        key.Title.OnPropertyChanged("Value");
+                    }
+                }
+
                 OnPropertyChanged("Mode");
                 OnPropertyChanged("Value");
             }
@@ -76,18 +96,31 @@ namespace PSM.Viewer.Models
         {
             get
             {
-                return _alias;
+                return _alias == null ? Key.W != null ? Key.W.Title.Alias : null : _alias;
             }
 
             set
             {
                 _alias = value;
+
+                if(Key.W != null && _alias == Key.W.Title._alias)
+                {
+                    _alias = null;
+                }
+
+                foreach (KeyItem key in Key.Children)
+                {
+                    if (key.Title._alias == null)
+                    {
+                        key.Title.OnPropertyChanged("Alias");
+                        key.Title.OnPropertyChanged("Value");
+                    }
+                }
+
                 OnPropertyChanged("Alias");
                 OnPropertyChanged("Value");
             }
-        }
-
-        private uint? _position = null;
+        }        
 
         /// <summary>
         /// 
@@ -104,6 +137,7 @@ namespace PSM.Viewer.Models
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        private uint? _position = null;
         /// <summary>
         /// 
         /// </summary>
@@ -114,7 +148,7 @@ namespace PSM.Viewer.Models
             {
 
                 string[] components = GetComponents();
-                return _position.HasValue ? _position.Value : ((uint)(components.Length - 1));
+                return _position.HasValue ? _position.Value : Key.W != null ? Key.W.Title.Position : ((uint)(components.Length - 1));
             }
 
             set
@@ -123,8 +157,21 @@ namespace PSM.Viewer.Models
                 string[] components = GetComponents();
                 _position = Math.Min(value, ((uint)(components.Length - 1)));
 
+                if (Key.W != null && _position == Key.W.Title._position)
+                {
+                    _position = null;
+                }
+
+                foreach (KeyItem key in Key.Children)
+                {
+                    if (!key.Title._position.HasValue)
+                    {
+                        key.Title.OnPropertyChanged("Position");
+                        key.Title.OnPropertyChanged("Value");
+                    }
+                }
+
                 OnPropertyChanged("Position");
-                OnPropertyChanged("Name");
                 OnPropertyChanged("Value");
             }
 

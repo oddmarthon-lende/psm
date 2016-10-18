@@ -13,7 +13,7 @@
         xmlns:s="clr-namespace:PSM.Stores;assembly=PSM"
         xmlns:theme="clr-namespace:PSM.Theme;assembly=PSM.Theme"
         mc:Ignorable="d"
-        Title="Edit Keys" Height="600" Width="800" x:Name="_window">
+        Title="Metrics" Height="600" Width="800" x:Name="_window">
 
     <Window.Resources>
 

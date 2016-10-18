@@ -1,4 +1,9 @@
-﻿using System;
+﻿/// <copyright file="keyvalueconversion.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -307,15 +312,15 @@ namespace PSM.Stores
     public class KeyValueConversion
     {
 
-        private KeyValueConversionMode _mode = KeyValueConversionMode.None;
+        protected KeyValueConversionMode? _mode;
         /// <summary>
         /// The mode used when converting values
         /// </summary>
-        public KeyValueConversionMode Mode
+        public virtual KeyValueConversionMode Mode
         {
             get
             {
-                return _mode;
+                return _mode.HasValue ? _mode.Value : KeyValueConversionMode.None;
             }
 
             set
@@ -328,14 +333,16 @@ namespace PSM.Stores
         /// <summary>
         /// Hold the object converted from string <see cref="Value"/>
         /// </summary>
-        public object ConvertedValue { get; private set; } = 0D;
+        public virtual object ConvertedValue { get; protected set; } = 0D;
 
-        private string _value;
-
+        /// <summary>
+        /// 
+        /// </summary>
+        protected string _value;
         /// <summary>
         /// Value used in conjunction with <see cref="Mode"/> to convert data values to another
         /// </summary>
-        public string Value
+        public virtual string Value
         {
 
             get

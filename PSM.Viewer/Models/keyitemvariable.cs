@@ -1,19 +1,23 @@
-﻿using PSM;
+﻿/// <copyright file="keyitemvariable.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
 using PSM.Stores;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Threading;
 
 namespace PSM.Viewer.Models
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public partial class KeyItem : Key, IReload, INotifyPropertyChanged, IKeyItem
     {
 
@@ -244,7 +248,7 @@ namespace PSM.Viewer.Models
                 int count = Keys.Count;
                 bool changed = false;
 
-                foreach (Key k in (_subKeyCache.ContainsKey(parent) ? _subKeyCache[parent] : Store.Get(Dispatcher).Keys(parent)))
+                foreach (Key k in (Cache.ContainsKey(parent) ? Cache[parent] : Store.Get(Dispatcher).Keys(parent)))
                 {
 
                     if(i < count)

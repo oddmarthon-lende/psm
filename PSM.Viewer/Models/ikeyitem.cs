@@ -10,7 +10,7 @@ namespace PSM.Viewer.Models
         /// <summary>
         /// 
         /// </summary>
-        KeyValueConversion Conversion { get; }
+        KeyItemValueConversion Conversion { get; }
 
         /// <summary>
         /// 

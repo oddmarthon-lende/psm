@@ -102,7 +102,6 @@
 
                     <MenuItem Header="Refresh" InputGestureText="F5" Command="{Binding Commands[Refresh]}" />
                     <Separator />
-                    <MenuItem Header="Show / Hide Controls" InputGestureText="Space" Command="{Binding Commands[ControlsVisibility]}"  />
                     <MenuItem Header="Capture Mouse" IsCheckable="True" IsChecked="{Binding CaptureRightClick}"  />
                     <Separator />
                     <MenuItem Header="Properties" InputGestureText="Ctrl + W, P" Command="{Binding Commands[Properties]}"  />

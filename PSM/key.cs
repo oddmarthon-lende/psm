@@ -1,10 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿/// <copyright file="key.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using System;
 using System.Runtime.Serialization;
 
 namespace PSM.Stores
-{    
+{
 
     /// <summary>
     /// A data model that describes a key
@@ -17,16 +20,16 @@ namespace PSM.Stores
         /// <summary>
         /// The key name
         /// </summary>
-        public string Name { get; private set; }
+        public string Name { get; protected set; }
         /// <summary>
         /// The data type for this key's <see cref="Entry.Value"/>
         /// </summary>
-        public Type Type { get; private set; }
+        public Type Type { get; protected set; }
 
         /// <summary>
         /// The value conversion parameters
         /// </summary>
-        public KeyValueConversion Conversion { get; set; } = new KeyValueConversion();
+        public KeyValueConversion Conversion { get; protected set; } = new KeyValueConversion();
 
         /// <summary>
         /// Create a new Key with the provided <paramref name="name"/>  and <paramref name="type"/>

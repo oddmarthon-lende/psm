@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿/// <copyright file="tableview.xaml.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using System.Collections.Generic;
 using PSM.Viewer.Models;
 using System.Linq;
 using System.ComponentModel;
@@ -11,7 +16,9 @@ using PSM.Viewer.Commands;
 
 namespace PSM.Viewer.Visualizations
 {
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class Column
     {
 
@@ -29,6 +36,9 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public IEnumerable<Cell> Cells
         {
             get
@@ -50,6 +60,12 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="rows"></param>
+        /// <param name="cells"></param>
         public Column(KeyItem key, Dictionary<KeyItem, Row> rows, IList<Cell> cells)
         {
             Key = key;
@@ -59,15 +75,29 @@ namespace PSM.Viewer.Visualizations
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class Row
     {
-
+        /// <summary>
+        /// 
+        /// </summary>
         public Dictionary<KeyItem, Column> Columns { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private IList<Cell> _cells;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyItem Key { get; private set; }
         
+        /// <summary>
+        /// 
+        /// </summary>
         public string Header
         {
             get
@@ -76,6 +106,9 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public IEnumerable<Cell> Cells
         {
             get
@@ -97,6 +130,12 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="columns"></param>
+        /// <param name="cells"></param>
         public Row(KeyItem key, Dictionary<KeyItem, Column> columns, IList<Cell> cells)
         {
             Key = key;
@@ -106,23 +145,44 @@ namespace PSM.Viewer.Visualizations
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class Cell : INotifyPropertyChanged
     {
-
+        /// <summary>
+        /// 
+        /// </summary>
         public MultiControl Control { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="propertyName"></param>
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChangedEventHandler handler = PropertyChanged;
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Column Column { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Row Row { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public EntryItem Entry
         {
             get
@@ -131,7 +191,14 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private object _value;
+
+        /// <summary>
+        /// 
+        /// </summary>
         public object Value
         {
             get
@@ -140,6 +207,9 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public SolidColorBrush Brush
         {
             get
@@ -148,6 +218,12 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="control"></param>
+        /// <param name="col"></param>
+        /// <param name="row"></param>
         public Cell(MultiControl control, Column col, Row row)
         {
 
@@ -159,12 +235,20 @@ namespace PSM.Viewer.Visualizations
                 Control.DataChanged += _control_DataChanged;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
         private void _control_DataChanged(object sender)
         {
             OnPropertyChanged("Value");
             OnPropertyChanged("Entry");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="value"></param>
         public void SetValue(object value)
         {
             _value = value;
@@ -178,12 +262,24 @@ namespace PSM.Viewer.Visualizations
     public sealed partial class TableView : TableBase
     {
 
+        /// <summary>
+        /// 
+        /// </summary>
         private Dictionary<KeyItem, Column> _columns = new Dictionary<KeyItem, Column>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         private Dictionary<KeyItem, Row> _rows = new Dictionary<KeyItem, Row>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         private List<Cell> _cells = new List<Cell>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         public IEnumerable<Column> Columns
         {
             get
@@ -210,6 +306,9 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public IEnumerable<Row> Rows
         {
             get
@@ -221,10 +320,19 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private List<KeyItem> _rowKeyCache = new List<KeyItem>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         private Dictionary<string, KeyItem> _columnKeyCache = new Dictionary<string, KeyItem>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyItemPathList RowPaths
         {
             get
@@ -254,6 +362,9 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyItemPathList ColumnPaths
         {
             get
@@ -283,6 +394,9 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public int SplitPosition
         {
             get { return (int)GetValue(SplitPositionProperty); }
@@ -297,13 +411,16 @@ namespace PSM.Viewer.Visualizations
                 return false;
             });
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public TableView()
         {
             InitializeComponent();
 
             RegisterUserCommand();
-            RegisterUserCommand("Edit Rows", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_ROWS));
-            RegisterUserCommand("Edit Columns", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_COL));
+            RegisterUserCommand("Edit Row Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_ROWS));
+            RegisterUserCommand("Edit Column Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_COL));
 
             Properties.Add(new PropertyDefinition()
             {
@@ -315,12 +432,20 @@ namespace PSM.Viewer.Visualizations
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private new enum CommandType
         {
             EDIT_ROWS,
             EDIT_COL
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="parameter"></param>
         protected override void ExecuteCommand(object sender, object parameter)
         {
 
@@ -337,7 +462,7 @@ namespace PSM.Viewer.Visualizations
                         return new KeyEditor.KeyEditorItem(c.Key);
                     }).ToArray());
 
-                    window.Title = String.Format("Edit Columns [{0}]", Title);
+                    window.Title = String.Format("Edit Column Headers [{0}]", Title);
 
                     break;
 
@@ -348,7 +473,7 @@ namespace PSM.Viewer.Visualizations
                         return new KeyEditor.KeyEditorItem(r.Key);
                     }).ToArray());
 
-                    window.Title = String.Format("Edit Rows [{0}]", Title);
+                    window.Title = String.Format("Edit Row Headers [{0}]", Title);
 
                     break;
             }

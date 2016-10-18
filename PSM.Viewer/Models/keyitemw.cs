@@ -1,4 +1,8 @@
-﻿
+﻿/// <copyright file="keyitemw.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +15,9 @@ using PSM.Viewer.Utilities;
 
 namespace PSM.Viewer.Models
 {
+    /// <summary>
+    /// Wildcard class
+    /// </summary>
     public class KeyItemW : KeyItem, INotifyPropertyChanged, IDisposable
     {
 
@@ -36,7 +43,9 @@ namespace PSM.Viewer.Models
             }
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public new string Name
         {
             get
@@ -57,6 +66,9 @@ namespace PSM.Viewer.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override Color Color
         {
             get
@@ -66,6 +78,7 @@ namespace PSM.Viewer.Models
 
             set
             {
+
                 base.Color = value;
 
                 foreach(KeyItem k in Children)

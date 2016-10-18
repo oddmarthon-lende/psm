@@ -218,7 +218,7 @@ namespace PSM.Viewer.Dialogs
             {
                 get
                 {
-                    return Key.W != null ? Key.W.StaticPath : Key is KeyItemW ? "Groups" : "Metrics";
+                    return Key.W != null ? Key.W.StaticPath : Key is KeyItemW ? "Groups" : "Keys";
                 }
             }
 

@@ -130,235 +130,18 @@ namespace PSM.Viewer.Visualizations
             return _categories.GetEnumerator();
         }
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class KeyItemPath
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Path { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public uint? Position { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Color? Color { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public KeyValueConversion Conversion { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public KeyItemTitleMode Mode { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Alias { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string W { get; set; }
-
-        /// <summary>
-        /// Convert to <see cref="KeyItem"/>
-        /// </summary>
-        /// <param name="p"></param>
-        /// <returns>A new <see cref="KeyItem"/></returns>
-        public static KeyItem ToKeyItem(KeyItemPath p)
-        {
-
-            KeyItem key = KeyItem.Create(p.Path);
-
-            if (p.Position.HasValue)
-                key.Title.Position = p.Position.Value;
-
-            key.Color = p.Color.Value;
-            key.Conversion = p.Conversion;
-            key.Title.Mode = p.Mode;
-            key.Title.Alias = p.Alias;
-
-            return key;
-        }
-
-        /// <summary>
-        /// Convert to <see cref="KeyItemW"/>
-        /// </summary>
-        /// <param name="p"></param>
-        /// <returns>A new <see cref="KeyItem"/></returns>
-        public static KeyItemW ToKeyItemW(KeyItemPath p)
-        {
-
-            KeyItemW key = KeyItemW.Create(p.Path);
-
-            if (p.Position.HasValue)
-                key.Title.Position = p.Position.Value;
-
-            key.Color = p.Color.Value;
-            key.Conversion = p.Conversion;
-            key.Title.Mode = p.Mode;
-            key.Title.Alias = p.Alias;
-
-            return key;
-        }
-
-        public KeyItemPath(IKeyItem key)
-        {
-            Path = key.StaticPath;
-            Position = key.Title.Position;
-            Color = key.Color;
-            Conversion = key.Conversion;
-            Mode = key.Title.Mode;
-            Alias = key.Title.Alias;
-            W = key.W != null ? key.W.StaticPath : null;
-
-        }
-
-        public KeyItemPath() { }
-
         
-    }
-
-    /// <summary>
-    /// A wrapper class around List<string>.
-    /// Used to hold the key paths when the VisualizationControl is serialized to XAML
-    /// </summary>
-    public class KeyItemPathList : List<KeyItemPath> {
-
-        public bool Contains(string path)
-        {
-
-            foreach (KeyItemPath p in this)
-                if (p.Path == path)
-                    return true;
-
-            return false;
-        }
-
-        public KeyItemPath Get(string path)
-        {
-
-            foreach (KeyItemPath p in this)
-                if (p.Path == path)
-                    return p;
-
-            return null;
-        }
-
-        public bool Remove(string path) {
-
-            foreach(KeyItemPath p in this)
-                if (p.Path == path)
-                    return Remove(p);
-
-            return false;
-        }
-
-    }
-
     /// <summary>
     /// 
     /// </summary>
     public class KeyItemTitleList : Dictionary<string, uint?> {}
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class TitleDefaults
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public KeyItemTitleMode Mode { get; set; } = KeyItemTitleMode.Component;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public uint? Position { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="title"></param>
-        public void CopyTo(KeyItemTitle title)
-        {
-            if (Position.HasValue)
-                title.Position = Position.Value;
-
-            title.Mode = Mode;
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class KeyDefaults
-    {
         
-        /// <summary>
-        /// 
-        /// </summary>
-        [ExpandableObject]
-        public TitleDefaults Title { get; set; } = new TitleDefaults();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [ExpandableObject]
-        public SolidColorBrush Brush { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [ExpandableObject]
-        public KeyValueConversion Conversion { get; set; } = new KeyValueConversion();
-
-        public void CopyTo(IKeyItem item)
-        {
-            Conversion.CopyTo(item.Conversion);
-            Title.CopyTo(item.Title);
-
-            if(Brush != null)
-                item.Color = Brush.Color;
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class Defaults
-    {             
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [ExpandableObject]
-        public KeyDefaults Keys { get; set; } = new KeyDefaults();
-
-        
-    }
-
     /// <summary>
     /// The VisualizationControl base class, inherited by all visualization controls
     /// </summary>
     [Icon("../icons/application_view_gallery.png")]
     public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged
     {
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Defaults Defaults { get; set; } = new Defaults();
 
         /// <summary>
         /// <see cref="IReload.CancellationTokenSource"/>
@@ -882,7 +665,7 @@ namespace PSM.Viewer.Visualizations
             /// <summary>
             /// Modify the title position
             /// </summary>
-            EDIT_KEYS = int.MinValue,
+            METRICS = int.MinValue,
             /// <summary>
             /// Shows the properties window
             /// </summary>
@@ -929,7 +712,7 @@ namespace PSM.Viewer.Visualizations
             switch (cmd)
             {
 
-                case CommandType.EDIT_KEYS:
+                case CommandType.METRICS:
 
                     window = new Dialogs.KeyEditor(this);
                     window.Title += String.Format(" [{0}]", Title);
@@ -959,7 +742,7 @@ namespace PSM.Viewer.Visualizations
                     Next();
                     return;
 
-                case CommandType.EDIT_KEYS:
+                case CommandType.METRICS:
 
                     break;
 
@@ -1004,7 +787,7 @@ namespace PSM.Viewer.Visualizations
 
             #region Commands
             
-            CommandsSource.Add("EditKeys", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_KEYS));
+            CommandsSource.Add("Metrics", new RelayCommand(ExecuteCommand, canExecute, CommandType.METRICS));
             CommandsSource.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
             CommandsSource.Add("Previous", new RelayCommand(ExecuteCommand, canExecute, CommandType.PREV));
             CommandsSource.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
@@ -1058,7 +841,7 @@ namespace PSM.Viewer.Visualizations
 
             RegisterUserCommand("Properties", CommandsSource["Properties"]);
             RegisterUserCommand();
-            RegisterUserCommand("Edit Keys", CommandsSource["EditKeys"]);
+            RegisterUserCommand("Metrics", CommandsSource["Metrics"]);
 
             #endregion
 
@@ -1334,13 +1117,11 @@ namespace PSM.Viewer.Visualizations
 
             if (key == null || key.Type == null) return false;
 
-            Defaults.Keys.CopyTo(key);
-
             MultiControl control = GetControl(key);
 
             if (control == null)
             {
-                Defaults.Keys.CopyTo(key);
+                
                 control = new MultiControl(key, this.OnReload, collection);
                 _controls.Add(control);
 
@@ -1396,9 +1177,7 @@ namespace PSM.Viewer.Visualizations
             if (e.NewItems != null)
                 foreach (KeyItem k in e.NewItems)
                 {
-                    Defaults.Keys.CopyTo(k);
                     Add(k);
-
                 }
 
             if (RefreshOperation == null && (e.OldItems != null || e.NewItems != null))

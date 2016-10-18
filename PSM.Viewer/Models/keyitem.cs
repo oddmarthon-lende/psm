@@ -26,7 +26,8 @@ namespace PSM.Viewer.Models
     /// </summary>
     public partial class KeyItem : Key, IReload, INotifyPropertyChanged, IKeyItem, IDisposable
     {
-        
+
+                
         /// <summary>
         /// 
         /// </summary>
@@ -37,10 +38,29 @@ namespace PSM.Viewer.Models
         /// </summary>
         private static ConcurrentDictionary<string, Key[]> _subKeyCache = new ConcurrentDictionary<string, Key[]>();
 
+        private static ConcurrentDictionary<string, Key[]> Cache
+        {
+            get
+            {
+                if(_clearSubkeyCacheTimer == null)
+                {
+                    _clearSubkeyCacheTimer = new System.Timers.Timer(10000) { AutoReset = false };
+                    _clearSubkeyCacheTimer.Elapsed += ClearCache;
+                }
+
+                _clearSubkeyCacheTimer.Stop();
+                _clearSubkeyCacheTimer.Start();
+
+                return _subKeyCache;
+            }
+        }
+
+        private static System.Timers.Timer _clearSubkeyCacheTimer;
+
         /// <summary>
         /// 
         /// </summary>
-        public static void ClearCache()
+        private static void ClearCache(object sender = null, object args = null)
         {
             _subKeyCache.Clear();
         }
@@ -50,8 +70,36 @@ namespace PSM.Viewer.Models
         /// </summary>
         public KeyItemW W { get; set; } = null;
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected static Random _random = new Random((int)DateTime.Now.Ticks);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected KeyItemValueConversion _conversion;
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        public new KeyItemValueConversion Conversion
+        {
+            get
+            {
+                return _conversion;
+            }
+
+            private set
+            {
+                _conversion = value;
+                base.Conversion = (KeyValueConversion)_conversion;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         internal Color? _color;
 
         /// <summary>
@@ -75,7 +123,13 @@ namespace PSM.Viewer.Models
 
             set
             {
+
                 _color = value;
+
+                if (W != null && W._color == _color)
+                {
+                    _color = null;
+                }
 
                 OnPropertyChanged("Color");
                 OnPropertyChanged("Brush");
@@ -109,7 +163,7 @@ namespace PSM.Viewer.Models
                 {
                     string parent = _parent != null ? _parent.Path : "";
 
-                    Key[] keys = _subKeyCache.ContainsKey(parent) ? _subKeyCache[parent] : Store.Get(Dispatcher).Keys(parent);
+                    Key[] keys = Cache.ContainsKey(parent) ? Cache[parent] : Store.Get(Dispatcher).Keys(parent);
 
                     foreach (Key k in keys)
                     {
@@ -385,9 +439,13 @@ namespace PSM.Viewer.Models
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private void _init()
         {
             Title = new KeyItemTitle(this);
+            Conversion = new KeyItemValueConversion(this);
         }
         
         /// <summary>
@@ -487,10 +545,10 @@ namespace PSM.Viewer.Models
 
                 string parent = item._parent != null ? item._parent.Path : "";
 
-                Key[] keys = _subKeyCache.ContainsKey(parent) ? _subKeyCache[parent] : Store.Get(ctx).Keys(parent);
+                Key[] keys = Cache.ContainsKey(parent) ? Cache[parent] : Store.Get(ctx).Keys(parent);
 
-                if (!_subKeyCache.ContainsKey(parent))
-                    while(!_subKeyCache.TryAdd(parent, keys));
+                if (!Cache.ContainsKey(parent))
+                    while(!Cache.TryAdd(parent, keys));
 
                 foreach (Key k in keys)
                 {

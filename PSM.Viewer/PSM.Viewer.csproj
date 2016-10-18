@@ -99,6 +99,8 @@
     <Compile Include="Editors\store_option_editor.cs" />
     <Compile Include="extensions.cs" />
     <Compile Include="iundo.cs" />
+    <Compile Include="Models\keyitempath.cs" />
+    <Compile Include="Models\keyitemvalueconversion.cs" />
     <Compile Include="Models\layoutanchorablestate.cs" />
     <Compile Include="Models\mainwindowstate.cs" />
     <Compile Include="Models\ikeyitem.cs" />

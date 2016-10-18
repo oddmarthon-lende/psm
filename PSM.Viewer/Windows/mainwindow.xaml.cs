@@ -56,12 +56,12 @@ namespace PSM.Viewer
         /// <summary>
         /// A format string used with <see cref="string.Format(string, object[])"/> to format the path to stored windows.
         /// </summary>
-        static string WindowsFolderFormat = @"windows\{0}";
+        internal static string WindowsFolderFormat = @"windows\{0}";
 
         /// <summary>
         /// The isolated storage file store for this application.
         /// </summary>
-        static IsolatedStorageFile UserStore = IsolatedStorageFile.GetUserStoreForDomain();
+        internal static IsolatedStorageFile UserStore = IsolatedStorageFile.GetUserStoreForDomain();
                
 
         #endregion
@@ -413,6 +413,7 @@ namespace PSM.Viewer
         /// </summary>
         public CommandCollection Commands { get; private set; } = new CommandCollection();
 
+        
         /// <summary>
         /// Executes the commands based on CommandType argument passed to RelayCommand objects
         /// </summary>
@@ -519,13 +520,11 @@ namespace PSM.Viewer
                     break;
 
                 case CommandType.SAVE:
-
-                    IsolatedStorageFile store = IsolatedStorageFile.GetUserStoreForDomain();
                     
                     foreach (VisualizationWindow w in _windows)
                     {
                                                 
-                        using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(WindowsFolderFormat, String.Format("{0}.xaml", w.Id)), FileMode.Create))
+                        using (IsolatedStorageFileStream stream = UserStore.OpenFile(String.Format(WindowsFolderFormat, String.Format("{0}.xaml", w.Id)), FileMode.Create))
                         {
                             w.Dispatcher.Invoke(delegate
                             {
@@ -541,7 +540,7 @@ namespace PSM.Viewer
                             
                             LayoutAnchorable anchorable = (LayoutAnchorable)element;
                             
-                            using (IsolatedStorageFileStream stream = store.OpenFile(String.Format(@"state\{0}.xaml", anchorable.ContentId), FileMode.Create))
+                            using (IsolatedStorageFileStream stream = UserStore.OpenFile(String.Format(@"state\{0}.xaml", anchorable.ContentId), FileMode.Create))
                             {
                                 
                                 new LayoutAnchorableSavedState(anchorable).Export(stream);
@@ -687,7 +686,15 @@ namespace PSM.Viewer
 
                 using (IsolatedStorageFileStream stream = UserStore.OpenFile(String.Format(WindowsFolderFormat, filename), FileMode.Open, FileAccess.Read))
                 {
-                    Import(stream);
+                    try
+                    {
+                        Import(stream);
+                    }
+                    catch(Exception e)
+                    {
+                        Logger.Error(e);
+                    }
+                    
                 }
 
             }
@@ -765,7 +772,7 @@ namespace PSM.Viewer
         /// Imports a window into a new thread from the provided stream that contains the XAML to deserialize
         /// </summary>
         /// <param name="stream">The serialized text stream containing the XAML to deserialize</param>
-        private static async Task<VisualizationWindow> Import(Stream stream)
+        private static VisualizationWindow Import(Stream stream)
         {
             
             MainWindow mainWindow = (MainWindow)App.Current.MainWindow;
@@ -791,7 +798,7 @@ namespace PSM.Viewer
                                 {
                                     w.Id = Guid.NewGuid();
                                 });
-
+                            
                                 MessageBox.Show(String.Format("Id was changed to {0}, because there was already a window with the same Id", Id), "Duplicate Window ID", MessageBoxButton.OK, MessageBoxImage.Information);
                             }
 
@@ -880,8 +887,6 @@ namespace PSM.Viewer
                 }
 
                 _graph = _graph ?? (VisualizationControl)ChartType.New();
-
-                _graph.Defaults.Keys.Brush = (SolidColorBrush)App.Current.FindResource("TextIconColor");
 
                 visualizationGrid.Children.Clear();
 
