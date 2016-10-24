@@ -180,5 +180,41 @@ namespace PSM.Stores
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static bool operator ==(Key a, Key b)
+        {
+            if (System.Object.ReferenceEquals(a, b)) return true;
+            if (((object)a) == null || ((object)b) == null) return false;
+
+            return a.Name == b.Name;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static bool operator !=(Key a, Key b)
+        {
+            return !(a == b);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object obj)
+        {
+            Key other = obj as Key;
+            return other.Name == this.Name;
+        }
+
     }
 }

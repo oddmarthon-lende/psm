@@ -20,7 +20,15 @@ namespace PSM.Viewer.Models
     /// </summary>
     public class KeyItemW : KeyItem, INotifyPropertyChanged, IDisposable
     {
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        private System.Timers.Timer _timer = new System.Timers.Timer(15000);
 
+        /// <summary>
+        /// 
+        /// </summary>
         private bool _auto = false;
         /// <summary>
         /// 
@@ -108,20 +116,116 @@ namespace PSM.Viewer.Models
         /// </summary>
         public bool HasWildcards { get; private set; } = false;
 
+
         /// <summary>
         /// 
         /// </summary>
-        private System.Timers.Timer _timer = new System.Timers.Timer(15000);
+        private Dictionary<string, IKeyItem> _memory = new Dictionary<string, IKeyItem>();
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<KeyItemPath> Memory
+        {
+            get
+            {
+                List<KeyItemPath> list = new List<KeyItemPath>();
 
+                foreach (KeyValuePair<string, IKeyItem> pair in _memory)
+                {
+                    KeyItemPath p = new KeyItemPath(pair.Value);
+                    p.Path = pair.Key;
+                    list.Add(p);
+                }
+
+                return list;
+
+            }
+
+            set
+            {
+                
+
+                foreach (KeyItemPath p in value)
+                {
+                    if (_memory.ContainsKey(p.Path))
+                        p.CopyTo(_memory[p.Path]);
+                    else
+                        _memory.Add(p.Path, p.ToKeyItem());
+                }
+            }
+        }
+
+        
         /// <summary>
         /// Constructor
         /// </summary>
         public KeyItemW() : base()
         {
+
             _timer.Elapsed += Update;
+            Children.CollectionChanged += Children_CollectionChanged;
             
         }
-                        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Children_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+
+            if (e.NewItems != null && _parent != null)
+            {                
+
+                foreach (IKeyItem k in e.NewItems)
+                {
+
+                    string path = k.Path;
+
+                    if(_parent.Variables != null && _parent.Variables.Count() > 0)
+                    {
+
+                        Variable[] variables = _parent.Variables.ToArray();
+
+                        PSM.Path p = PSM.Path.Extract(k.Path);
+                        string[] components = p.Components.ToArray();
+
+                        for (int i = 0; i < p.Length; i++)
+                        {
+
+                            foreach (Variable v in variables)
+                            {
+                                if (v.Position == i)
+                                {
+                                    components[i] = "*";
+                                }
+                            }
+
+                        }
+
+                        path = String.Join(".", components);
+                    }
+                    
+
+                    if (_memory.ContainsKey(path))
+                    {
+
+                        _memory[path].CopyTo(k);
+                        _memory[path] = k;
+
+                    }
+                    else
+                    {
+                        _memory.Add(path, k);
+                    }
+
+                }
+
+            }
+
+        }
+
         /// <summary>
         /// Create a new wildcard item
         /// </summary>
@@ -213,7 +317,7 @@ namespace PSM.Viewer.Models
 
             foreach (IKeyItem k in keys)
             {
-                k.W = _w ? item : null;
+                ((KeyItem)k).W = _w ? item : null;
                 item.Children.Add(k);
             }
 
@@ -233,26 +337,34 @@ namespace PSM.Viewer.Models
         /// </summary>
         public override void Reload()
         {
-
+            
             using (KeyItemW item = KeyItemW.Create(StaticPath))
             {
 
                 foreach (KeyItem k in Children.ToArray())
                 {
                     if (!item.Children.Contains(k))
+                    {
                         Children.Remove(k);
+                        k.Dispose();
+                    }
+                    
                 }
 
                 foreach (KeyItem k in item.Children)
                 {
 
-                    k.W = k.W != null ? this : null;
-
                     if (!Children.Contains(k))
+                    {
+                        k.W = k.W != null ? this : null;
                         Children.Add(k);
+                    }
+                    else
+                        k.Dispose();
                     
                 }
 
+                item.Children.Clear();
             }
 
         }
@@ -262,11 +374,13 @@ namespace PSM.Viewer.Models
         /// </summary>
         public override void Dispose()
         {
-            
+
+            _parent.PropertyChanged -= Update;
+
             _timer.Stop();
             _timer.Dispose();
             _parent.Dispose();
-
+            
             base.Dispose();
         }
 

@@ -77,7 +77,7 @@ namespace PSM.Viewer.Visualizations
 
             }            
 
-            Model.InvalidatePlot(false);
+            Model.InvalidatePlot(true);
 
             foreach (KeyValuePair<KeyItem, T> s in Series)
             {

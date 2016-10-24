@@ -24,7 +24,7 @@ namespace PSM.Viewer.Models
         /// <summary>
         /// Key path variable
         /// </summary>
-        public class Variable : INotifyPropertyChanged, IReload
+        public class Variable : INotifyPropertyChanged, IReload, IDisposable
         {
 
             /// <summary>
@@ -293,6 +293,18 @@ namespace PSM.Viewer.Models
             public bool Previous()
             {
                 return false;
+            }
+
+            public void Dispose()
+            {
+                if(PropertyChanged != null)
+                    foreach(var e in PropertyChanged.GetInvocationList())
+                    {
+                        PropertyChanged -= (PropertyChangedEventHandler)e;
+                    }
+
+                if(Parent != null)
+                    Parent.Dispose();
             }
         }
 

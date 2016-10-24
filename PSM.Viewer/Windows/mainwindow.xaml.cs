@@ -28,11 +28,12 @@ using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Windows.Media;
 using System.Threading.Tasks;
 using PSM.Viewer.Commands;
+using System.Diagnostics;
 
 namespace PSM.Viewer
 {
 
-    public partial class MainWindow : Theme.Window, INotifyPropertyChanged, IReload
+    public partial class MainWindow : Theme.Window, INotifyPropertyChanged, IReload, IDisposable
     {
         
         
@@ -613,8 +614,16 @@ namespace PSM.Viewer
 
                 case CommandType.EXIT:
 
-                    App.Current.Shutdown();
-                    Environment.Exit(0);
+                    foreach (WindowInfo w in Windows)
+                    {
+                        VisualizationWindow v = (VisualizationWindow)w.Window;
+                        v.Dispatcher.Invoke(v.Dispose);
+                    }
+                        
+
+                    this.Dispose();
+
+                    Application.Current.Shutdown();
 
                     break;
                     
@@ -821,7 +830,10 @@ namespace PSM.Viewer
                 while (w == null)
                 {
                     if (error != null)
+                    {
+                        Debug.Fail(error.Message, error.StackTrace);
                         throw error;
+                    }
 
                     Thread.Sleep(100);
                 }
@@ -1084,6 +1096,11 @@ namespace PSM.Viewer
 
             }
         }
-        
+
+        public void Dispose()
+        {
+            Store.Get().Dispose();
+            Store.Get(Dispatcher.CurrentDispatcher).Dispose();
+        }
     }
 }

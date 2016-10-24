@@ -198,7 +198,7 @@ namespace PSM.Viewer.Models
 
             this.IsActive = false;
 
-            Store.Get(Dispatcher).Unregister(this);            
+            Unregister();
 
         }
 
@@ -677,7 +677,7 @@ namespace PSM.Viewer.Models
 
             Controls ctrl = (Controls)ctx;
             EntryItem[] entries;
-            
+
             try
             {
                 Debug.WriteLine("Loading... {0}", ctrl.Selected);
@@ -698,9 +698,13 @@ namespace PSM.Viewer.Models
 
                     ctrl.Status = ReloadStatus.Idle;
 
-                });
+                }, DispatcherPriority.Send, ctrl.CancellationTokenSource.Token);
 
 
+            }
+            catch (ThreadAbortException)
+            {
+                Debug.WriteLine(String.Format("Thread \"{0}\" was aborted ", Thread.CurrentThread.Name));
             }
             catch (Exception error)
             {
@@ -712,9 +716,11 @@ namespace PSM.Viewer.Models
 
                 Logger.Error(error);
             }
-            
+                                   
 
         }
+
+        private Thread _thread;
 
         /// <summary>
         /// <see cref="Controls.Reload"/>
@@ -722,19 +728,22 @@ namespace PSM.Viewer.Models
         public override void Reload()
         {
 
-            Thread thread;
-
-            if (Status == ReloadStatus.Loading)
-                return;
-            
+            if(_thread != null)
+            {
+                if (!_thread.IsAlive)
+                    _thread = null;
+                else
+                {
+                    _thread.Abort();
+                }
+            }
+                                    
             Unregister();
             
             Status = ReloadStatus.Loading;
             
-            thread = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
-            
-            thread.Start(this);
-
+            _thread = new Thread((ParameterizedThreadStart)ProcessReload) { Name = "Reload - " + base.Selected.Path };
+            _thread.Start(this);
 
         }
 

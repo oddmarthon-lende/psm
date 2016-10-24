@@ -10,10 +10,14 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Threading;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace PSM.Viewer.Dialogs.Commands
 {
-
+    /// <summary>
+    /// Copies a parameter to all keys
+    /// </summary>
     public class KeyEditorCopyCommand : ICommand
     {
 
@@ -81,6 +85,63 @@ namespace PSM.Viewer.Dialogs.Commands
         }
     }
 
+    /// <summary>
+    /// Randomize the colors for a group
+    /// </summary>
+    public class KeyEditorRandomizeColorsCommand : ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object parameter)
+        {
+            return true;
+        }
+
+        public KeyEditor Editor { get; set; }
+
+        public void Execute(object parameter)
+        {
+            
+            IEnumerable<object> items = parameter as IEnumerable<object>;
+
+            foreach(KeyEditor.KeyEditorItem item in items)
+            {
+                KeyItem key = item.Key as KeyItem;
+                key.RandomizeColor();
+            }
+
+            
+        }
+    }
+
+    public class KeyEditorResetColorsCommand : ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object parameter)
+        {
+            return true;
+        }
+
+        public KeyEditor Editor { get; set; }
+
+        public void Execute(object parameter)
+        {
+
+            IEnumerable<object> items = parameter as IEnumerable<object>;
+
+            foreach (KeyEditor.KeyEditorItem item in items)
+            {
+                KeyItem key = item.Key as KeyItem;
+                key.ResetColor();
+            }
+
+
+        }
+    }
+
 }
 
 namespace PSM.Viewer.Dialogs
@@ -91,8 +152,18 @@ namespace PSM.Viewer.Dialogs
     /// </summary>
     public partial class KeyEditor : Theme.Window, IReload
     {
-        
-        public Commands.KeyEditorCopyCommand CopyCommand { get; private set; }
+
+        /// <summary>
+        /// Gets the variables
+        /// </summary>
+        public IEnumerable<KeyItem.Variable> Variables
+        {
+            get
+            {
+
+                return KeyItem.GetGlobalVariables();
+            }
+        }
 
         /// <summary>
         /// 
@@ -305,31 +376,15 @@ namespace PSM.Viewer.Dialogs
             set { SetValue(CanAddProperty, value); }
         }
 
-        public CancellationTokenSource CancellationTokenSource
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
+        /// <summary>
+        /// 
+        /// </summary>
+        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
 
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public ReloadStatus Status
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public ReloadStatus Status { get; set; } = ReloadStatus.Idle;
 
         /// <summary>
         /// 
@@ -364,13 +419,15 @@ namespace PSM.Viewer.Dialogs
         public KeyEditor()
         {
 
+            Resources.Add("CopyCommand", new Commands.KeyEditorCopyCommand() { Editor = this });
+            Resources.Add("RandomColorCommand", new Commands.KeyEditorRandomizeColorsCommand() { Editor = this });
+            Resources.Add("ResetColorCommand", new Commands.KeyEditorResetColorsCommand() { Editor = this });
+
             InitializeComponent();
 
             this.OnReload(treeView);
 
-            Icon = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("PSM.Viewer.Icons.application_form_edit.png"));
-
-            CopyCommand = new Commands.KeyEditorCopyCommand() { Editor = this };            
+            Icon = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("PSM.Viewer.Icons.application_form_edit.png"));            
 
         }
 
@@ -389,12 +446,16 @@ namespace PSM.Viewer.Dialogs
                     if (this._widget != null)
                     {
 
-                        if (item.Key.W == null && this._widget.Remove(item.Key)) { }
+                        if (item.Key.W == null && this._widget.Remove(item.Key))
+                        {
+                            item.Key.Dispose();
+                        }
                         else if (item.Key.W != null)
                         {
                             if (System.Windows.MessageBox.Show("This item was added using a path expression, do you want to remove all items added by the expression?", "Cannot remove item", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                             {
-                                this._widget.Remove(item.Key.W);                                
+                                this._widget.Remove(item.Key.W);
+                                item.Key.W.Dispose();
                             }
                         }
 
@@ -457,6 +518,11 @@ namespace PSM.Viewer.Dialogs
 
             foreach (MultiControl control in _widget.Controls)
                 Items.Add(new KeyEditorItem(control.Key));
+
+            foreach (KeyItem.Variable variable in Variables)
+            {
+                variable.Reload();
+            }
         }
 
         public bool Next()
@@ -467,6 +533,11 @@ namespace PSM.Viewer.Dialogs
         public bool Previous()
         {
             return false;
+        }
+
+        private void variables_combo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            this.OnReload(this);
         }
     }
 }

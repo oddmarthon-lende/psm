@@ -21,6 +21,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Xml;
 using PSM.Viewer.Models;
+using System.Diagnostics;
 
 namespace PSM.Viewer
 {
@@ -153,6 +154,7 @@ namespace PSM.Viewer
             OnReload(control, obj, (error) =>
             {
                 Logger.Error(error);
+                Debug.Fail(error.Message, error.StackTrace);
                 MessageBox.Show(error.GetBaseException().Message, error.Message, MessageBoxButton.OK, MessageBoxImage.Error);
             });
 

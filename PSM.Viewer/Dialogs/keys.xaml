@@ -35,6 +35,8 @@
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
 
+        
+
     </Window.Resources>
 
     <Grid>
@@ -53,6 +55,27 @@
 
             <ToolBarTray DockPanel.Dock="Top">
 
+                <ToolBar Width="Auto" >
+
+                    <ItemsControl ItemsSource="{Binding Variables, ElementName=_window}" >
+
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Target="{Binding ElementName=list}" HorizontalAlignment="Left" Content="{Binding Name}" />
+                                    <ComboBox ItemsSource="{Binding Keys}" x:Name="list" IsSynchronizedWithCurrentItem="True" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}" SelectionChanged="variables_combo_SelectionChanged" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                </ToolBar>
 
                 <ToolBar Visibility="{Binding TreeVisibility, ElementName=_window}" >
                     <Label>Path : </Label>
@@ -76,15 +99,31 @@
                 <GroupStyle>
                     <GroupStyle.ContainerStyle>
                         <Style TargetType="{x:Type GroupItem}">
+                            <Setter Property="Width" Value="auto"/>
                             <Setter Property="Margin" Value="0,0,0,5"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="{x:Type GroupItem}">
                                         <Expander IsExpanded="True">
                                             <Expander.Header>
-                                                <DockPanel>
-                                                    <TextBlock FontWeight="Bold" Text="{Binding Path=Name}" Margin="5,0,0,0" Width="auto"/>
-                                                </DockPanel>
+
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock FontWeight="Bold" Text="{Binding Path=Name}" Margin="5,0,0,0" Width="auto" VerticalAlignment="Center"/>
+                                                    <Expander IsExpanded="False" ToolTip="Options" ExpandDirection="Right" VerticalAlignment="Center">
+                                                        <Expander.Content>
+                                                            <ToolBarTray>
+                                                                <ToolBar>
+                                                                    <Label>
+                                                                        Colors :
+                                                                    </Label>
+                                                                    <Button Command="{StaticResource RandomColorCommand}" CommandParameter="{Binding Items}" ToolTip="Randomize the colors">Random</Button>
+                                                                    <Button Command="{StaticResource ResetColorCommand}" CommandParameter="{Binding Items}" ToolTip="Set color back to group color or default if not belonging to a group">Reset</Button>
+                                                                </ToolBar>
+                                                            </ToolBarTray>
+                                                        </Expander.Content>
+                                                    </Expander>
+                                                </StackPanel>
+                                                                                                    
                                             </Expander.Header>
                                             <Expander.Content>
                                                 <ItemsPresenter />
@@ -120,7 +159,7 @@
 
                         <ContentPresenter Grid.Column="0" />
                         <Button Grid.Column="1" ToolTip="Copy To All" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" 
-                                BorderBrush="Transparent" Command="{Binding CopyCommand, ElementName=_window}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGridCell}}}" Content="{StaticResource CopyIcon}" />
+                                BorderBrush="Transparent" Command="{StaticResource CopyCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGridCell}}}" Content="{StaticResource CopyIcon}" />
                     </Grid>
                 </ControlTemplate>
 

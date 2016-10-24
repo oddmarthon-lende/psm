@@ -1,11 +1,16 @@
-﻿using PSM.Stores;
+﻿using System;
+/// <copyright file="ikeyitem.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
 
 namespace PSM.Viewer.Models
 {
-    public interface IKeyItem : IReload, INotifyPropertyChanged
+    public interface IKeyItem : IReload, INotifyPropertyChanged, IDisposable
     {
         /// <summary>
         /// 
@@ -40,7 +45,7 @@ namespace PSM.Viewer.Models
         /// <summary>
         /// 
         /// </summary>
-        KeyItemW W { get; set; }
+        KeyItemW W { get; }
 
         /// <summary>
         /// 

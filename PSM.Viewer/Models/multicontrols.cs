@@ -178,24 +178,7 @@ namespace PSM.Viewer.Models
                 pair.Value.Dispose();
             }
         }
-
-        public void Register()
-        {
-            Controls ctrl = Get();
-
-            Unregister();
-
-            if (ctrl != null)
-                ctrl.Register();
-        }
-
-        public void Unregister()
-        {
-            foreach (var pair in Controls)
-            {
-                pair.Value.Unregister();
-            }
-        }
+               
 
         public void Reload()
         {

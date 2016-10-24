@@ -68,7 +68,7 @@ namespace PSM.Viewer.Models
         /// <summary>
         /// 
         /// </summary>
-        public KeyItemW W { get; set; } = null;
+        public KeyItemW W { get; internal set; } = null;
 
         /// <summary>
         /// 
@@ -115,7 +115,7 @@ namespace PSM.Viewer.Models
                     if (W != null)
                         return W.Color;
 
-                    _color = Color.FromArgb(255, (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D));
+                    RandomizeColor();
                 }
 
                 return _color.Value;
@@ -193,7 +193,11 @@ namespace PSM.Viewer.Models
         public static ObservableCollection<Variable> GetGlobalVariables(object context = null)
         {
             context = context ?? Dispatcher.CurrentDispatcher;
-            return _variables_global.ContainsKey(context) ? _variables_global[context] : null;
+
+            if (!_variables_global.ContainsKey(context))
+                while(!_variables_global.TryAdd(context, new ObservableCollection<Variable>()));
+
+            return _variables_global[context];
         }
 
         /// <summary>
@@ -452,7 +456,7 @@ namespace PSM.Viewer.Models
         /// Constructor
         /// </summary>
         public KeyItem() : base(null, null) { _init(); }
-               
+                               
         /// <summary>
         /// Constructor
         /// </summary>
@@ -506,7 +510,7 @@ namespace PSM.Viewer.Models
                 int i = 0;
 
                 foreach (Variable v_local in vars.ToArray())
-                {                   
+                {
 
                     foreach ( Variable v_global in variables_global_ctx )
                     {
@@ -518,6 +522,7 @@ namespace PSM.Viewer.Models
                                 throw new KeyItemVariableException("Variables cannot have different parent nodes in the same context.");
                             }
 
+                            vars[i].Dispose();
                             vars[i] = v_global;
                         }
                         else if (v_global.Name == v_local.Name)
@@ -554,26 +559,26 @@ namespace PSM.Viewer.Models
                 {
                     if (item.Name == k.Name)
                     {
+                        item.Dispose();
                         item = new KeyItem(key, k.Type)
                         {
                             Context = ctx,
-                            Variables = vars.Count > 0 ? vars : null,
+                            Variables = vars,
                             _parent = item._parent
                         };
                     }
                 }
             }
-            
-            foreach (Variable v in vars)
+
+            foreach (Variable v in item.Variables)
             {
-                v.PropertyChanged -= item.V_PropertyChanged;
-                v.PropertyChanged += item.V_PropertyChanged;
+                v.PropertyChanged += item.Variable_PropertyChanged;
             }
 
             return item;
         }
 
-        private void V_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void Variable_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             OnPropertyChanged("Path");
             OnPropertyChanged("Name");
@@ -604,6 +609,26 @@ namespace PSM.Viewer.Models
                 _children.Add(new KeyItem(k) { _parent = this });
             }
 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Color RandomizeColor()
+        {
+            Color = Color.FromArgb(255, (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D));
+            return Color;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void ResetColor()
+        {
+            _color = null;
+            OnPropertyChanged("Color");
+            OnPropertyChanged("Brush");
         }
 
         /// <summary>
@@ -685,11 +710,37 @@ namespace PSM.Viewer.Models
 
         public virtual void Dispose()
         {
-            if(Variables != null)
+
+            if(PropertyChanged != null)
+                foreach(var e in PropertyChanged.GetInvocationList())
+                {
+                    PropertyChanged -= (PropertyChangedEventHandler)e;
+                }
+                                    
+            if (Variables != null)
+            {
                 foreach (Variable v in Variables)
                 {
-                    v.PropertyChanged -= V_PropertyChanged;
+                    v.PropertyChanged -= Variable_PropertyChanged;
                 }
+            }                
+
+            foreach(IKeyItem k in Children)
+            {
+                k.Dispose();
+            }
+
+            Children.Clear();
+
+            KeyItem parent = Parent;
+
+            while(parent != null)
+            {
+                parent.Dispose();
+                parent = parent.Parent;
+            }
+
+            
         }
     }
 }

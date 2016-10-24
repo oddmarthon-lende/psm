@@ -23,8 +23,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using System.Collections;
-using System.Windows.Media;
-using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 using PSM.Viewer.Commands;
 using PSM.Viewer.Dialogs;
 
@@ -146,7 +144,15 @@ namespace PSM.Viewer.Visualizations
         /// <summary>
         /// <see cref="IReload.CancellationTokenSource"/>
         /// </summary>
-        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource
+        {
+            get { return (CancellationTokenSource)GetValue(CancellationTokenSourceProperty); }
+            set { SetValue(CancellationTokenSourceProperty, value); }
+        }
+        public static readonly DependencyProperty CancellationTokenSourceProperty =
+            DependencyProperty.Register("CancellationTokenSource", typeof(CancellationTokenSource), typeof(VisualizationControl), new PropertyMetadata(new CancellationTokenSource()));
+
+
 
         #region Static Properties and Methods
 
@@ -438,6 +444,8 @@ namespace PSM.Viewer.Visualizations
         /// </summary>
         private Dictionary<string, KeyItemW> _groups = new Dictionary<string, KeyItemW>();
 
+        private int _page = 0;
+
         /// <summary>
         /// 
         /// </summary>
@@ -464,7 +472,7 @@ namespace PSM.Viewer.Visualizations
                 {
 
                     if (!_groups.ContainsKey(p.Path))
-                        Add(KeyItemPath.ToKeyItemW(p));
+                        Add(p.ToKeyItemW());
                 }
 
             }
@@ -495,7 +503,8 @@ namespace PSM.Viewer.Visualizations
                 
                 foreach(MultiControl c in Controls)
                 {
-                    list.Add(new KeyItemPath(c.Key));
+                    if(c.Key.W == null)
+                        list.Add(new KeyItemPath(c.Key));
                 }
 
                 return list;
@@ -503,35 +512,13 @@ namespace PSM.Viewer.Visualizations
 
             set
             {
-
-                foreach (KeyItemPath p in value)
-                {
-
-                    if(p.W != null)
-                    {
-
-                        if(!_groups.ContainsKey(p.W))
-                            Add(KeyItemW.Create(p.W));
-                    }
-                }
-
+                
                 foreach (KeyItemPath p in value)
                 { 
 
-                    KeyItem k = KeyItemPath.ToKeyItem(p);
+                    KeyItem k = p.ToKeyItem();
 
-                    if (p.W != null)
-                    {
-                        KeyItemW w = _groups[p.W];
-
-                        foreach(KeyItem k2 in w.Children)
-                        {
-                            if (k == k2)
-                                k.CopyTo(k2);
-                        }
-
-                    }
-                    else
+                    if(k.W == null)
                         Add(k);
                 }
             }
@@ -853,15 +840,15 @@ namespace PSM.Viewer.Visualizations
                       
 
             this.SizeChanged += delegate {
-                if (RefreshOperation == null)
-                    RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+                if (_refreshOperation == null)
+                    _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
             };
 
             this.Drop += VisualizationControl_Drop;            
 
         }
 
-        protected DispatcherOperation RefreshOperation = null;
+        protected DispatcherOperation _refreshOperation = null;
 
         /// <summary>
         /// Drop keys onto the widget
@@ -935,9 +922,7 @@ namespace PSM.Viewer.Visualizations
         /// Refresh the rendering, no data should be updated by this method.
         /// </summary>
         public virtual void Refresh()
-        {
-
-            RefreshOperation = null;
+        {            
 
             DependencyObject parent = this.Parent;
 
@@ -957,7 +942,9 @@ namespace PSM.Viewer.Visualizations
             }
 
             UpdateLayout();
-            
+
+            _refreshOperation = null;
+
         }
 
         /// <summary>
@@ -972,8 +959,7 @@ namespace PSM.Viewer.Visualizations
             }
 
             _controls.Clear();
-
-            GC.SuppressFinalize(this);
+           
         }
 
         /// <summary>
@@ -983,7 +969,7 @@ namespace PSM.Viewer.Visualizations
         /// <returns>The <see cref="MultiControl"/> if any</returns>
         public MultiControl GetControl(KeyItem key)
         {
-            return (from s in _controls where s.Key.Path == key.Path select s).ElementAtOrDefault(0);
+            return (from s in _controls where s.Key == key select s).ElementAtOrDefault(0);
         }
 
         /// <summary>
@@ -1017,7 +1003,8 @@ namespace PSM.Viewer.Visualizations
                 IsEnabledProperty,
                 AllowDropProperty,
                 VisibilityProperty,
-                StatusProperty
+                StatusProperty,
+                CancellationTokenSourceProperty
             };
 
             foreach (DependencyProperty p in properties)
@@ -1122,15 +1109,17 @@ namespace PSM.Viewer.Visualizations
             if (control == null)
             {
                 
-                control = new MultiControl(key, this.OnReload, collection);
+                control = new MultiControl(key, null, collection);
                 _controls.Add(control);
+                control.Get(DataIndexFieldAsEnum).Page = _page;
+
 
             }
             else
                 return false;
 
-            if(RefreshOperation == null)
-                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+            if(_refreshOperation == null)
+                _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
             return true;
 
@@ -1149,8 +1138,8 @@ namespace PSM.Viewer.Visualizations
                 m.Dispose();
             }
 
-            if (RefreshOperation == null)
-                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+            if (_refreshOperation == null)
+                _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
             return true;
         }
@@ -1165,8 +1154,7 @@ namespace PSM.Viewer.Visualizations
         {
 
             Dispatcher.InvokeAsync(this.Refresh);
-            this.OnReload(this);
-
+            
             if(e.OldItems != null)
                 foreach (KeyItem k in e.OldItems)
                 {
@@ -1180,8 +1168,8 @@ namespace PSM.Viewer.Visualizations
                     Add(k);
                 }
 
-            if (RefreshOperation == null && (e.OldItems != null || e.NewItems != null))
-                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+            if (_refreshOperation == null && (e.OldItems != null || e.NewItems != null))
+                _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
         }
 
@@ -1277,8 +1265,8 @@ namespace PSM.Viewer.Visualizations
 
             }            
 
-            if (RefreshOperation == null)
-                RefreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+            if (_refreshOperation == null)
+                _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
 
         }
 
@@ -1321,7 +1309,9 @@ namespace PSM.Viewer.Visualizations
 
             foreach (MultiControl control in _controls)
             {
-                yn |= control.Get(DataIndexFieldAsEnum).Next();
+                Controls ctrl = control.Get(DataIndexFieldAsEnum);
+                yn |= ctrl.Next();
+                _page = ctrl.Page;
             }
 
             return yn;
@@ -1338,7 +1328,9 @@ namespace PSM.Viewer.Visualizations
 
             foreach (MultiControl control in _controls)
             {
+                Controls ctrl = control.Get(DataIndexFieldAsEnum);
                 yn |= control.Get(DataIndexFieldAsEnum).Previous();
+                _page = ctrl.Page;
             }
 
             return yn;
@@ -1348,7 +1340,9 @@ namespace PSM.Viewer.Visualizations
         {
             foreach (MultiControl control in _controls)
             {
+                Controls ctrl = control.Get(DataIndexFieldAsEnum);
                 control.Reset();
+                _page = ctrl.Page;
             }
         }
                 

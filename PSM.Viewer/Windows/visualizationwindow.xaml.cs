@@ -128,14 +128,35 @@ namespace PSM.Viewer
     /// <summary>
     /// A window that can contain many <see cref="VisualizationControl"/>
     /// </summary>
-    public partial class VisualizationWindow : Theme.Window, IReload, INotifyPropertyChanged, IPropertyProvider, IDisposable
+    public partial  class VisualizationWindow : Theme.Window, IReload, INotifyPropertyChanged, IPropertyProvider, IDisposable
     {
-        
-        
+
+        /// <summary>
+        /// Store options for this context
+        /// </summary>
+        public StoreOptionsList StoreOptions
+        {
+            get
+            {
+                return _options.StoreOptions;
+            }
+
+            set
+            {
+                _options.StoreOptions = value;
+            }
+        }
+
         /// <summary>
         /// <see cref="IReload.CancellationTokenSource"/>
         /// </summary>
-        public CancellationTokenSource CancellationTokenSource { get; set; } = new CancellationTokenSource();
+        public CancellationTokenSource CancellationTokenSource
+        {
+            get { return (CancellationTokenSource)GetValue(CancellationTokenSourceProperty); }
+            set { SetValue(CancellationTokenSourceProperty, value); }
+        }
+        public static readonly DependencyProperty CancellationTokenSourceProperty =
+            DependencyProperty.Register("CancellationTokenSource", typeof(CancellationTokenSource), typeof(VisualizationWindow), new PropertyMetadata(new CancellationTokenSource()));
 
         #region Properties              
 
@@ -330,7 +351,7 @@ namespace PSM.Viewer
         /// The default CanExecute delegate that always returns true. 
         /// Used as parameter for commands. <see cref="RelayCommand"/>
         /// </summary>
-        private Func<object, object, bool> canExecute = delegate { return true; };
+        private bool _command_can_execute(object sender, object e) { return true; }
 
         #region PropertyDefinitions
 
@@ -350,7 +371,7 @@ namespace PSM.Viewer
             new PropertyDefinition() {
 
                 Category = "Layout",
-                TargetProperties = new List<object>(new string[] { "RowDefinitions", "ColumnDefinitions", "VariableDefinitions" })
+                TargetProperties = new List<object>(new string[] { "RowDefinitions", "ColumnDefinitions" })
             }
         };
 
@@ -362,28 +383,14 @@ namespace PSM.Viewer
         {
             get {
 
-                ObservableCollection<Models.KeyItem.Variable> vars = Models.KeyItem.GetGlobalVariables();
-
-                if (vars == null)
-                    return null;
-
-                return vars;
+                return Models.KeyItem.GetGlobalVariables();
           }
         }
 
-
-        public StoreOptionsList StoreOptions
-        {
-            get {
-                return _options.StoreOptions;
-            }
-
-            set {
-                _options.StoreOptions = value;
-            }
-        }
-        
         private string _zoomInterval;
+        /// <summary>
+        /// 
+        /// </summary>
         public string ZoomInterval
         {
             get
@@ -455,6 +462,9 @@ namespace PSM.Viewer
 
         private int _page = 0;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Visibility[] ToolbarsVisibility
         {
             get
@@ -566,18 +576,18 @@ namespace PSM.Viewer
         
         private void CreateCommands()
         {
-            Commands.Add("Export", new RelayCommand(ExecuteCommand, canExecute, CommandType.EXPORT));
-            Commands.Add("Properties", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES));
-            Commands.Add("PropertiesW", new RelayCommand(ExecuteCommand, canExecute, CommandType.PROPERTIES_W));
+            Commands.Add("Export", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.EXPORT));
+            Commands.Add("Properties", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.PROPERTIES));
+            Commands.Add("PropertiesW", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.PROPERTIES_W));
             Commands.Add("Previous", new RelayCommand(ExecuteCommand, delegate { return _page > 0; }, CommandType.PREVIOUS));
-            Commands.Add("Next", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEXT));
+            Commands.Add("Next", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.NEXT));
             Commands.Add("Reset", new RelayCommand(ExecuteCommand, delegate { return _page > 0; }, CommandType.RESET));
-            Commands.Add("Refresh", new RelayCommand(ExecuteCommand, canExecute, CommandType.RELOAD));
-            Commands.Add("Delete", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
-            Commands.Add("ControlsVisibility", new RelayCommand(ExecuteCommand, canExecute, CommandType.CONTROLS));
-            Commands.Add("AddChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD));
-            Commands.Add("Save", new RelayCommand(ExecuteCommand, canExecute, CommandType.SAVE));
-            Commands.Add("Zoom", new RelayCommand(ExecuteCommand, canExecute, CommandType.ZOOM));
+            Commands.Add("Refresh", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.RELOAD));
+            Commands.Add("Delete", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.DELETE));
+            Commands.Add("ControlsVisibility", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.CONTROLS));
+            Commands.Add("AddChart", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.ADD));
+            Commands.Add("Save", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.SAVE));
+            Commands.Add("Zoom", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.ZOOM));
             Commands.Add("Undo", new RelayCommand(ExecuteCommand, delegate { return UndoExtension.Count > 0; }, CommandType.UNDO));
         }
         
@@ -694,9 +704,9 @@ namespace PSM.Viewer
                         widget.Owner = this;
 
                         widget.RegisterUserCommand();
-                        widget.RegisterUserCommand("Remove", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_WIDGET, widget));
-                        widget.RegisterUserCommand("Copy To New Window", new RelayCommand(ExecuteCommand, canExecute, CommandType.TO_NEW, widget));
-                        widget.RegisterUserCommand("Clone", new RelayCommand(ExecuteCommand, canExecute, CommandType.CLONE, widget));
+                        widget.RegisterUserCommand("Remove", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.REMOVE_WIDGET, widget));
+                        widget.RegisterUserCommand("Copy To New Window", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.TO_NEW, widget));
+                        widget.RegisterUserCommand("Clone", new RelayCommand(ExecuteCommand, _command_can_execute, CommandType.CLONE, widget));
 
                         widget.MouseDoubleClick += Widget_MouseDblClick;
 
@@ -706,13 +716,7 @@ namespace PSM.Viewer
 
                         if (ZoomInterval != null)
                             widget.Timespan = _timeSpan;
-
-                        widget.Controls.CollectionChanged += delegate
-                        {
-                            OnPropertyChanged("Variables");
-                            OnPropertyChanged("VariablesVisibility");
-                        };
-
+                        
                     }
             }
             
@@ -951,7 +955,6 @@ namespace PSM.Viewer
 
                 case CommandType.RELOAD:
                     
-                    this.OnReload(this);
                     break;
 
                 case CommandType.PROPERTIES:
@@ -995,7 +998,7 @@ namespace PSM.Viewer
 
                     ZoomInterval =  (string)button.Content;
 
-                    this.OnReload(this);
+                    
 
                     break;
 
@@ -1020,7 +1023,7 @@ namespace PSM.Viewer
             }
 
             Refresh();
-            
+            this.OnReload(this);
         }
 
         #endregion
@@ -1063,7 +1066,8 @@ namespace PSM.Viewer
                 AllowsTransparencyProperty,
                 WindowStyleProperty,
                 StyleProperty,
-                CanEnterFullscreenProperty
+                CanEnterFullscreenProperty,
+                CancellationTokenSourceProperty
 
             };
 
@@ -1119,8 +1123,6 @@ namespace PSM.Viewer
             foreach (VisualizationControl widget in Children)
                 r |= widget.Next();
 
-            this.OnReload(this);
-
             ++_page;
 
             return _page < 0;
@@ -1136,9 +1138,7 @@ namespace PSM.Viewer
 
             foreach (VisualizationControl widget in Children)
                 r |= widget.Previous();
-
-            this.OnReload(this);
-
+            
             _page = Math.Max(0, --_page);
 
             return r;
@@ -1149,7 +1149,7 @@ namespace PSM.Viewer
             _page = 0;
             foreach (VisualizationControl widget in Children)
                 widget.Reset();
-            this.OnReload(this);
+
         }
         
         /// <summary>
@@ -1173,18 +1173,7 @@ namespace PSM.Viewer
             Dispatcher.InvokeShutdown();
                         
         }
-
-        /// <summary>
-        /// Reloads the window contents when the combo selection is changed
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void variable_combos_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            Refresh();
-            this.OnReload(this);
-        }
-
+        
         private void variable_combos_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             ComboBox combo = (ComboBox)sender;
@@ -1193,6 +1182,11 @@ namespace PSM.Viewer
             if (!combo.IsDropDownOpen)
                 variable.Reload();
             
+        }
+
+        private void variable_combos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            this.OnReload(this);
         }
     }
 }

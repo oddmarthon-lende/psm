@@ -116,7 +116,7 @@
 
                     <ToolBar Visibility="{Binding IsChecked, ElementName=view_toolbars_variables_mi, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}" Width="Auto" x:Name="variableToolbar" >
 
-                        <ItemsControl ItemsSource="{Binding Variables, UpdateSourceTrigger=PropertyChanged}" >
+                        <ItemsControl ItemsSource="{Binding Variables}" >
 
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>

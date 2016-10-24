@@ -355,7 +355,7 @@ namespace PSM.Viewer.Visualizations
                 foreach (KeyItemPath p in value)
                 {
 
-                    KeyItem k = KeyItemPath.ToKeyItem(p);
+                    KeyItem k = p.ToKeyItem();
                     _rowKeyCache.Add(k);
                 }
 
@@ -387,7 +387,7 @@ namespace PSM.Viewer.Visualizations
                 foreach (KeyItemPath p in value)
                 {
 
-                    KeyItem k = KeyItemPath.ToKeyItem(p);
+                    KeyItem k = p.ToKeyItem();
                     _columnKeyCache.Add(p.Path, k);
                 }
 
@@ -419,8 +419,8 @@ namespace PSM.Viewer.Visualizations
             InitializeComponent();
 
             RegisterUserCommand();
-            RegisterUserCommand("Edit Row Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_ROWS));
-            RegisterUserCommand("Edit Column Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_COL));
+            RegisterUserCommand("Row Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_ROWS));
+            RegisterUserCommand("Column Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_COL));
 
             Properties.Add(new PropertyDefinition()
             {

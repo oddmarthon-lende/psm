@@ -1,9 +1,13 @@
-﻿using PSM.Stores;
-using System;
+﻿/// <copyright file="keyitempath.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2015 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
+using PSM.Stores;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows.Markup;
 using System.Windows.Media;
 
 namespace PSM.Viewer.Models
@@ -11,8 +15,10 @@ namespace PSM.Viewer.Models
     /// <summary>
     /// 
     /// </summary>
+    [ContentProperty("Children")]
     public class KeyItemPath
     {
+        
         /// <summary>
         /// 
         /// </summary>
@@ -42,30 +48,23 @@ namespace PSM.Viewer.Models
         /// 
         /// </summary>
         public string Alias { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public string W { get; set; }
-
+                
         /// <summary>
         /// Convert to <see cref="KeyItem"/>
         /// </summary>
         /// <param name="p"></param>
         /// <returns>A new <see cref="KeyItem"/></returns>
-        public static KeyItem ToKeyItem(KeyItemPath p)
+        public KeyItem ToKeyItem()
         {
 
-            KeyItem key = KeyItem.Create(p.Path);
+            KeyItem key = KeyItem.Create(Path);
 
-            if (p.Position.HasValue)
-                key.Title.Position = p.Position.Value;
+            CopyTo(key);
 
-            key.Color = p.Color.Value;
-            key.Conversion.Mode = p.Conversion.Mode;
-            key.Conversion.Value = p.Conversion.Value;
-            key.Title.Mode = p.Mode;
-            key.Title.Alias = p.Alias;
+            foreach(KeyItemPath p in Children)
+            {
+                key.Children.Add(p.ToKeyItem());
+            }
 
             return key;
         }
@@ -75,25 +74,28 @@ namespace PSM.Viewer.Models
         /// </summary>
         /// <param name="p"></param>
         /// <returns>A new <see cref="KeyItem"/></returns>
-        public static KeyItemW ToKeyItemW(KeyItemPath p)
+        public KeyItemW ToKeyItemW()
         {
 
-            KeyItemW key = KeyItemW.Create(p.Path);
+            KeyItemW key = KeyItemW.Create(Path);
 
-            if (p.Position.HasValue)
-                key.Title.Position = p.Position.Value;
-
-            key.Color = p.Color.Value;
-            key.Conversion.Mode = p.Conversion.Mode;
-            key.Conversion.Value = p.Conversion.Value;
-            key.Title.Mode = p.Mode;
-            key.Title.Alias = p.Alias;
+            CopyTo(key);
+            key.Memory = Children;
 
             return key;
         }
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+        public List<KeyItemPath> Children { get; private set; } = new List<KeyItemPath>();
+
+        public KeyItemPath(KeyItemW key) : this((IKeyItem)key)
+        {
+            Children = key.Memory.ToList();
+        }
+
         public KeyItemPath(IKeyItem key)
         {
+            
             Path = key.StaticPath;
             Position = key.Title.Position;
             Color = key.Color;
@@ -101,8 +103,20 @@ namespace PSM.Viewer.Models
             Conversion.Value = key.Conversion.Value;
             Mode = key.Title.Mode;
             Alias = key.Title.Alias;
-            W = key.W != null ? key.W.StaticPath : null;
+            Children = key.Children.Select((k) => { return new KeyItemPath(k); }).ToList();
 
+        }
+
+        public void CopyTo(IKeyItem key)
+        {
+            if (Position.HasValue)
+                key.Title.Position = Position.Value;
+
+            key.Color = Color.Value;
+            key.Conversion.Mode = Conversion.Mode;
+            key.Conversion.Value = Conversion.Value;
+            key.Title.Mode = Mode;
+            key.Title.Alias = Alias;
         }
 
         public KeyItemPath() { }

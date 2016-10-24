@@ -19,7 +19,7 @@ namespace PSM.Viewer.Visualizations
         public Line()
         {
             
-            InitializeComponent();        
+            InitializeComponent();
                 
             this.SeriesAdded += Line_SeriesAdded;
 
@@ -44,25 +44,7 @@ namespace PSM.Viewer.Visualizations
 
         private void Line_SeriesAdded(MultiControl control, TwoColorLineSeries series)
         {
-            //series.ItemsSource = null;
-
-            //control.Entries.CollectionChanged += (sender, args) =>
-            //{
-            //    if(args.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
-            //    {
-            //        foreach(EntryItem entry in args.NewItems)
-            //        {
-            //            series.Points.Add(new DataPoint(DateTimeAxis.ToDouble(entry.Index), control.Key.Convert<double>((Entry)entry)));
-            //        }
-            //    }
-            //    else if(args.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
-            //    {
-            //        series.Points.Clear();
-            //    }
-            //};
-
-            
-
+                        
             SetBinding(LineStyleProperty, new Binding("Value")
             {
                 Source = new Utilities.BindingWrapper<LineStyle>(
