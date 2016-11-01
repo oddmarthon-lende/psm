@@ -16,7 +16,7 @@ namespace PSM.Powershell
 {
     
     
-    class ScriptExecutionContext : IDisposable
+    internal class ScriptExecutionContext : IDisposable
     {
         
         private const string _scriptExecutionContextIDString = "ScriptExecutionContextID";

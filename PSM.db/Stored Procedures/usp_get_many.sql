@@ -11,18 +11,17 @@ AS
 
 	select @basetype = [Type], @keyid = [Id] from [keys] where [Name] = @Key and [NamespaceId] = (select [Id] from [namespaces] where [Namespace] = @Namespace);
 
+	set @q = ';with p as
+				  (
+					select [Id] from [tbl_' + @basetype + ']
+						where [KeyId] = @keyid ';
+
 	if(@basetype is null)
 	begin
 		return 0;
 	end
 	else if(@IndexColumn = 'Index')
-	begin
-		
-		
-		set @q = ';with p as
-				  (
-					select [Id] from [tbl_' + @basetype + ']
-						where [KeyId] = @keyid ';
+	begin		
 
 		if(@End is not null)
 		begin
@@ -50,7 +49,10 @@ AS
 	else
 	begin
 
-		set @q = 'select [' + @IndexColumn + '] as [Index], [Value], [Timestamp] from [tbl_' + @basetype + '] where [KeyId] = @keyid and ([' + @IndexColumn + '] ';
+		set @q = @q + ')
+				select t.[' + @IndexColumn + '] as [Index], t.[Value], t.[Timestamp] from [tbl_' + @basetype + '] t
+					inner join p on (t.Id = p.Id)  
+					where [KeyId] = @keyid and (t.[' + @IndexColumn + '] ';
 		
 		set @q = @q + ' >';
 
@@ -69,12 +71,12 @@ AS
 		if(@End is not null)
 		begin
 
-			set @q = @q + ' and [' + @IndexColumn + '] <= @End)'
+			set @q = @q + ' and t.[' + @IndexColumn + '] <= @End)'
 
 		end
 
-		set @q = @q + ' order by [' + @IndexColumn + '] desc';
-		print @q;
+		set @q = @q + ' order by t.[' + @IndexColumn + '] desc';
+		
 	end
 
 	exec sp_executesql @q, N'@keyid bigint, @Start sql_variant, @End sql_variant', @keyid = @keyid, @Start = @Start, @End = @End;

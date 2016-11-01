@@ -617,7 +617,7 @@ namespace PSM.Viewer
                     foreach (WindowInfo w in Windows)
                     {
                         VisualizationWindow v = (VisualizationWindow)w.Window;
-                        v.Dispatcher.Invoke(v.Dispose);
+                        v.Dispatcher.InvokeAsync(v.Dispose);
                     }
                         
 

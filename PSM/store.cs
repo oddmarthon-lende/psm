@@ -19,7 +19,7 @@ using System.Timers;
 namespace PSM.Stores
 {
 
-    public class Setup : global::PSM.Setup
+    internal class Setup : global::PSM.Setup
     {
 
         public static TResult Get<T, TResult>(string name, bool allowEmpty = false)
@@ -37,7 +37,7 @@ namespace PSM.Stores
         }
 
         [ConfigurationCollection(typeof(SettingElement), CollectionType = ConfigurationElementCollectionType.AddRemoveClearMap)]
-        public class SettingsCollection : ConfigurationElementCollection
+        internal class SettingsCollection : ConfigurationElementCollection
         {
             protected override ConfigurationElement CreateNewElement()
             {
@@ -55,7 +55,7 @@ namespace PSM.Stores
 
         }
 
-        public class SettingElement : ConfigurationElement
+        internal class SettingElement : ConfigurationElement
         {
 
             [ConfigurationProperty("for", IsRequired = true)]

@@ -8,13 +8,13 @@ using System.Management.Automation;
 
 namespace PSM.Powershell
 {
-    
-    public delegate void IntervalChanged(SetIntervalCommand sender);
-    public delegate void NamespaceChanged(SetNamespaceCommand sender);
-    public delegate void DataPushed(PushDataCommand sender);
+
+    internal delegate void IntervalChanged(SetIntervalCommand sender);
+    internal delegate void NamespaceChanged(SetNamespaceCommand sender);
+    internal delegate void DataPushed(PushDataCommand sender);
 
     [Cmdlet(VerbsCommon.Set, "Interval")]
-    public class SetIntervalCommand : PSCmdlet
+    internal class SetIntervalCommand : PSCmdlet
     {
 
         public static event IntervalChanged Changed;
@@ -38,7 +38,7 @@ namespace PSM.Powershell
     }
 
     [Cmdlet(VerbsCommon.Set, "Namespace")]
-    public class SetNamespaceCommand : PSCmdlet
+    internal class SetNamespaceCommand : PSCmdlet
     {
 
         public static event NamespaceChanged Changed;
@@ -61,7 +61,7 @@ namespace PSM.Powershell
     }
 
     [Cmdlet(VerbsCommon.Push, "Data")]
-    public class PushDataCommand : PSCmdlet
+    internal class PushDataCommand : PSCmdlet
     {
 
         public static event DataPushed Pushed;

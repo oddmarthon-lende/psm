@@ -19,7 +19,7 @@ namespace PSM
     /// <returns>A starting index from which the next transfer occurs.</returns>
     public delegate object RealTimeData(Envelope data);
 
-    public class Setup : ConfigurationSection
+    internal class Setup : ConfigurationSection
     {
         private static Assembly _assembly = Assembly.GetExecutingAssembly();
 

@@ -176,7 +176,8 @@ namespace PSM.Viewer.Models
         /// Append a data entry
         /// </summary>
         /// <param name="item"></param>
-        protected virtual void Append(EntryItem item) {
+        protected virtual void Append(EntryItem item)
+        {
             
             if (!IsActive) return;
             Entries.Insert(0, item);
@@ -400,10 +401,8 @@ namespace PSM.Viewer.Models
 
         private Task<IEnumerable<EntryItem>> ReloadTask = null;
 
-        private ConcurrentDictionary<string, ConcurrentQueue<Entry>> _data = new ConcurrentDictionary<string, ConcurrentQueue<Entry>>();
-
+        private static ConcurrentDictionary<Controls, ConcurrentQueue<Entry>> _data = new ConcurrentDictionary<Controls, ConcurrentQueue<Entry>>();
         private DispatcherOperation ProcessQueueOperation = null;
-
         private ReloadStatus _status = ReloadStatus.Idle;
         /// <summary>
         /// <see cref="Controls.Status"/>
@@ -670,6 +669,71 @@ namespace PSM.Viewer.Models
             }
 
             base.Append(item);
+
+            switch (_typeName)
+            {
+
+                case "datetime":
+
+                    DateTime start = (DateTime)Start;
+                    DateTime end = (DateTime)End;
+
+                    EntryItem entry = null;
+
+                    int count = Entries.Count;
+
+                    while (count > 0)
+                    {
+
+                        entry = Entries.First();
+
+                        if (entry.Timestamp > end)
+                        {
+                            Entries.RemoveAt(0);
+                            count--;
+
+                            continue;
+                        }
+
+                        break;
+                    }
+
+                    count = Entries.Count;
+
+                    while (count > 0)
+                    {
+
+                        entry = Entries.Last();
+
+                        if (entry.Timestamp < start)
+                        {
+                            Entries.Remove(entry);
+                            count--;
+
+                            continue;
+                        }
+
+                        break;
+                    }
+
+                    break;
+
+                case "byte":
+                case "int16":
+                case "int32":
+                case "int64":
+                    {
+
+                        while (Entries.Count > (long)Count)
+                            Entries.RemoveAt(Entries.Count - 1);
+
+                        break;
+
+                    }
+
+            }
+
+            
         }
         
         private static void ProcessReload(object ctx)
@@ -786,110 +850,47 @@ namespace PSM.Viewer.Models
             if (IsActive)
             {
                 
-                if (!_data.ContainsKey(data.Path))
-                    while(!_data.TryAdd(data.Path, new ConcurrentQueue<Entry>()));
+                if (!_data.ContainsKey(this))
+                    while(!_data.TryAdd(this, new ConcurrentQueue<Entry>()));
 
                 ConcurrentQueue<Entry> queue;
 
-                while(!_data.TryGetValue(data.Path, out queue));
+                while(!_data.TryGetValue(this, out queue));
 
                 foreach (Entry entry in data.Entries.OrderBy( (e) => { return e.Index; }))
                 {
                     queue.Enqueue(entry);
                 }
-                
+
                 if(ProcessQueueOperation == null)
-                    ProcessQueueOperation = Dispatcher.InvokeAsync(ProcessQueue, DispatcherPriority.Normal);
+                    ProcessQueueOperation = Dispatcher.InvokeAsync(ProcessQueue);
 
             }
 
             startIndex = data.Entries.Max(entry => { return entry.Index; });
 
             return startIndex;
-        }        
+        }
 
+       
         /// <summary>
         /// Processes the queue and updates data
         /// </summary>
         private void ProcessQueue()
-        {          
+        {
 
-            ConcurrentQueue<Entry> queue;            
+            ConcurrentQueue<Entry> queue;
 
-            if (!_data.TryGetValue(Selected.Parent.Path, out queue))
-                return;            
+            while (!_data.TryGetValue(this, out queue)) ;
 
             while (queue.Count > 0)
             {
                 Entry entry;
 
-                while (!queue.TryDequeue(out entry));
+                while (!queue.TryDequeue(out entry)) ;
 
                 if (entry.Key == Selected.Name)
                     Append((EntryItem)entry);
-            }
-                        
-            switch (_typeName)
-            {
-
-                case "datetime" :
-
-                    DateTime start = (DateTime)Start;
-                    DateTime end = (DateTime)End;
-                    
-                    EntryItem entry = null;
-
-                    int count = Entries.Count;
-
-                    while(count > 0)
-                    {
-
-                        entry = Entries.First();
-
-                        if(entry.Timestamp > end)
-                        {
-                            Entries.RemoveAt(0);
-                            count--;
-
-                            continue;
-                        }
-
-                        break;
-                    }
-
-                    count = Entries.Count;
-
-                    while (count > 0)
-                    {
-
-                        entry = Entries.Last();
-
-                        if (entry.Timestamp < start)
-                        {
-                            Entries.Remove(entry);
-                            count--;
-
-                            continue;
-                        }
-
-                        break;
-                    }                                    
-
-                    break;
-
-                case "byte"  :
-                case "int16" :
-                case "int32" :
-                case "int64" :
-                {
-
-                        while (Entries.Count > (long)Count)
-                            Entries.RemoveAt(Entries.Count - 1);
-
-                        break;
-
-                }
-
             }
 
             ProcessQueueOperation = null;
@@ -902,6 +903,7 @@ namespace PSM.Viewer.Models
         /// <returns></returns>
         public override bool Next()
         {
+
             if(_start != null)
             {
                 switch (typeof(T).Name.ToLower())

@@ -50,6 +50,7 @@ namespace PSM.Control
         {
 
             App.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            App.Current.DispatcherUnhandledException += (sender, e) => MessageBox.Show(e.Exception.Message, "An error has occured");
 
             InitializeComponent();
             

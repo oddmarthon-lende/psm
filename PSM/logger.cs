@@ -27,22 +27,6 @@ namespace PSM
             
             string entryType = "";
 
-            //try
-            //{
-            //    if(t == EventLogEntryType.Error)
-            //        EventLog.WriteEntry(Source, msg, t);
-            //}
-            //catch (Exception)
-            //{
-            //    try
-            //    {
-            //        EventLog.CreateEventSource(Source, LogName);
-            //    }
-            //    catch(Exception) { }
-
-            //}
-            
-
             lock (lock0)
             {
                 switch (t)

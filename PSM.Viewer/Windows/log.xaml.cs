@@ -62,9 +62,7 @@ namespace PSM.Viewer
 
             InitializeComponent();
 
-            Dispatcher d = System.Windows.Threading.Dispatcher.CurrentDispatcher;
-
-            Logger.OnLog += (msg, eventType) => d.Invoke(delegate { Events.Add(new Event(msg, eventType)); });
+            Logger.OnLog += (msg, eventType) => Dispatcher.InvokeAsync(delegate { Events.Add(new Event(msg, eventType)); });
            
         }
 

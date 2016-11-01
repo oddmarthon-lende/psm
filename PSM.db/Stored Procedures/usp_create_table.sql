@@ -25,9 +25,9 @@ AS
 												
 				ALTER TABLE [dbo].[tbl_'+@basetype+'] CHECK CONSTRAINT [FK_'+@basetype+'_keys];
 				
-				CREATE NONCLUSTERED INDEX IX_'+@basetype+'_KeyId ON [dbo].[tbl_'+@basetype+'] ([KeyId]);
+				CREATE NONCLUSTERED INDEX IX_'+@basetype+'_KeyId ON [dbo].[tbl_'+@basetype+'] ([KeyId]) INCLUDE([Value], [Timestamp]);
 
-				CREATE NONCLUSTERED INDEX IX_'+@basetype+'_Timestamp ON [dbo].[tbl_'+@basetype+'] ([Timestamp]);' +
+				CREATE NONCLUSTERED INDEX IX_'+@basetype+'_Timestamp ON [dbo].[tbl_'+@basetype+'] ([Timestamp]) INCLUDE ([KeyId]);' +
 
 				(case when @basetype like '%var%' then '' when @basetype like '%text' then '' when @basetype = 'image' then '' when @basetype = 'xml' then '' else 'CREATE NONCLUSTERED INDEX IX_'+@basetype+'_Value ON [dbo].[tbl_'+@basetype+'] ([Value]);' end);
 
