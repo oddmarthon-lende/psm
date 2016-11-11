@@ -16,244 +16,7 @@ using PSM.Viewer.Commands;
 
 namespace PSM.Viewer.Visualizations
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class Column
-    {
-
-        public Dictionary<KeyItem, Row> Rows { get; private set; }
-
-        private IList<Cell> _cells;
-
-        public KeyItem Key { get; private set; }
-        
-        public string Header
-        {
-            get
-            {
-                return Key == null ? null : Key.Title.Value;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public IEnumerable<Cell> Cells
-        {
-            get
-            {
-                if (Rows == null)
-                    return null;
-
-                return Rows.Select((k, i) =>
-                {
-                    foreach(Cell c in _cells)
-                    {
-                        if (c.Column == this && c.Row == k.Value)
-                            return c;
-                    }
-
-                    return new Cell(null, null, null);
-                });
-
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="rows"></param>
-        /// <param name="cells"></param>
-        public Column(KeyItem key, Dictionary<KeyItem, Row> rows, IList<Cell> cells)
-        {
-            Key = key;
-            Rows = rows;
-            _cells = cells;
-
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class Row
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public Dictionary<KeyItem, Column> Columns { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private IList<Cell> _cells;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public KeyItem Key { get; private set; }
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        public string Header
-        {
-            get
-            {
-                return Key == null ? null : Key.Title.Value;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public IEnumerable<Cell> Cells
-        {
-            get
-            {
-
-                return Columns.Select((k, i) =>
-                {
-
-                    foreach(Cell c in _cells)
-                    {
-                        if (c.Row == this && c.Column == k.Value)
-                            return c;
-                    }
-
-                    return new Cell(null, null, null);
-
-                });
-
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="columns"></param>
-        /// <param name="cells"></param>
-        public Row(KeyItem key, Dictionary<KeyItem, Column> columns, IList<Cell> cells)
-        {
-            Key = key;
-            Columns = columns;
-            _cells = cells;
-
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class Cell : INotifyPropertyChanged
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public MultiControl Control { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="propertyName"></param>
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Column Column { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Row Row { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public EntryItem Entry
-        {
-            get
-            {
-                return Control == null || Control.Entries.Count == 0 ? null : Control.Entries[0];
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private object _value;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public object Value
-        {
-            get
-            {
-                return _value ?? (Entry == null ? null : Entry.Value is DateTime ? ((DateTime)Entry.Value).ToString("o") : Control.Key.Convert<string>((Entry)Entry));
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public SolidColorBrush Brush
-        {
-            get
-            {
-                return Control == null ? Row == null ? Brushes.White : Row.Key.Brush : Control.Key.Brush;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="control"></param>
-        /// <param name="col"></param>
-        /// <param name="row"></param>
-        public Cell(MultiControl control, Column col, Row row)
-        {
-
-            Control = control;
-            Column = col;
-            Row = row;
-
-            if(Control != null)
-                Control.DataChanged += _control_DataChanged;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        private void _control_DataChanged(object sender)
-        {
-            OnPropertyChanged("Value");
-            OnPropertyChanged("Entry");
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="value"></param>
-        public void SetValue(object value)
-        {
-            _value = value;
-        }
-    }
+    
 
     [Visible(true)]
     [DisplayName("Table View")]
@@ -261,40 +24,309 @@ namespace PSM.Viewer.Visualizations
     [SubCategory("Built-In")]
     public sealed partial class TableView : TableBase
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        public class TableColumn
+        {
+
+            public Dictionary<KeyItem, TableRow> Rows { get; private set; }
+
+            private IList<TableCell> _cells;
+
+            public KeyItem Key { get; private set; }
+
+            public string Header
+            {
+                get
+                {
+                    return Key == null ? null : Key.Title.Value;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public IEnumerable<TableCell> Cells
+            {
+                get
+                {
+                    if (Rows == null)
+                        return null;
+
+                    return Rows.Select((k, i) =>
+                    {
+                        foreach (TableCell c in _cells)
+                        {
+                            if (c.Column == this && c.Row == k.Value)
+                                return c;
+                        }
+
+                        return new TableCell(null, null, null);
+                    });
+
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="key"></param>
+            /// <param name="rows"></param>
+            /// <param name="cells"></param>
+            public TableColumn(KeyItem key, Dictionary<KeyItem, TableRow> rows, IList<TableCell> cells)
+            {
+                Key = key;
+                Rows = rows;
+                _cells = cells;
+
+            }
+        }
 
         /// <summary>
         /// 
         /// </summary>
-        private Dictionary<KeyItem, Column> _columns = new Dictionary<KeyItem, Column>();
+        public class TableRow
+        {
+            /// <summary>
+            /// 
+            /// </summary>
+            public Dictionary<KeyItem, TableColumn> Columns { get; private set; }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private IList<TableCell> _cells;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public KeyItem Key { get; private set; }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string Header
+            {
+                get
+                {
+                    return Key == null ? null : Key.Title.Value;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public IEnumerable<TableCell> Cells
+            {
+                get
+                {
+
+                    return Columns.Select((k, i) =>
+                    {
+
+                        foreach (TableCell c in _cells)
+                        {
+                            if (c.Row == this && c.Column == k.Value)
+                                return c;
+                        }
+
+                        return new TableCell(null, null, null);
+
+                    });
+
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="key"></param>
+            /// <param name="columns"></param>
+            /// <param name="cells"></param>
+            public TableRow(KeyItem key, Dictionary<KeyItem, TableColumn> columns, IList<TableCell> cells)
+            {
+                Key = key;
+                Columns = columns;
+                _cells = cells;
+
+            }
+        }
 
         /// <summary>
         /// 
         /// </summary>
-        private Dictionary<KeyItem, Row> _rows = new Dictionary<KeyItem, Row>();
+        public class TableCell : INotifyPropertyChanged
+        {
+            /// <summary>
+            /// 
+            /// </summary>
+            public MultiControl Control { get; private set; }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="propertyName"></param>
+            protected virtual void OnPropertyChanged(string propertyName)
+            {
+                PropertyChangedEventHandler handler = PropertyChanged;
+                if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public TableColumn Column { get; private set; }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public TableRow Row { get; private set; }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public Entry Entry
+            {
+                get
+                {
+                    return Control == null || Control.Entries.Count == 0 ? null : Control.Entries[0];
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private object _value;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public object Value
+            {
+                get
+                {
+                    return _value ?? (Entry == null ? null : Entry.Value is DateTime ? ((DateTime)Entry.Value).ToString("o") : Control.Key.Convert<string>((Entry)Entry));
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public SolidColorBrush Brush
+            {
+                get
+                {
+                    return Control == null ? Row == null ? Brushes.Transparent : Row.Key.Brush : Control.Key.Brush;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string Description
+            {
+                get
+                {
+                    string description = "";
+
+                    if (Entry != null)
+                    {
+                        description = String.Format("{0}, {1}, {2}", Column.Header, Row.Header, (string)_descriptionConverter.Convert(Entry, typeof(string), null, null));
+                    }
+                    else if (Value != null)
+                    {
+                        description = String.Format("{0}", Value);
+                    }
+
+
+
+                    return description;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private static Converters.EntryToDescriptionConverter _descriptionConverter = new Converters.EntryToDescriptionConverter();
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="control"></param>
+            /// <param name="col"></param>
+            /// <param name="row"></param>
+            public TableCell(MultiControl control, TableColumn col, TableRow row)
+            {
+
+                Control = control;
+                Column = col;
+                Row = row;
+
+                if (Control != null)
+                    Control.DataChanged += _control_DataChanged;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="sender"></param>
+            private void _control_DataChanged(object sender)
+            {
+                OnPropertyChanged("Value");
+                OnPropertyChanged("Entry");
+                OnPropertyChanged("Description");
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            public void SetValue(object value)
+            {
+                _value = value;
+            }
+        }
 
         /// <summary>
         /// 
         /// </summary>
-        private List<Cell> _cells = new List<Cell>();
+        private Dictionary<KeyItem, TableColumn> _columns = new Dictionary<KeyItem, TableColumn>();
 
         /// <summary>
         /// 
         /// </summary>
-        public IEnumerable<Column> Columns
+        private Dictionary<KeyItem, TableRow> _rows = new Dictionary<KeyItem, TableRow>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private List<TableCell> _cells = new List<TableCell>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<TableColumn> Columns
         {
             get
             {
-                List<Cell> row_header_cells = new List<Cell>();
-                List<Column> list = _columns.Select((k, i) =>
+                
+                List<TableCell> row_header_cells = new List<TableCell>();
+                List<TableColumn> list = _columns.Select((k, i) =>
                 {
                     return k.Value;
                 }).ToList();
 
-                Column column = new Column(null, _rows, row_header_cells);
+                TableColumn column = new TableColumn(null, _rows, row_header_cells);
 
-                foreach (KeyValuePair<KeyItem, Row> k in _rows)
+                foreach (KeyValuePair<KeyItem, TableRow> k in _rows)
                 {
-                    Cell cell = new Cell(null, column, k.Value);
+                    TableCell cell = new TableCell(null, column, k.Value);
                     cell.SetValue(k.Value.Header);
                     row_header_cells.Add(cell);
 
@@ -307,9 +339,9 @@ namespace PSM.Viewer.Visualizations
         }
 
         /// <summary>
-        /// 
+        /// The rows
         /// </summary>
-        public IEnumerable<Row> Rows
+        public IEnumerable<TableRow> Rows
         {
             get
             {
@@ -321,7 +353,7 @@ namespace PSM.Viewer.Visualizations
         }
 
         /// <summary>
-        /// 
+        /// Row Key Cache
         /// </summary>
         private List<KeyItem> _rowKeyCache = new List<KeyItem>();
 
@@ -339,7 +371,7 @@ namespace PSM.Viewer.Visualizations
             {
                 KeyItemPathList list = new KeyItemPathList();
 
-                foreach(Row r in Rows)
+                foreach(TableRow r in Rows)
                 {
                     list.Add(new KeyItemPath(r.Key));
                 }
@@ -371,7 +403,7 @@ namespace PSM.Viewer.Visualizations
             {
                 KeyItemPathList list = new KeyItemPathList();
 
-                foreach (Column c in Columns.Where((c) => { return c.Key != null; }))
+                foreach (TableColumn c in Columns.Where((c) => { return c.Key != null; }))
                 {
                     list.Add(new KeyItemPath(c.Key));
                 }
@@ -536,7 +568,7 @@ namespace PSM.Viewer.Visualizations
 
                 if (!_rows.ContainsKey(r))
                 {
-                    _rows.Add(r, new Row(r, _columns, _cells));
+                    _rows.Add(r, new TableRow(r, _columns, _cells));
                 }
 
                 if (_columnKeyCache.ContainsKey(c.Path))
@@ -546,10 +578,10 @@ namespace PSM.Viewer.Visualizations
 
                 if (!_columns.ContainsKey(c))
                 {
-                    _columns.Add(c, new Column(c, _rows, _cells));
+                    _columns.Add(c, new TableColumn(c, _rows, _cells));
                 }
 
-                _cells.Add(new Cell(control, _columns[c], _rows[r]));                
+                _cells.Add(new TableCell(control, _columns[c], _rows[r]));                
 
             }
             

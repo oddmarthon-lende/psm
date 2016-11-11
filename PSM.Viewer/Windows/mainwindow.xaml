@@ -33,7 +33,6 @@
         <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding Commands[Previous], ElementName=window}"  />
         <KeyBinding Modifiers="Ctrl" Key="N" Command="{Binding Commands[NewWindow], ElementName=window}"  />
         <KeyBinding Key="Pause" Command="{Binding Commands[Stop], ElementName=window}"  />
-        <KeyBinding Key="W" Modifiers="Ctrl" Command="{Binding Commands[Settings], ElementName=window}"  />
 
     </Window.InputBindings>
 
@@ -96,8 +95,6 @@
                     <Separator />
                     <MenuItem Header="Next" InputGestureText="Alt+Right" Command="{Binding Commands[Next], ElementName=window}"  />
                     <MenuItem Header="Previous" InputGestureText="Alt+Left" Command="{Binding Commands[Previous], ElementName=window}"  />
-                    <Separator />
-                    <MenuItem Header="Visualization Properties" Command="{Binding Commands[OpenChartProperties], ElementName=window}" />
                 </MenuItem>
 
 
@@ -142,7 +139,6 @@
                         <Button ToolTip="New Window" Command="{Binding Commands[NewWindow], ElementName=window}" Content="{StaticResource PlusIcon}" />
                         <Button ToolTip="Save" Command="{Binding Commands[Save], ElementName=window}" Content="{StaticResource SaveIcon}" />
                         <Button ToolTip="Import" Command="{Binding Commands[Import], ElementName=window}" Content="{StaticResource ImportIcon}" />
-                        <Button ToolTip="Visualization Properties" Command="{Binding Commands[OpenChartProperties], ElementName=window}" Content="{StaticResource ConfigureIcon}" />
 
                     </ToolBar>
 
@@ -192,34 +188,8 @@
 
                             <xcad:LayoutAnchorable ContentId="datagrid" Title="Data"  CanHide="False" CanClose="False">
 
-                                <DataGrid x:Name="dataGrid" ItemsSource="{Binding Source={StaticResource viewSource}}" Grid.RowSpan="1" Grid.Row="1" AutoGenerateColumns="False" Background="{x:Null}" VirtualizingPanel.IsVirtualizing="True">
+                                <DataGrid x:Name="dataGrid" ItemsSource="{Binding Source={StaticResource viewSource}}" Grid.RowSpan="1" Grid.Row="1" AutoGenerateColumns="False" CanUserResizeColumns="True" Background="{x:Null}" VirtualizingPanel.IsVirtualizing="True" />
 
-                                    <!--<dg:DataGridControl.View>
-                                        <dg:TableflowView UseDefaultHeadersFooters="False">
-                                            <dg:TableflowView.FixedHeaders>
-                                                <DataTemplate>
-                                                    <dg:ColumnManagerRow AllowSort="True" AllowColumnReorder="False" AllowColumnResize="True" />
-                                                </DataTemplate>
-                                            </dg:TableflowView.FixedHeaders>
-                                        </dg:TableflowView>
-                                    </dg:DataGridControl.View>-->
-
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Index" Width="10*" Binding="{Binding Index}" IsReadOnly="True" />
-                                        <DataGridTextColumn Header="Value" Width="70*" Binding="{Binding Value}" IsReadOnly="True"/>
-                                        <DataGridTextColumn Width="20*" Header="Timestamp" Binding="{Binding Timestamp, StringFormat=o}" IsReadOnly="True"/>
-                                    </DataGrid.Columns>
-
-                                </DataGrid>
-
-                            </xcad:LayoutAnchorable>
-
-                        </xcad:LayoutAnchorablePane>
-
-                        <xcad:LayoutAnchorablePane >
-
-                            <xcad:LayoutAnchorable ContentId="chart" Title="Visualizer" CanHide="False" CanClose="False">
-                                <Grid Grid.Row="2" Grid.RowSpan="1" x:Name="visualizationGrid" Margin="1"/>
                             </xcad:LayoutAnchorable>
 
                         </xcad:LayoutAnchorablePane>

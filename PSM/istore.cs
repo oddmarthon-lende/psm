@@ -70,13 +70,13 @@ namespace PSM.Stores
         /// <param name="end">The end index</param>
         /// <param name="index">The index identifier</param>
         /// <returns>An <see cref="IEnumerable{Entry}"/> of the data</returns>
-        IEnumerable<Entry> Read(string path, object start, object end, Enum index);
+        IEnumerable<Entry> Read(string path, IComparable start, IComparable end, Enum index);
         
         /// <summary>
         /// Add data to the store
         /// </summary>
         /// <param name="envelope">The data <see cref="Envelope"/> that will be added. </param>
-        void Write(Envelope envelope);
+        void Write(string path, params Entry[] entries);
 
         /// <summary>
         /// Delete the key and all data.
@@ -90,7 +90,7 @@ namespace PSM.Stores
         /// </summary>
         /// <param name="ns">The namespace</param>
         /// <returns>An array that contains the <see cref="Key"/>'s</returns>
-        Key[] Keys(string ns);
+        IEnumerable<Key> Keys(string ns);
         
         /// <summary>
         /// Register for retrieval of realtime data.
@@ -100,7 +100,7 @@ namespace PSM.Stores
         /// <param name="startingIndex">The starting index</param>
         /// <param name="indexIdentifier">The index used when fetching data</param>
         /// <param name="handler">The delegate that will receive the data <see cref="Envelope"/></param>
-        void Register(object context, string path, object startingIndex, Enum indexIdentifier, RealTimeData handler);
+        void Register(object context, string path, IComparable startingIndex, Enum indexIdentifier, RealTimeData handler);
 
         /// <summary>
         /// Unregister the context and stop the data transfer for all keys that was <see cref="Register(object, string, object, RealTimeData)"/>d with this context.

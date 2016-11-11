@@ -178,5 +178,6 @@
         </StackPanel>
 
         <Grid x:Name="grid" Grid.Row="1" Grid.Column="0" />
+
     </Grid>
 </theme:Window>

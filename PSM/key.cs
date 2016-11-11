@@ -216,5 +216,10 @@ namespace PSM.Stores
             return other.Name == this.Name;
         }
 
+        public override int GetHashCode()
+        {
+            return (Name ?? "").GetHashCode();
+        }
+
     }
 }

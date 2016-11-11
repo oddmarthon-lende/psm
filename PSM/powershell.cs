@@ -96,7 +96,7 @@ namespace PSM.Powershell
 
         }
 
-        private object OnData(Envelope data)
+        private Index OnData(Envelope data)
         {
 
             IStore store = Store.Get();
@@ -111,7 +111,7 @@ namespace PSM.Powershell
 
                 try
                 {
-                    store.Write(data);
+                    store.Write(data.Path, data.Entries);
                     Logger.Info(String.Format("Powershell : Sent {0} entries to the store ({1})", data.Entries != null ? data.Entries.Length : 0, store.GetType()));
                 }
                 catch (Exception error)

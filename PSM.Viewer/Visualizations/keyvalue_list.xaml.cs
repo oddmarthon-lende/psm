@@ -13,7 +13,6 @@ namespace PSM.Viewer.Visualizations
         public KeyValueList()
         {
             InitializeComponent();
-            Foreground = Brushes.White;
         }
         
     }

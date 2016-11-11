@@ -17,16 +17,31 @@ namespace PSM
     /// </summary>
     /// <param name="data">The data that is being transferred.</param>
     /// <returns>A starting index from which the next transfer occurs.</returns>
-    public delegate object RealTimeData(Envelope data);
+    public delegate Index RealTimeData(Envelope data);
 
-    internal class Setup : ConfigurationSection
+    /// <summary>
+    /// 
+    /// </summary>
+    public class Setup : ConfigurationSection
     {
+        /// <summary>
+        /// 
+        /// </summary>
         private static Assembly _assembly = Assembly.GetExecutingAssembly();
 
+        /// <summary>
+        /// 
+        /// </summary>
         private static ExeConfigurationFileMap _map = Map();
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected static Configuration config = ConfigurationManager.OpenMappedExeConfiguration(_map, ConfigurationUserLevel.None);
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Setup ()
         {          
 
@@ -34,6 +49,10 @@ namespace PSM
                 throw new FileNotFoundException(String.Format("Missing config file: {0}", _map.ExeConfigFilename));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private static ExeConfigurationFileMap Map()
         {
 
@@ -54,18 +73,35 @@ namespace PSM
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [ConfigurationProperty("scriptDirectory", DefaultValue = "C:\\", IsRequired = false)]
         public string Directory { get { return (string)base["scriptDirectory"]; } }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [ConfigurationProperty("defaultInterval", DefaultValue = "60000", IsRequired = false)]
         public int defaultInterval { get { return (int)base["defaultInterval"]; } }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [ConfigurationProperty("defaultNamespace", DefaultValue = "root", IsRequired = false)]
         public string defaultNamespace { get { return (string)base["defaultNamespace"]; } }
         
-
+        /// <summary>
+        /// 
+        /// </summary>
         public static Setup Powershell {  get { return Get<Setup>("powershell"); } }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="section"></param>
+        /// <returns></returns>
         public static T Get<T> (string section)
         {
             
@@ -78,9 +114,15 @@ namespace PSM
 
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public sealed class Store
     {
 
+        /// <summary>
+        /// 
+        /// </summary>
         internal static ConcurrentDictionary<object, IStore> _instances = new ConcurrentDictionary<object, IStore>();
                 
         /// <summary>

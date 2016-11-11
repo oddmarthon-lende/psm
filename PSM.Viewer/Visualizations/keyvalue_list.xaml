@@ -24,12 +24,43 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Grid Margin="1" Background="{Binding Key.Brush, UpdateSourceTrigger=PropertyChanged}" Grid.IsSharedSizeScope="True">
+                        
+                        <Grid Margin="1" Grid.IsSharedSizeScope="True">
+                            
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="50*" />
                                 <ColumnDefinition Width="50*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Background="#0F000000" HorizontalAlignment="Stretch" Margin="1" Text="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" ToolTip="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold"  Padding="5" />
+
+                            <Rectangle x:Name="background" Grid.Column="0" Grid.ColumnSpan="2" Fill="{Binding Key.Brush, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock x:Name="title" Grid.Column="0" Background="#0F000000" HorizontalAlignment="Stretch" Margin="1" Text="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold"  Padding="5">
+                                <TextBlock.Triggers>
+                                    <EventTrigger RoutedEvent="MouseEnter">
+                                        <EventTrigger.Actions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                        <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{Binding Text, ElementName=title}" />
+                                                    </ObjectAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger.Actions>
+                                    </EventTrigger>
+
+                                    <EventTrigger RoutedEvent="MouseLeave">
+                                        <EventTrigger.Actions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                        <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="" />
+                                                    </ObjectAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger.Actions>
+                                    </EventTrigger>
+                                </TextBlock.Triggers>
+                            </TextBlock>
                             <ItemsControl Grid.Column="1" ItemsSource="{Binding Entries}" VirtualizingPanel.IsVirtualizing="True">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -43,20 +74,110 @@
                                                 <ColumnDefinition Width="50*" />
                                                 <ColumnDefinition Width="50*" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Foreground="{Binding Converter={StaticResource ColorConverter}}" ToolTip="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Padding="5" >
+                                            <TextBlock x:Name="value" Grid.Column="0" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Foreground="{Binding Converter={StaticResource ColorConverter}}" Padding="5" >
+                                                <TextBlock.Triggers>
+                                                    <EventTrigger RoutedEvent="MouseEnter">
+                                                        <EventTrigger.Actions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                                        <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{Binding Text, ElementName=value}" />
+                                                                    </ObjectAnimationUsingKeyFrames>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger.Actions>
+                                                    </EventTrigger>
+
+                                                    <EventTrigger RoutedEvent="MouseLeave">
+                                                        <EventTrigger.Actions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                                        <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="" />
+                                                                    </ObjectAnimationUsingKeyFrames>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger.Actions>
+                                                    </EventTrigger>
+                                                </TextBlock.Triggers>
                                                 <TextBlock.Text>
                                                     <MultiBinding Converter="{StaticResource EntryConverter}">
                                                         <Binding Path="DataContext.Key" UpdateSourceTrigger="PropertyChanged" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" />
-                                                        <Binding Path="Value" UpdateSourceTrigger="PropertyChanged" StringFormat="o" />
+                                                        <Binding Path="Value" UpdateSourceTrigger="PropertyChanged" NotifyOnTargetUpdated="True" StringFormat="o" />
                                                     </MultiBinding>
                                                 </TextBlock.Text>
                                             </TextBlock>
-                                            <TextBlock Grid.Column="1" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Text="{Binding Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" ToolTip="{Binding Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" Padding="5" />
+                                            <TextBlock x:Name="date" Grid.Column="1" Background="#0FFFFFFF" Margin="1" HorizontalAlignment="Stretch" Text="{Binding Index, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" Padding="5">
+                                                <TextBlock.Triggers>
+                                                    <EventTrigger RoutedEvent="MouseEnter">
+                                                        <EventTrigger.Actions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                                        <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{Binding Text, ElementName=date}" />
+                                                                    </ObjectAnimationUsingKeyFrames>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger.Actions>
+                                                    </EventTrigger>
+
+                                                    <EventTrigger RoutedEvent="MouseLeave">
+                                                        <EventTrigger.Actions>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                                        <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="" />
+                                                                    </ObjectAnimationUsingKeyFrames>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </EventTrigger.Actions>
+                                                    </EventTrigger>
+                                                </TextBlock.Triggers>
+                                            </TextBlock>
                                         </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <Grid.Triggers>
+                                <EventTrigger RoutedEvent="MouseEnter" >
+                                    <EventTrigger.Actions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Duration="0:0:1" Storyboard.TargetProperty="(Rectangle.Opacity)" Storyboard.TargetName="background" To="0.5" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger.Actions>
+                                </EventTrigger>
+                                <EventTrigger RoutedEvent="MouseLeave">
+                                    <EventTrigger.Actions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Duration="0:0:1" Storyboard.TargetProperty="(Rectangle.Opacity)" Storyboard.TargetName="background" To="1.0" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger.Actions>
+                                </EventTrigger>
+                            </Grid.Triggers>
+                            
                         </Grid>
+
+                        <DataTemplate.Triggers>
+
+                            <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                <EventTrigger.Actions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimationUsingKeyFrames Duration="0:0:0.500" BeginTime="0:0:0" AccelerationRatio="0.25" Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="background">
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.250" Value="0" />
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.500" Value="1.0" />
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger.Actions>
+                            </EventTrigger>
+                        </DataTemplate.Triggers>
+                        
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>        
             </ItemsControl>

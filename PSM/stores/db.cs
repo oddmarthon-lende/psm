@@ -27,24 +27,31 @@ namespace PSM.Stores
 
         #region Fields and Properties
 
+        /// <summary>
+        /// 
+        /// </summary>
         public enum IndexType
         {
 
-            Id,
-            Index,
-            Timestamp,
-            Value
+            Descending,
+            Timestamp
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override Enum Default
         {
             get
             {
-                return IndexType.Index;
+                return IndexType.Descending;
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override Type Index
         {
             get
@@ -251,23 +258,24 @@ namespace PSM.Stores
                 int i = record.GetOrdinal("Value");
                 object v = record.GetValue(i);
 
-                return new Entry
+                Entry entry = new Entry
                 {
-
-                    Index = record.GetValue(record.GetOrdinal("Index")),
                     Key = this.Key,
                     Value = v,
-                    Timestamp = record.GetDateTime(record.GetOrdinal("Timestamp")),
                     Type = v.GetType()
-
                 };
+
+                entry.Index.Add(IndexType.Descending, (IComparable)record.GetValue(record.GetOrdinal("Id")));
+                entry.Index.Add(IndexType.Timestamp, (IComparable)record.GetValue(record.GetOrdinal("Timestamp")));
+
+                return entry;
 
             }
 
             /// <summary>
             /// <see cref="global::PSM.Path.Extract(string)"/>
             /// </summary>
-            public static new Path Create(string path)
+            public static Path Create(string path)
             {
                 return new Path(global::PSM.Path.Extract(path));
             }
@@ -401,7 +409,7 @@ namespace PSM.Stores
         /// <summary>
         /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
-        public override IEnumerable<Entry> Read(string path, object start, object end, Enum index)
+        public override IEnumerable<Entry> Read(string path, IComparable start, IComparable end, Enum index)
         {
 
             SqlConnection connection = CreateConnection();
@@ -444,7 +452,7 @@ namespace PSM.Stores
         /// <summary>
         /// <see cref="IStore.Keys(string)"/>
         /// </summary>
-        public override Key[] Keys(string path)
+        public override IEnumerable<Key> Keys(string path)
         {
 
             using (SqlConnection connection = CreateConnection())
@@ -561,13 +569,13 @@ namespace PSM.Stores
         protected virtual void Dispatch (Store.Path path, Dictionary<Store.Path, Entry[]> processed, SqlConnection connection, ref int totalCount)
         {
             
-            Type indexType = path.StartIndex.GetType();
+            Type indexType = path.StartIndex[path.IndexIdentifier].GetType();
             TypeCode indexTypeCode = Type.GetTypeCode(indexType);
 
             using (SqlCommand command = connection.CreateCommand())
             {
 
-                IndexType indexIdentifier = (IndexType)path.Index;
+                IndexType indexIdentifier = (IndexType)path.IndexIdentifier;
                 
                 command.CommandType = CommandType.StoredProcedure;
                 command.CommandText = "usp_get_many";
@@ -575,7 +583,7 @@ namespace PSM.Stores
                 command.Parameters.Add(new SqlParameter("@Start", GetType(indexType))
                 {
                     Direction = ParameterDirection.Input,
-                    SqlValue = path.StartIndex
+                    SqlValue = path.StartIndex[indexIdentifier]
                 });
 
                 command.Parameters.Add(new SqlParameter("@End", GetType(indexType))
@@ -599,7 +607,7 @@ namespace PSM.Stores
                 command.Parameters.Add(new SqlParameter("@IndexColumn", SqlDbType.VarChar)
                 {
                     Direction = ParameterDirection.Input,
-                    SqlValue = path.Index
+                    SqlValue = path.IndexIdentifier
                 });
 
                 Entry[] entries = null;
@@ -607,27 +615,10 @@ namespace PSM.Stores
                 if (processed.TryGetValue(path, out entries))
                 {
 
-                    switch (indexTypeCode)
-                    {
-                        
-                        case TypeCode.DateTime:
-
-                            entries = (from entry in entries where entry.Index != null && Type.GetTypeCode(entry.Index.GetType()) == indexTypeCode && 
-                                       (DateTime)entry.Index > (DateTime)path.StartIndex select entry).ToArray();
-                            break;
-
-                        case TypeCode.Int64:
-
-                            entries = (from entry in entries where entry.Index != null && Type.GetTypeCode(entry.Index.GetType()) == indexTypeCode && 
-                                       (long)entry.Index > (long)path.StartIndex select entry).ToArray();
-                            break;
-
-                        default:
-                            entries = null;
-                            break;
-
-                    }
-
+                    entries = (from entry in entries
+                               where entry.Index[path.IndexIdentifier].CompareTo(path.StartIndex[path.IndexIdentifier]) > 0
+                               select entry).ToArray();
+                                        
                     if (entries != null && entries.Length == 0)
                         entries = null;
 
@@ -641,8 +632,7 @@ namespace PSM.Stores
                     path.StartIndex = path.Handler(new Envelope()
                     {
                         Path = path.Namespace,
-                        Entries = entries,
-                        Timestamp = DateTime.Now
+                        Entries = entries
                     });
 
                     if (path.StartIndex == null)
@@ -684,7 +674,7 @@ namespace PSM.Stores
 
                         Dictionary<Store.Path, Entry[]> processed = new Dictionary<Store.Path, Entry[]>();
 
-                        foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in context.Receivers)
+                        foreach (KeyValuePair<object, ConcurrentBag<Store.Path>> pair in context._receivers)
                         {
 
                             ConcurrentBag<Store.Path> paths = pair.Value;
@@ -725,8 +715,10 @@ namespace PSM.Stores
         /// <param name="ctx">The <see cref="DB"/> instance that the thread belongs to.</param>
         protected static void Dispatch(object ctx)
         {
+
             DB context = (DB)ctx;
             Envelope envelope;
+
             int count = 0;
             int i = 0;
 
@@ -793,7 +785,7 @@ namespace PSM.Stores
 
 
                                             Direction = ParameterDirection.Input,
-                                            SqlValue = entry.Timestamp
+                                            SqlValue = entry.Index[IndexType.Timestamp] ?? DateTime.Now
 
                                         });
 

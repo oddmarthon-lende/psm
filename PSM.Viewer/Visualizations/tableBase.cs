@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using Xceed.Wpf.Toolkit.PropertyGrid;
+using System.Linq;
 
 namespace PSM.Viewer.Converters
 {
@@ -38,7 +39,7 @@ namespace PSM.Viewer.Converters
         {
             if (value == null) return Parent.Foreground;
 
-            EntryItem data = (EntryItem)value;
+            Entry data = (Entry)value;
             double? d_value = null;
 
             try
@@ -48,8 +49,9 @@ namespace PSM.Viewer.Converters
             }
             catch (Exception) { }
 
-            int t = Parent.Highlighting.HighlightThresholdExceeded && Parent.LastResetTime < data.Timestamp && (d_value != null && ((d_value > Parent.Threshold.High) || (d_value < Parent.Threshold.Low))) ? 2 : 0;
-            int n = Parent.Highlighting.HighlightNew && Parent.LastResetTime < data.Timestamp ? 1 : 0;
+            DateTime ts = (DateTime)data.Index.Where((pair) => pair.Value.GetType() == typeof(DateTime)).First().Value;
+            int t = Parent.Highlighting.HighlightThresholdExceeded && Parent.LastResetTime < ts && (d_value != null && ((d_value > Parent.Threshold.High) || (d_value < Parent.Threshold.Low))) ? 2 : 0;
+            int n = Parent.Highlighting.HighlightNew && Parent.LastResetTime < ts ? 1 : 0;
 
             switch (t | n)
             {

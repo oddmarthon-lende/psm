@@ -109,11 +109,11 @@ namespace PSM.Viewer.Models
             }
         }
 
-        private ObservableCollection<EntryItem> _entries = new ObservableCollection<EntryItem>();
+        private ObservableCollection<Entry> _entries = new ObservableCollection<Entry>();
         /// <summary>
         /// A reference to the collection that holds the data.
         /// </summary>
-        public ObservableCollection<EntryItem> Entries
+        public ObservableCollection<Entry> Entries
         {
             get
             {
@@ -176,7 +176,7 @@ namespace PSM.Viewer.Models
         /// Append a data entry
         /// </summary>
         /// <param name="item"></param>
-        protected virtual void Append(EntryItem item)
+        protected virtual void Append(Entry item)
         {
             
             if (!IsActive) return;
@@ -266,11 +266,11 @@ namespace PSM.Viewer.Models
             }
         }
 
-        private object _start = null;
+        private IComparable _start = null;
         /// <summary>
         /// The starting index from which to start to load data.
         /// </summary>
-        public virtual object Start
+        public virtual IComparable Start
         {
             get
             {
@@ -282,11 +282,11 @@ namespace PSM.Viewer.Models
             }
         }
 
-        private object _end = null;
+        private IComparable _end = null;
         /// <summary>
         /// The end index from which to end the loading of data.
         /// </summary>
-        public virtual object End {
+        public virtual IComparable End {
             get
             {
                 return _end;
@@ -314,7 +314,7 @@ namespace PSM.Viewer.Models
         /// </summary>
         /// <param name="key">The key</param>
         /// <returns>The data</returns>
-        public abstract IEnumerable<EntryItem> Reload(KeyItem key);
+        public abstract IEnumerable<Entry> Reload(KeyItem key);
 
         /// <summary>
         /// Reloads the data.
@@ -392,17 +392,29 @@ namespace PSM.Viewer.Models
     /// <typeparam name="T">DateTime or a number type</typeparam>
     /// <typeparam name="TCount">Timespan or a number type</typeparam>
     public class Controls<T, TCount> : Controls, INotifyPropertyChanged
+        where T : IComparable
+        where TCount : IComparable
     {
 
+        
         /// <summary>
-        /// The type name of the type parameter <see cref="T"/>
+        /// 
         /// </summary>
-        private string _typeName = typeof(T).Name.ToLower();
+        private Task<IEnumerable<Entry>> ReloadTask = null;
 
-        private Task<IEnumerable<EntryItem>> ReloadTask = null;
-
+        /// <summary>
+        /// 
+        /// </summary>
         private static ConcurrentDictionary<Controls, ConcurrentQueue<Entry>> _data = new ConcurrentDictionary<Controls, ConcurrentQueue<Entry>>();
+
+        /// <summary>
+        /// 
+        /// </summary>
         private DispatcherOperation ProcessQueueOperation = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
         private ReloadStatus _status = ReloadStatus.Idle;
         /// <summary>
         /// <see cref="Controls.Status"/>
@@ -420,18 +432,18 @@ namespace PSM.Viewer.Models
             }
         }
 
-        private object _start = null;
+        private IComparable _start = null;
 
         private object _count = default(TCount);
 
         /// <summary>
         /// <see cref="Controls.Start"/>
         /// </summary>
-        public override object Start
+        public override IComparable Start
         {
             get
-            {                
-                object default_value = null;
+            {
+                IComparable default_value = null;
 
                 if (_start != null)
                     return _start;
@@ -479,7 +491,7 @@ namespace PSM.Viewer.Models
             set
             {
                 
-                if (SetField(ref _start, value == null ? null : Convert.ChangeType(value, typeof(T))))
+                if (SetField(ref _start, value == null ? null : (IComparable)Convert.ChangeType(value, typeof(T))))
                     OnPropertyChanged("End");
 
             }
@@ -488,7 +500,7 @@ namespace PSM.Viewer.Models
         /// <summary>
         /// <see cref="Controls.End"/>
         /// </summary>
-        public override object End
+        public override IComparable End
         {
 
             get
@@ -512,11 +524,11 @@ namespace PSM.Viewer.Models
                     case "int32":
                     case "int64":
 
-                        return (object)((long)Start + (long)Count - 1L);
+                        return (IComparable)((long)Start + (long)Count - 1L);
 
                 }
 
-                return default(T);
+                return (IComparable)default(T);
 
             }
 
@@ -602,7 +614,7 @@ namespace PSM.Viewer.Models
         /// <param name="Entries"></param>
         /// <param name="Start"></param>
         /// <param name="Count"></param>
-        public Controls(ObservableCollection<EntryItem> Entries, object Count)
+        public Controls(ObservableCollection<Entry> Entries, object Count)
         {
             this.Entries = Entries??this.Entries;
             this.Count = Count;
@@ -620,7 +632,7 @@ namespace PSM.Viewer.Models
         /// <summary>
         /// <see cref="Controls.Reload(KeyItem)"/>
         /// </summary>
-        public override IEnumerable<EntryItem> Reload(KeyItem key)
+        public override IEnumerable<Entry> Reload(KeyItem key)
         {
 
             IEnumerable<Entry> enumerable = null;
@@ -631,24 +643,26 @@ namespace PSM.Viewer.Models
             }
 
             return enumerable == null ? null : enumerable.Select(entry => {
-                return (EntryItem)entry;
+                return entry;
             });
         }        
 
         /// <summary>
-        /// <see cref="Controls.Append(EntryItem)"/>
+        /// <see cref="Controls.Append(Entry)"/>
         /// </summary>
-        protected override void Append(EntryItem item)
+        protected override void Append(Entry item)
         {
 
-            switch (_typeName)
-            {
+            string IndexTypeName = item.Index[Selected.IndexIdentifier].GetType().Name.ToLower();
 
+            switch (IndexTypeName)
+            {
+                
                 case "datetime":
 
                     DateTime start = (DateTime)Start;
                     DateTime end = (DateTime)End;
-                    DateTime ts = item.Timestamp;
+                    DateTime ts = (DateTime)item.Index[Selected.IndexIdentifier];
 
                     if (ts >= start && ts <= end)
                         break;
@@ -670,7 +684,7 @@ namespace PSM.Viewer.Models
 
             base.Append(item);
 
-            switch (_typeName)
+            switch (IndexTypeName)
             {
 
                 case "datetime":
@@ -678,7 +692,7 @@ namespace PSM.Viewer.Models
                     DateTime start = (DateTime)Start;
                     DateTime end = (DateTime)End;
 
-                    EntryItem entry = null;
+                    Entry entry = null;
 
                     int count = Entries.Count;
 
@@ -687,7 +701,7 @@ namespace PSM.Viewer.Models
 
                         entry = Entries.First();
 
-                        if (entry.Timestamp > end)
+                        if (entry.Index[Selected.IndexIdentifier].CompareTo(end) > 0)
                         {
                             Entries.RemoveAt(0);
                             count--;
@@ -705,7 +719,7 @@ namespace PSM.Viewer.Models
 
                         entry = Entries.Last();
 
-                        if (entry.Timestamp < start)
+                        if (entry.Index[Selected.IndexIdentifier].CompareTo(start) < 0)
                         {
                             Entries.Remove(entry);
                             count--;
@@ -740,7 +754,7 @@ namespace PSM.Viewer.Models
         {
 
             Controls ctrl = (Controls)ctx;
-            EntryItem[] entries;
+            Entry[] entries;
 
             try
             {
@@ -752,7 +766,7 @@ namespace PSM.Viewer.Models
                 {
                     ctrl.Entries.Clear();
 
-                    foreach (EntryItem entry in entries)
+                    foreach (Entry entry in entries)
                     {
                         ctrl.Entries.Add(entry);
                     }
@@ -814,17 +828,17 @@ namespace PSM.Viewer.Models
         public override void Register()
         {
 
-            object startIndex = null;
+            IComparable startIndex = null;
 
             if (Selected == null)
                 return;
 
             if (Entries.Count > 0)
-                startIndex = Entries.Max(entry => { return ((Entry)entry).Index; });
+                startIndex = Entries.Max(entry => { return entry.Index[Selected.IndexIdentifier]; });
             else
             {
 
-                startIndex = default(T);
+                startIndex = (IComparable)default(T);
 
                 if (startIndex is DateTime)
                     startIndex = DateTime.Now;
@@ -842,10 +856,10 @@ namespace PSM.Viewer.Models
         /// </summary>
         /// <param name="data">The data envelope that was received</param>
         /// <return>The highest timestamp in the dataset.</return>
-        private object Received(Envelope data)
+        private Index Received(Envelope data)
         {
 
-            object startIndex = null;
+            Index startIndex = null;
 
             if (IsActive)
             {
@@ -857,8 +871,11 @@ namespace PSM.Viewer.Models
 
                 while(!_data.TryGetValue(this, out queue));
 
-                foreach (Entry entry in data.Entries.OrderBy( (e) => { return e.Index; }))
+                foreach (Entry entry in data.Entries.OrderBy( (e) => { return e.Index[Selected.IndexIdentifier]; }))
                 {
+                    if (startIndex == null || entry.Index[Selected.IndexIdentifier].CompareTo(startIndex[Selected.IndexIdentifier]) > 0)
+                        startIndex = entry.Index;
+
                     queue.Enqueue(entry);
                 }
 
@@ -866,10 +883,9 @@ namespace PSM.Viewer.Models
                     ProcessQueueOperation = Dispatcher.InvokeAsync(ProcessQueue);
 
             }
-
-            startIndex = data.Entries.Max(entry => { return entry.Index; });
-
+            
             return startIndex;
+
         }
 
        
@@ -890,7 +906,7 @@ namespace PSM.Viewer.Models
                 while (!queue.TryDequeue(out entry)) ;
 
                 if (entry.Key == Selected.Name)
-                    Append((EntryItem)entry);
+                    Append((Entry)entry);
             }
 
             ProcessQueueOperation = null;

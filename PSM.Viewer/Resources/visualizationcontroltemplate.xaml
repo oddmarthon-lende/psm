@@ -2,22 +2,25 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:toolkit="http://schemas.xceed.com/wpf/xaml/toolkit"
                     xmlns:c="clr-namespace:PSM.Viewer.Converters"
+                    xmlns:local="clr-namespace:PSM.Viewer"
                     xmlns:v="clr-namespace:PSM.Viewer.Visualizations">
 
     <c:ReloadStatusToCursorConverter x:Key="CursorConverter" />
     <c:ReloadStatusToBooleanConverter x:Key="BooleanConverter" />
 
-    <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}" >
+    <ControlTemplate x:Key="VisualizationControlTemplate" TargetType="{x:Type v:VisualizationControl}">        
 
         <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{TemplateBinding Background}">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="100*" />
+                <ColumnDefinition Width="auto" />
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="100*" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
 
             <StackPanel  Grid.Column="0" Grid.Row="0" Margin="{TemplateBinding Margin}" Orientation="Vertical" Visibility="{TemplateBinding TitleVisibility}">
@@ -25,38 +28,68 @@
                 <TextBlock FontSize="{TemplateBinding SubTitleFontSize}" FontWeight="{TemplateBinding TitleFontWeight}" Text="{TemplateBinding SubTitle}" TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" />
             </StackPanel>
 
-            <ContentPresenter Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="1" Margin="0" />
+            <ContentPresenter Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0" Panel.ZIndex="0" />
 
-            <Grid Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="2" >
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="32" />
-                    <ColumnDefinition Width="100*" />
-                    <ColumnDefinition Width="32" />
-                </Grid.ColumnDefinitions>
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="32" />
-                    <RowDefinition Height="100*" />
-                    <RowDefinition Height="32" />
-                </Grid.RowDefinitions>
-
-                <Grid.Resources>
-
-                    <ControlTemplate x:Key="ButtonControlTemplate" TargetType="{x:Type Button}">
-                        <ContentPresenter />
-                    </ControlTemplate>
-
-                    <Style TargetType="{x:Type Button}">
-                        <Setter Property="Template" Value="{StaticResource ButtonControlTemplate}" />
-                        <Setter Property="Margin" Value="2.5" />
-                    </Style>
-
-                </Grid.Resources>
-
+            <Grid x:Name="menu" Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Visibility="Collapsed" Panel.ZIndex="1" IsHitTestVisible="False" Opacity="0">
+                <Rectangle x:Name="menuRect" Fill="{Binding Background, RelativeSource={RelativeSource AncestorType={x:Type local:VisualizationWindow}}}" Opacity="0.75" IsHitTestVisible="False" />
+            </Grid>
+            
+            <Grid x:Name="statusBar" Grid.Row="2" Grid.Column="0" Visibility="Visible" Panel.ZIndex="1" IsHitTestVisible="False">
+                <Rectangle  x:Name="statusBarRect" Fill="{Binding Background, RelativeSource={RelativeSource AncestorType={x:Type local:VisualizationWindow}}}" Opacity="0" IsHitTestVisible="False" />
+                <TextBlock TextAlignment="Center" x:Name="statusBarText" Text="{TemplateBinding StatusBarText}" Foreground="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" Margin="2" Opacity="0" IsHitTestVisible="False" />
             </Grid>
 
         </Grid>
+
+        <ControlTemplate.Triggers>
+
+            <DataTrigger Binding="{Binding StatusBarText}" Value="">
+                <Setter Property="Visibility" TargetName="statusBar" Value="Collapsed" />
+            </DataTrigger>
+                        
+            <EventTrigger RoutedEvent="MouseEnter">
+                <EventTrigger.Actions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Duration="0:0:0.250" To="0.75" Storyboard.TargetProperty="(Rectangle.Opacity)" Storyboard.TargetName="statusBarRect" />
+                            <DoubleAnimation Duration="0:0:0.500" To="1.0" Storyboard.TargetProperty="(TextBlock.Opacity)" Storyboard.TargetName="statusBarText" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger.Actions>
+            </EventTrigger>
+
+            <EventTrigger RoutedEvent="MouseLeave">
+                <EventTrigger.Actions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Duration="0:0:0.500" To="0.0" Storyboard.TargetProperty="(Rectangle.Opacity)" Storyboard.TargetName="statusBarRect" />
+                            <DoubleAnimation Duration="0:0:0.250" To="0.0" Storyboard.TargetProperty="(TextBlock.Opacity)" Storyboard.TargetName="statusBarText" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger.Actions>
+            </EventTrigger>
+
+            <EventTrigger RoutedEvent="MouseEnter">
+                <EventTrigger.Actions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Duration="0:0:0.250" To="1.0" Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="menu" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger.Actions>
+            </EventTrigger>
+
+            <EventTrigger RoutedEvent="MouseLeave">
+                <EventTrigger.Actions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Duration="0:0:0.500" To="0.0" Storyboard.TargetProperty="(UIElement.Opacity)" Storyboard.TargetName="menu" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger.Actions>
+            </EventTrigger>
+
+        </ControlTemplate.Triggers>
 
     </ControlTemplate>
     

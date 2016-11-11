@@ -71,7 +71,7 @@ namespace PSM.Viewer.Commands
         /// Calls the delegate.
         /// </summary>
         /// <param name="parameter">Optional</param>
-        public void Execute(object parameter)
+        public void Execute(object parameter = null)
         {
             if (_execute != null)
                 _execute(this, parameter);

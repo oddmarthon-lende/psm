@@ -104,8 +104,7 @@ namespace PSM.Powershell
 
                     Key = sender.Key,
                     Value = sender.Data.BaseObject,
-                    Type = sender.Data.BaseObject.GetType(),
-                    Timestamp = sender.Timestamp ?? DateTime.Now
+                    Type = sender.Data.BaseObject.GetType()
 
                 });
 
@@ -124,8 +123,7 @@ namespace PSM.Powershell
             Envelope env = new Envelope()
             {
                 Path = _script.Path,
-                Entries = new Entry[all ? count : 1],
-                Timestamp = DateTime.Now
+                Entries = new Entry[all ? count : 1]
             };
 
             if(count > 0)

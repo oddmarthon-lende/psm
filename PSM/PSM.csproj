@@ -87,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="entry.cs" />
+    <Compile Include="entryjsonstream.cs" />
     <Compile Include="envelope.cs" />
     <Compile Include="execution_context.cs" />
     <Compile Include="commands.cs" />
@@ -96,13 +97,11 @@
     <Compile Include="powershell.cs" />
     <Compile Include="Stores\advantage.cs" />
     <Compile Include="Stores\db.cs" />
-    <Compile Include="Stores\dummy.cs" />
     <Compile Include="istore.cs" />
     <Compile Include="logger.cs" />
     <Compile Include="psm.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="script.cs" />
-    <Compile Include="Stores\http.cs" />
     <Compile Include="key.cs" />
     <Compile Include="store.cs" />
   </ItemGroup>

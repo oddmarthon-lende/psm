@@ -5,20 +5,129 @@
 /// <summary>Data entry model object</summary>
 /// 
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
 
 namespace PSM
 {
-    
+    /// <summary>
+    /// The index collection object
+    /// A dictionary with some added functionality
+    /// </summary>
+    [Serializable]
+    public class Index : Dictionary<Enum, IComparable>, IComparable<Index>, IComparable
+    {
+
+        /// <summary>
+        /// String indexer
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public IComparable this[string key]
+        {
+            
+            get
+            {
+
+                foreach(var pair in this)
+                {
+                    if (pair.Key.ToString() == key)
+                        return pair.Value;
+                }
+
+                return null;
+            }
+            
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="items"></param>
+        public Index(params KeyValuePair<Enum, IComparable>[] items)
+        {
+            foreach(var item in items)
+            {
+                Add(item.Key, item.Value);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="IComparable.CompareTo(object)"/>
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public int CompareTo(object obj)
+        {
+            if (!(obj is Index))
+                throw new ArgumentException("obj is not the same type as this instance");
+
+            return CompareTo((Index)obj);
+        }
+
+        /// <summary>
+        /// <see cref="IComparable{Index}.CompareTo(Index)"/>
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public int CompareTo(Index other)
+        {
+            int result = 0;
+
+            foreach(var pair in this)
+            {
+                if (!other.ContainsKey(pair.Key))
+                    result--;
+                else
+                    result += other[pair.Key].CompareTo(pair.Value);
+            }
+
+            return result;
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            string[] text = new string[this.Count];
+            int i = 0;
+
+            foreach(var pair in this)
+            {
+                text[i++] = String.Format("{0}:{1}", pair.Key, pair.Value is DateTime ? ((DateTime)pair.Value).ToString("o"): pair.Value);
+            }
+
+            return String.Join(", ", text);
+        }
+    }
+
+    /// <summary>
+    /// Data Access Interface
+    /// </summary>
+    public interface IEntry
+    {
+        /// <summary>
+        /// The index
+        /// </summary>
+        Index Index { get; }
+
+        /// <summary>
+        /// The value
+        /// </summary>
+        object Value { get; }
+    }
+
     /// <summary>
     /// Class that wraps one data entry
     /// </summary>
     [Serializable]
-    public struct Entry : ISerializable
-    {
+    [KnownType(typeof(Index))]
+    public class Entry : ISerializable, IEntry
+    {        
 
         /// <summary>
         /// The data path
@@ -28,8 +137,8 @@ namespace PSM
         /// <summary>
         /// The index value for this entry
         /// </summary>
-        public object Index { get; set; }
-
+        public Index Index { get; private set; } = new Index();
+        
         /// <summary>
         /// The data value for this entry
         /// </summary>
@@ -39,14 +148,22 @@ namespace PSM
         /// The value type
         /// </summary>
         public Type Type { get; set; }
+                
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public Entry() { }
 
         /// <summary>
-        /// The timestamp for this entry.
+        /// Constructor
         /// </summary>
-        public DateTime Timestamp { get; set; }
-
-        [NonSerialized]
-        public int Retry;
+        public Entry(Entry other)
+        {
+            Key = other.Key;
+            Index = other.Index;
+            Value = other.Value;
+            Type = other.Type;
+        }
 
         /// <summary>
         /// Deserialization Constructor
@@ -55,13 +172,12 @@ namespace PSM
         /// <param name="context"></param>
         public Entry(SerializationInfo info, StreamingContext context)
         {
-            Index = info.GetValue("index", typeof(object));
+
+            Index = (Index)info.GetValue("index", typeof(Index));
             Key = info.GetString("key");
             Type = Type.GetType(info.GetString("type"));
             Value = info.GetValue("value", Type);
-            Timestamp = info.GetDateTime("timestamp").ToLocalTime();            
-            Retry = 0;
-
+            
         }
 
         /// <summary>
@@ -76,7 +192,6 @@ namespace PSM
             info.AddValue("key", Key);
             info.AddValue("value", Value, Type);
             info.AddValue("type", Type.FullName);
-            info.AddValue("timestamp", Timestamp.ToUniversalTime().ToString("o"));
         }
 
         /// <summary>
@@ -85,177 +200,9 @@ namespace PSM
         /// <returns></returns>
         public override string ToString()
         {
-            return Value.ToString();
+            return (Value??"").ToString();
         }
     }
 
-    /// <summary>
-    /// A stream that takes an <see cref="IEnumerable{Entry}"/> as input, and outputs a JSON text stream.
-    /// Copyright (C) 2015 Odd Marthon Lende
-    /// </summary>
-    public class EntryJSONStream : Stream, IDisposable
-    {
-        private IEnumerable<Entry> _entries;
-        private StreamWriter _writer;
-
-        private static DataContractJsonSerializer _json = new DataContractJsonSerializer(typeof(Entry));
-        private IEnumerator<Entry> _enumerator;
-
-        public EntryJSONStream(IEnumerable<Entry> _entries)
-        {
-            
-            this._entries = _entries;
-            _writer = new StreamWriter(this, System.Text.Encoding.UTF8) { AutoFlush = true };
-            _enumerator = this._entries.GetEnumerator();
-
-        }
-
-        public override bool CanRead
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        public override bool CanSeek
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        public override bool CanWrite
-        {
-            get
-            {
-                return true;
-            }
-        }
-        
-        public override long Length { get { return length; } }
-
-        public override long Position { get; set; }
-        
-        public override void Flush()
-        {
-        }
-
-        private long _position = 0;
-
-        private static char START_ARRAY = '[';
-        private static char COMMA = ',';
-        private static char END_ARRAY = ']';
-
-        private enum State
-        {
-            CLOSED,
-            OPEN,
-            OBJECT,
-            DONE
-        }
-
-        private State state = State.CLOSED;
-
-        public override void Close()
-        {
-            base.Close();
-            _enumerator.Dispose();
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            
-            int i = offset;
-
-            for (; state != State.DONE && i < offset + count; i++)
-            {
-
-                long p = Position;
-
-                if (Position >= length)
-                {
-
-                    if (state == State.CLOSED)
-                    {
-
-                        _writer.Write(START_ARRAY);
-                        state = State.OPEN;
-
-                    }
-                    else if (_enumerator.MoveNext())
-                    {
-
-                        EntryJSONStream._json.WriteObject(this, _enumerator.Current);
-
-                        byte[] b = this.buffer;
-                        Array.Resize<byte>(ref b, b.Length + 1);
-
-                        _writer.Write(COMMA);
-
-                        b[b.Length - 1] = this.buffer[0];
-                        this.buffer = b;
-
-                        state = State.OBJECT;
-
-                    }
-                    else
-                    {
-                        if(state == State.OBJECT)
-                        {
-                            Position--; i--;
-                        }                        
-
-                        _writer.Write(END_ARRAY);
-                       
-                        state = State.DONE;
-
-                    }
-
-                }
-
-                Position = p;
-
-                buffer[i] = this.buffer[_position++];
-
-                Position++;
-
-            }
-            
-            return i - offset;
-
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            return Position;
-        }
-
-        public override void SetLength(long value)
-        {
-        }
-
-        private byte[] buffer = new byte[0];
-        private long length = 0;
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-
-            if (Position + count > length)
-                length += count;
-
-            _position = 0;
-
-            this.buffer = new byte[count];
-
-            for (int i = 0; i < count && i < length; i++)
-            {
-
-                this.buffer[i] = buffer[offset + i];
-                Position++;
-
-            }
-        }
-    }
+    
 }

@@ -10,15 +10,21 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+/// <copyright file="store.cs" company="Baker Hughes Incorporated">
+/// Copyright (c) 2016 All Rights Reserved
+/// </copyright>
+/// <author>Odd Marthon Lende</author>
+/// 
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using System.Timers;
 
 namespace PSM.Stores
 {
-
+    /// <summary>
+    /// 
+    /// </summary>
     internal class Setup : global::PSM.Setup
     {
 
@@ -83,19 +89,34 @@ namespace PSM.Stores
         
     }
 
-    
+    /// <summary>
+    /// Abstract class for implementing a store
+    /// </summary>
     public abstract class Store : IStore
     {
-
+        /// <summary>
+        /// 
+        /// </summary>
         public abstract Enum Default { get; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public abstract Type Index { get; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public class Configuration : IOptions
         {
-
+            /// <summary>
+            /// 
+            /// </summary>
             private Type _store;
 
+            /// <summary>
+            /// 
+            /// </summary>
             [Category("Data")]
             [Description("The data store used when loading data")]
             public Type Store {
@@ -112,6 +133,10 @@ namespace PSM.Stores
                 }
             }
             
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
             public virtual Properties Get()
             {
 
@@ -155,6 +180,12 @@ namespace PSM.Stores
                 return properties;
             }
 
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="name"></param>
+            /// <returns></returns>
             public T Get<T>(string name)
             {
                 object value = this.GetType().GetProperty(name).GetValue(this);
@@ -185,12 +216,12 @@ namespace PSM.Stores
             /// <summary>
             /// The index used when polling for new data.
             /// </summary>
-            public object StartIndex { get; set; }
+            public Index StartIndex { get; set; } = new Index();
 
             /// <summary>
             /// The index used when fetching data
             /// </summary>
-            public Enum Index { get; set; }
+            public Enum IndexIdentifier { get; set; }
 
             /// <summary>
             /// The handler that will receive the data, when there is new data available.
@@ -221,7 +252,7 @@ namespace PSM.Stores
         /// <summary>
         /// Holds the registered receivers of realtime data updates.
         /// </summary>
-        protected ConcurrentDictionary<object, ConcurrentBag<Path>> Receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
+        protected ConcurrentDictionary<object, ConcurrentBag<Path>> _receivers = new ConcurrentDictionary<object, ConcurrentBag<Path>>();
 
         /// <summary>
         /// If <c>true</c>, this object has been disposed.
@@ -253,6 +284,9 @@ namespace PSM.Stores
         /// </summary>
         protected Guid _id = Guid.NewGuid();
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public Store()
         {
             _queue = new ConcurrentQueue<Envelope>();
@@ -267,20 +301,28 @@ namespace PSM.Stores
         /// <summary>
         /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
-        public abstract IEnumerable<Entry> Read(string path, object start, object end, Enum index);
+        public abstract IEnumerable<Entry> Read(string path, IComparable start, IComparable end, Enum index);
         
         /// <summary>
         /// <see cref="IStore.Keys(string)"/>
         /// </summary>
-        public abstract Key[] Keys(string ns);
+        public abstract IEnumerable<Key> Keys(string ns);
 
         /// <summary>
         /// <see cref="IStore.Write(Envelope)"/>
         /// </summary>
-        public virtual void Write(Envelope envelope)
+        public virtual void Write(string path, params Entry[] entries)
         {
+
             if (!_disposed)
             {
+
+                Envelope envelope = new Envelope()
+                {
+                    Entries = entries,
+                    Path = path
+                };
+
                 _queue.Enqueue(envelope);
                 _freqIn.Mark(1);
             }
@@ -289,7 +331,7 @@ namespace PSM.Stores
         /// <summary>
         /// <see cref="IStore.Register(object, string, object, RealTimeData)"/>
         /// </summary>
-        public virtual void Register(object context, string path, object startingIndex, Enum index, RealTimeData handler)
+        public virtual void Register(object context, string path, IComparable startingIndex, Enum index, RealTimeData handler)
         {
 
             ConcurrentBag<Path> paths = null;
@@ -300,14 +342,14 @@ namespace PSM.Stores
                     throw new NullReferenceException();
             }
 
-            if (!Receivers.ContainsKey(context))
+            if (!_receivers.ContainsKey(context))
             {
                 paths = new ConcurrentBag<Path>();
-                while (!Receivers.TryAdd(context, paths)) ;
+                while (!_receivers.TryAdd(context, paths)) ;
             }
             else
             {
-                while (!Receivers.TryGetValue(context, out paths)) ;
+                while (!_receivers.TryGetValue(context, out paths)) ;
             }
 
             Path p1 = Path.Extract(path);
@@ -325,9 +367,9 @@ namespace PSM.Stores
                 });
             }
 
-            p1.StartIndex = startingIndex;
+            p1.StartIndex = new Index(new KeyValuePair<Enum, IComparable>(index, startingIndex));
             p1.Handler = handler;
-            p1.Index = index;
+            p1.IndexIdentifier = index;
 
         }
 
@@ -338,10 +380,10 @@ namespace PSM.Stores
         {
             ConcurrentBag<Path> list;
 
-            if (!Receivers.ContainsKey(context))
+            if (!_receivers.ContainsKey(context))
                 return;
 
-            while (!Receivers.TryRemove(context, out list)) ;
+            while (!_receivers.TryRemove(context, out list)) ;
         }
 
         /// <summary>
@@ -352,10 +394,10 @@ namespace PSM.Stores
 
             ConcurrentBag<Path> list;
 
-            if (!Receivers.ContainsKey(context))
+            if (!_receivers.ContainsKey(context))
                 return;
 
-            while (!Receivers.TryGetValue(context, out list)) ;
+            while (!_receivers.TryGetValue(context, out list)) ;
 
             Path p1 = Path.Extract(path);
 

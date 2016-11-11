@@ -9,7 +9,7 @@ namespace PSMViewer.Visualizations
 
     [Visible(true)]
     [DisplayName("Gauge (OpenGL)")]
-    public class Gauge : Replicator<glGauge>
+    public class Gauge : Replicator
     {
 
     }

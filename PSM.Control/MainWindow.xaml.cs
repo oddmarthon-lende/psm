@@ -25,22 +25,16 @@ namespace PSM.Control
             if (type != EventLogEntryType.Error && type != EventLogEntryType.FailureAudit)
                 return;
 
-            Store.Get().Write(new Envelope()
-            {
-
-                Path = "@errors",
-                Entries = new Entry[1] {
+            Store.Get().Write("@errors", new Entry[1] {
 
                     new Entry {
 
                         Key = Environment.MachineName,
                         Type = typeof(string),
-                        Value = message,
-                        Timestamp = DateTime.Now
+                        Value = message
 
                     }
-                }
-            });
+                });
 
         };
 

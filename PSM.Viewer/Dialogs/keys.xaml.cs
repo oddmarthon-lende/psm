@@ -40,7 +40,7 @@ namespace PSM.Viewer.Dialogs.Commands
             foreach(KeyEditor.KeyEditorItem it in Editor.Items)
             {
 
-                if (item == it)
+                if (item == it || !item.Key.GetType().Equals(it.Key.GetType()))
                     continue;
 
                 switch (column.DisplayIndex)

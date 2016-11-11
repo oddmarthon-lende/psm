@@ -1,5 +1,5 @@
 ﻿/// <copyright file="base.cs" company="Baker Hughes Incorporated">
-/// Copyright (c) 2015 All Rights Reserved
+/// Copyright (c) 2016 All Rights Reserved
 /// </copyright>
 /// <author>Odd Marthon Lende</author>
 /// <summary>The base for all visualization controls</summary>
@@ -192,6 +192,11 @@ namespace PSM.Viewer.Visualizations
                 this.Icon = Icon;
                 this.Type = Type;
             }
+
+            public override string ToString()
+            {
+                return DisplayName ?? Type.Name;
+            }
         }
         /// <summary>
         /// Lists information about the types that inherits from VisualizationControl
@@ -263,21 +268,36 @@ namespace PSM.Viewer.Visualizations
 
         #region Properties
 
-        #region Dependency Properties
-
-
         /// <summary>
         /// <see cref="IReload.Status"/>
         /// </summary>
         public ReloadStatus Status
         {
-            get {
+            get
+            {
                 return (ReloadStatus)GetValue(StatusProperty);
             }
-            set {
+            set
+            {
                 SetValue(StatusProperty, value);
             }
         }
+
+        #region Dependency Properties
+
+        /// <summary>
+        /// The text to show in the status bar of the widget
+        /// </summary>
+        public string StatusBarText
+        {
+            get { return (string)GetValue(StatusBarTextProperty); }
+            set { SetValue(StatusBarTextProperty, value); }
+        }
+        public static readonly DependencyProperty StatusBarTextProperty =
+            DependencyProperty.Register("StatusBarText", typeof(string), typeof(VisualizationControl), new PropertyMetadata(""));
+
+
+
         /// <summary>
         /// Identifies the <see cref="Status"/> dependency property
         /// </summary>
@@ -437,7 +457,7 @@ namespace PSM.Viewer.Visualizations
         /// <summary>
         /// Holds a list of <typeparamref name="PropertyDefinition"/> objects that will be exposed to the user.
         /// </summary>
-        protected List<PropertyDefinition> Properties { get; set; } = new List<PropertyDefinition>();
+        public List<PropertyDefinition> Properties { get; protected set; } = new List<PropertyDefinition>();
 
         /// <summary>
         /// 
@@ -786,7 +806,7 @@ namespace PSM.Viewer.Visualizations
                 Properties.Add(new PropertyDefinition()
                 {
                     Category = "Layout",
-                    TargetProperties = new List<object>(new string[] { "Row", "RowSpan", "Column", "ColumnSpan", "Margin" })
+                    TargetProperties = new List<object>(new string[] { "Row", "RowSpan", "Column", "ColumnSpan", "Margin", "MinWidth", "MinHeight", "MaxWidth", "MaxHeight" })
                 });
 
                 Properties.Add(new PropertyDefinition()
@@ -1099,7 +1119,7 @@ namespace PSM.Viewer.Visualizations
         /// <param name="key">The key to load</param>
         /// <param name="collection">A collection for the data. Used to share collection between objects.</param>
         /// <returns>The MultiControl that is created for the key</returns>
-        public virtual bool Add(KeyItem key, ObservableCollection<EntryItem> collection = null)
+        public virtual bool Add(KeyItem key, ObservableCollection<Entry> collection = null)
         {
 
             if (key == null || key.Type == null) return false;
@@ -1117,10 +1137,7 @@ namespace PSM.Viewer.Visualizations
             }
             else
                 return false;
-
-            if(_refreshOperation == null)
-                _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
-
+            
             return true;
 
         }
@@ -1137,10 +1154,7 @@ namespace PSM.Viewer.Visualizations
                 Controls.Remove(m);
                 m.Dispose();
             }
-
-            if (_refreshOperation == null)
-                _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
-
+                        
             return true;
         }
 
@@ -1150,10 +1164,8 @@ namespace PSM.Viewer.Visualizations
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected void Key_Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void Key_Children_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-
-            Dispatcher.InvokeAsync(this.Refresh);
             
             if(e.OldItems != null)
                 foreach (KeyItem k in e.OldItems)
@@ -1169,7 +1181,10 @@ namespace PSM.Viewer.Visualizations
                 }
 
             if (_refreshOperation == null && (e.OldItems != null || e.NewItems != null))
+            {
                 _refreshOperation = Dispatcher.InvokeAsync(Refresh, DispatcherPriority.Background);
+                this.OnReload(this);
+            }
 
         }
 
@@ -1196,9 +1211,8 @@ namespace PSM.Viewer.Visualizations
 
                     switch((DB.IndexType)DataIndexFieldAsEnum)
                     {
-                        case DB.IndexType.Index:
-                        case DB.IndexType.Id:
-                        case DB.IndexType.Value:
+                        
+                        case DB.IndexType.Descending:
 
                             Start = StartIndex;
                             Count = this.Count;
@@ -1221,9 +1235,9 @@ namespace PSM.Viewer.Visualizations
 
                     switch ((Advantage.IndexType)DataIndexFieldAsEnum)
                     {
-                        case Advantage.IndexType.Index:
+                        case Advantage.IndexType.Descending:
                         case Advantage.IndexType.Depth:
-                        
+
                             Start = StartIndex;
                             Count = this.Count;
 

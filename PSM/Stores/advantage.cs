@@ -26,7 +26,7 @@ namespace PSM.Stores
 
             Time,
             Depth,
-            Index
+            Descending
 
         }
 
@@ -34,7 +34,7 @@ namespace PSM.Stores
         {
             get
             {
-                return IndexType.Index;
+                return IndexType.Descending;
             }
         }
 
@@ -143,7 +143,7 @@ namespace PSM.Stores
         /// This method has been disabled in this implementation of the <see cref="IStore"/> interface
         /// Using it will result in an exception being thrown.
         /// </summary>
-        public override void Write(Envelope data)
+        public override void Write(string path, params Entry[] entries)
         {
             throw new InvalidOperationException("Writing to the Advantage Database has not been implemented.");
         }
@@ -153,7 +153,7 @@ namespace PSM.Stores
         /// </summary>
         /// <param name="path">The path</param>
         /// <returns>An array of <see cref="Key"/> type</returns>
-        public override Key[] Keys(string path)
+        public override IEnumerable<Key> Keys(string path)
         {
 
             ParameterizedPath p = ParameterizedPath.Extract(path);
@@ -286,7 +286,7 @@ namespace PSM.Stores
         /// Gets data
         /// <see cref="IStore.Read(string, object, object, Enum)"/>
         /// </summary>
-        public override IEnumerable<Entry> Read(string path, object start, object end, Enum index)
+        public override IEnumerable<Entry> Read(string path, IComparable start, IComparable end, Enum index)
         {
 
             ParameterizedPath p = ParameterizedPath.Extract(path);
@@ -336,10 +336,10 @@ namespace PSM.Stores
             using (SqlCommand command = connection.CreateCommand())
             {
 
-                IndexType indexIdentifier = (IndexType)path.Index;
+                IndexType indexIdentifier = (IndexType)path.IndexIdentifier;
 
                 command.CommandType = CommandType.Text;
-                command.CommandText = GenerateQuery(path.Index, false, new ParameterizedPath(new DB.Path(path)));
+                command.CommandText = GenerateQuery(path.IndexIdentifier, false, new ParameterizedPath(new DB.Path(path)));
 
                 command.Parameters.Add(new SqlParameter("@StartIndex", GetType(indexType))
                 {
@@ -364,27 +364,8 @@ namespace PSM.Stores
                 if (processed.TryGetValue(path, out entries))
                 {
 
-                    switch (path.Index.ToString())
-                    {
+                    entries = (from entry in entries where entry.Index[path.IndexIdentifier].CompareTo(path.StartIndex[path.IndexIdentifier]) > 0 select entry).ToArray();
 
-                        case "Depth":
-                        case "Index":
-
-                            entries = (from entry in entries where Convert.ToDouble(entry.Index) > Convert.ToDouble(path.StartIndex) select entry).ToArray();
-                            break;
-
-                        case "Time":
-
-                            entries = (from entry in entries where (DateTime)entry.Index > (DateTime)path.StartIndex select entry).ToArray();
-                            break;                       
-
-                        default:
-
-                            entries = null;
-                            break;
-
-                    }
-                    
                 }
 
                 entries = entries ?? (new Entries(new Path(path), indexIdentifier, connection, command)).ToArray();
@@ -395,8 +376,7 @@ namespace PSM.Stores
                     path.StartIndex = path.Handler(new Envelope()
                     {
                         Path = path.Namespace,
-                        Entries = entries,
-                        Timestamp = DateTime.Now
+                        Entries = entries
                     });
 
                     if (path.StartIndex == null)

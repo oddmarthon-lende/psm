@@ -12,6 +12,7 @@
         <ItemsControl.Resources>
             <c:TextHighlightColorConverter x:Key="ColorConverter" Parent="{x:Reference _vc}" />
             <c:EntryToStringConverter x:Key="EntryConverter" />
+            <c:EntryToDescriptionConverter x:Key="DescriptionConverter" />
         </ItemsControl.Resources>
 
         <ItemsControl.ItemsPanel>
@@ -23,7 +24,33 @@
         <ItemsControl.ItemTemplate>
             <DataTemplate>
                 <StackPanel Orientation="Vertical" Margin="1" Background="{Binding Key.Brush, UpdateSourceTrigger=PropertyChanged}">
-                    <TextBlock Background="#55000000" Text="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" TextAlignment="Justify" Padding="5" />
+                    <TextBlock x:Name="title" Background="#55000000" Text="{Binding Key.Title.Value, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" TextAlignment="Justify" Padding="5">
+                        <TextBlock.Triggers>
+                            <EventTrigger RoutedEvent="MouseEnter">
+                                <EventTrigger.Actions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{Binding Text, ElementName=title}" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger.Actions>
+                            </EventTrigger>
+
+                            <EventTrigger RoutedEvent="MouseLeave">
+                                <EventTrigger.Actions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger.Actions>
+                            </EventTrigger>
+                        </TextBlock.Triggers>
+                    </TextBlock>
                     <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" >
                         <ItemsControl ItemsSource="{Binding Entries}" ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" >
 
@@ -35,21 +62,38 @@
 
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Foreground="{Binding Converter={StaticResource ColorConverter}}" Padding="5" Margin="1" Background="#55FFFFFF">
+                                    <TextBlock x:Name="value" Foreground="{Binding Converter={StaticResource ColorConverter}}" Padding="5" Margin="1" Background="#55FFFFFF">
                                         <TextBlock.Text>
                                             <MultiBinding Converter="{StaticResource EntryConverter}">
                                                 <Binding Path="DataContext.Key" UpdateSourceTrigger="PropertyChanged" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" />
                                                 <Binding UpdateSourceTrigger="PropertyChanged" />
                                             </MultiBinding>
                                         </TextBlock.Text>
-                                        <TextBlock.ToolTip>
-                                            <StackPanel Orientation="Vertical">
-                                                <Label>Value</Label>
-                                                <TextBlock Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" />
-                                                <Label>Time</Label>
-                                                <TextBlock Text="{Binding Timestamp, UpdateSourceTrigger=PropertyChanged, StringFormat=o}" />
-                                            </StackPanel>
-                                        </TextBlock.ToolTip>
+                                        <TextBlock.Triggers>
+                                            <EventTrigger RoutedEvent="MouseEnter">
+                                                <EventTrigger.Actions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{Binding Converter={StaticResource DescriptionConverter}}" />
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger.Actions>
+                                            </EventTrigger>
+
+                                            <EventTrigger RoutedEvent="MouseLeave">
+                                                <EventTrigger.Actions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <ObjectAnimationUsingKeyFrames BeginTime="0:0:0" Storyboard.Target="{Binding ElementName=_vc}" Storyboard.TargetProperty="(local:VisualizationControl.StatusBarText)">
+                                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="" />
+                                                            </ObjectAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger.Actions>
+                                            </EventTrigger>
+                                        </TextBlock.Triggers>
                                     </TextBlock>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

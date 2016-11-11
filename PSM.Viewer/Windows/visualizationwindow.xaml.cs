@@ -859,19 +859,15 @@ namespace PSM.Viewer
                             v.OnReload(v);
                         });
 
-                    });                                      
+                    });
 
-                    break;
+                    return;
 
                 case CommandType.CLONE:
 
                     Children.Add((VisualizationControl)System.Windows.Markup.XamlReader.Load(stream));
-                    break;
-
-                case CommandType.UNDO:
-
-                    UndoExtension.Undo();
-                    break;
+                    return;
+                                    
 
                 case CommandType.REMOVE_WIDGET:
 
@@ -880,7 +876,7 @@ namespace PSM.Viewer
                     Children.Remove(w);
                     w.Dispose();
 
-                    break;
+                    return;
 
                 case CommandType.SAVE:
                     
@@ -894,7 +890,7 @@ namespace PSM.Viewer
                         this.Export(stream);
                     }
 
-                    break;
+                    return;
 
                 case CommandType.ADD:
 
@@ -925,7 +921,7 @@ namespace PSM.Viewer
                         }
                     }
 
-                    break;
+                    return;
 
                 case CommandType.EXPORT:
 
@@ -942,7 +938,7 @@ namespace PSM.Viewer
                         this.Export(dialog.OpenFile());
                     }
 
-                    break;
+                    return;
 
                 case CommandType.DELETE:
 
@@ -951,7 +947,7 @@ namespace PSM.Viewer
                         ((MainWindow)App.Current.MainWindow).Remove(this);
                     });
 
-                    break;
+                    return;
 
                 case CommandType.RELOAD:
                     
@@ -996,9 +992,7 @@ namespace PSM.Viewer
                         break;
                     }                       
 
-                    ZoomInterval =  (string)button.Content;
-
-                    
+                    ZoomInterval =  (string)button.Content;                    
 
                     break;
 

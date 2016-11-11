@@ -25,15 +25,14 @@ using System.Threading;
 using System.Windows.Data;
 using PSM.Viewer.Utilities;
 using Xceed.Wpf.Toolkit.PropertyGrid;
-using System.Windows.Media;
-using System.Threading.Tasks;
 using PSM.Viewer.Commands;
 using System.Diagnostics;
+using Xceed.Wpf.DataGrid.Converters;
 
 namespace PSM.Viewer
 {
 
-    public partial class MainWindow : Theme.Window, INotifyPropertyChanged, IReload, IDisposable
+    public partial class MainWindow : Theme.Window, INotifyPropertyChanged, IReload, IDisposable, IFormatProvider
     {
         
         
@@ -203,10 +202,6 @@ namespace PSM.Viewer
             /// </summary>
             SAVE,
             /// <summary>
-            /// Set the chart type for a key, so that it will automatically use this type whenever data is loaded into the main window.
-            /// </summary>
-            SET_CHART_TYPE,
-            /// <summary>
             /// Create a new window
             /// </summary>
             NEW_WINDOW,
@@ -219,26 +214,15 @@ namespace PSM.Viewer
             /// </summary>
             EVENT_LOG,
             /// <summary>
-            /// Opens the properties for the selected visualization control
-            /// </summary>
-            OPEN_VISUALIZATION_PROPERTIES,
-            /// <summary>
-            /// Add the key to the current visualizatio
-            /// </summary>
-            ADD_KEY_CHART,
-            /// <summary>
-            /// Remove key from chart
-            /// </summary>
-            REMOVE_KEY_CHART,
-            /// <summary>
             /// Delete key from tree
             /// </summary>
             DELETE,
             RESET
         }
 
-        private VisualizationControl _graph = null;
-
+        /// <summary>
+        /// 
+        /// </summary>
         public Visibility[] ToolbarsVisibility
         {
             get
@@ -305,8 +289,6 @@ namespace PSM.Viewer
 
                             ctrl.Key = key;
                             
-                            Visualize(key);
-                            
                             this.OnReload(ctrl);
 
                         }                        
@@ -323,9 +305,67 @@ namespace PSM.Viewer
 
             EventLogWindow = new EventLogWindow() { };
             EventLogWindow.Closing += EvtWindow_Closing;
-            
+
+            SetupIndexColumns();
         }
 
+        /// <summary>
+        /// <see cref="IFormatProvider.GetFormat(Type)"/>
+        /// </summary>
+        /// <param name="formatType"></param>
+        /// <returns></returns>
+        public object GetFormat(Type formatType)
+        {
+            if (formatType == typeof(DateTime))
+                return "o";
+
+            return null;
+        }
+
+        /// <summary>
+        /// Generates columns for the data indexes
+        /// </summary>
+        private void SetupIndexColumns()
+        {
+            
+            StringFormatConverter converter = new StringFormatConverter() { FormatProvider = this };
+            string[] names = Enum.GetNames(PSM.Store.Get(Dispatcher.CurrentDispatcher).Index);
+
+            dataGrid.Columns.Clear();
+
+            dataGrid.Columns.Add(new DataGridTextColumn()
+            {
+                Header = "Value",
+                Width = new DataGridLength(50, DataGridLengthUnitType.Star),
+                IsReadOnly = true,
+                Binding = new Binding("Value")
+                {
+                    Converter = converter
+                }
+            });            
+
+            foreach(string name in names)
+            {
+
+                dataGrid.Columns.Add(new DataGridTextColumn()
+                {
+                    Header = name,
+                    Width = new DataGridLength((int)(50 / names.Length), DataGridLengthUnitType.Star),
+                    IsReadOnly = true,
+                    Binding = new Binding(String.Format("Index[{0}]", name))
+                    {
+                        Converter = converter
+                    }
+                });
+
+            }
+                        
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         private void CreateCommands()
         {
 
@@ -338,7 +378,6 @@ namespace PSM.Viewer
             Commands.Add("About", new RelayCommand(ExecuteCommand, canExecute, CommandType.ABOUT));
             Commands.Add("RefreshTable", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH_TABLE));
             Commands.Add("RefreshTree", new RelayCommand(ExecuteCommand, canExecute, CommandType.REFRESH_TREE));
-            Commands.Add("SetChartType", new RelayCommand(ExecuteCommand, ContextMenu_CanExecute, CommandType.SET_CHART_TYPE));
             Commands.Add("Reset", new RelayCommand(ExecuteCommand, delegate {
                 return DataContext == null ? false : ((MultiControl)DataContext).Get().Page > 0;
             }, CommandType.RESET));
@@ -349,46 +388,21 @@ namespace PSM.Viewer
             Commands.Add("NewWindow", new RelayCommand(ExecuteCommand, canExecute, CommandType.NEW_WINDOW));
             Commands.Add("Stop", new RelayCommand(ExecuteCommand, canExecute, CommandType.STOP));
             Commands.Add("EventLog", new RelayCommand(ExecuteCommand, canExecute, CommandType.EVENT_LOG));
-            Commands.Add("OpenChartProperties", new RelayCommand(ExecuteCommand, canExecute, CommandType.OPEN_VISUALIZATION_PROPERTIES));
-            Commands.Add("AddKeyToChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.ADD_KEY_CHART));
-            Commands.Add("RemoveKeyFromChart", new RelayCommand(ExecuteCommand, canExecute, CommandType.REMOVE_KEY_CHART));
             Commands.Add("DeleteFromTree", new RelayCommand(ExecuteCommand, canExecute, CommandType.DELETE));
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="key"></param>
+        /// <param name="args"></param>
         private void TreeView_KeyRightClick(Tree sender, KeyItem key, System.Windows.Input.MouseEventArgs args)
         {
 
             ContextMenu menu = new ContextMenu();
             MenuItem item;
-
-            if (key.Type != null)
-            {
-                item = new MenuItem();
-
-                if (_graph != null)
-                {
-
-                    if (_graph.Paths.Contains(key.Path))
-                    {
-                        item.Command = Commands["RemoveKeyFromChart"];
-                        item.Header = "Remove From Visualization";
-                    }
-                    else
-                    {
-                        item.Command = Commands["AddKeyToChart"];
-                        item.Header = "Add To Visualization";
-                    }
-
-                    item.CommandParameter = key;
-                    menu.Items.Add(item);
-
-                }
-
-                menu.Items.Add(new Separator());
-            }
-
             
-
             item = new MenuItem();
 
             item.Command = Commands["DeleteFromTree"];
@@ -401,6 +415,11 @@ namespace PSM.Viewer
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void EvtWindow_Closing(object sender, CancelEventArgs e)
         {
             e.Cancel = true;
@@ -448,33 +467,7 @@ namespace PSM.Viewer
                     
 
                     break;
-
-                case CommandType.REMOVE_KEY_CHART:
-
-                    if(_graph != null)
-                    {
-                        _graph.Remove((KeyItem)parameter);
-                    }
-
-                    break;
-
-                case CommandType.ADD_KEY_CHART:
-
-                    if(_graph != null)
-                    {
-                        _graph.Add((KeyItem)parameter);
-                        RefreshSettingsValues(_graph.GetControl((KeyItem)parameter));
-                    }                        
-
-                    break;
-
-                case CommandType.OPEN_VISUALIZATION_PROPERTIES:
-
-                    if(_graph != null)
-                        _graph.Commands["Properties"].Execute(null);
-
-                    break;
-
+                                    
                 case CommandType.EVENT_LOG:
 
                     EventLogWindow.Show();
@@ -559,14 +552,7 @@ namespace PSM.Viewer
                     {
                         new WindowSavedState(EventLogWindow).Export(stream);
                     }
-
-                    if(_graph != null)
-                    {
-                        using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"graph.xaml", FileMode.Create))
-                        {
-                            _graph.Export(stream);
-                        }
-                    }
+                                       
 
                     break;
 
@@ -580,18 +566,7 @@ namespace PSM.Viewer
                     ), "About", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     break;
-
-                case CommandType.SET_CHART_TYPE:
-
-                    VisualizationControl.InheritorInfo info = (VisualizationControl.InheritorInfo)parameter;
-                    info.IsSelected = true;
-
-                    Options.ChartType = info.Type;
-
-                    Visualize(key);
-
-                    break;
-
+                    
                 case CommandType.NEXT:
                     this.Next();
                     break;
@@ -759,21 +734,7 @@ namespace PSM.Viewer
             {
                 
             }
-
-            try
-            {
-
-                using (IsolatedStorageFileStream stream = UserStore.OpenFile(@"graph.xaml", FileMode.Open, FileAccess.Read))
-                {
-                    _graph = ((VisualizationControl)XamlReader.Load(stream));
-                    _graph.Owner = this;
-                }
-
-            }
-            catch (Exception)
-            {
-
-            }
+                        
 
         }
 
@@ -875,83 +836,10 @@ namespace PSM.Viewer
         }
 
         #endregion
+               
                 
-
-        /// <summary>
-        /// Adds a chart to visualize the current data in the window
-        /// </summary>
-        /// <param name="key"></param>
-        private void Visualize(KeyItem key)
-        {
-
-            MultiControl context = (MultiControl)this.DataContext;
-            Type ChartType       = Options.ChartType;
-
-            if (ChartType != null && key != null && key.Type != null)
-            {
-
-                
-
-                if (_graph != null && !_graph.GetType().Equals(ChartType))
-                {
-                    _graph.Dispose();
-                    _graph = null;                    
-                }
-
-                _graph = _graph ?? (VisualizationControl)ChartType.New();
-
-                visualizationGrid.Children.Clear();
-
-                if (_graph != null)
-                {
-
-                    visualizationGrid.Children.Add(_graph);
-
-                    _graph.Owner = this;
-                    _graph.Title = key.Parent.Path;
-
-                    foreach (KeyItemPath p in _graph.Paths.ToArray())
-                    {
-                        _graph.Remove(KeyItem.Create(p.Path));
-                    }
-
-                    _graph.Add(key, context.Entries);
-                    
-                    //string icon = (string)_graph.GetType().GetTypeInfo().GetCustomAttribute<IconAttribute>();
-                    
-                    //if(icon != null || icon.Length >= 0)                    
-                    //    using (Stream stream = Application.GetResourceStream(new Uri(icon, UriKind.Relative)).Stream)
-                    //    {
-                    //        chartPropertiesButtonImage.Source = BitmapFrame.Create(stream);
-                    //    }
-
-                }
-            }
-        }
-
         #region Event Handlers     
-
-        /// <summary>
-        /// Used so that the items are checked accordingly in the context menu.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ChartTypeMenuItem_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-
-            KeyItem key = ((MultiControl)this.DataContext).Key;
-            Type ChartType = Options.ChartType;
-
-            if (key == null) return;
-
-            foreach (VisualizationControl.InheritorInfo info in ((MenuItem)sender).Items)
-            {
-                info.IsSelected = ChartType != null && ChartType.Equals(info.Type);
-            }
-
-        }
-
-
+        
         /// <summary>
         /// Used Support drag and dropping of exported files onto the mainwindow.
         /// </summary>
@@ -1007,12 +895,19 @@ namespace PSM.Viewer
         {
 
             Options.settings_propertyGrid_SelectedObjectChanged(sender, e);
+            SetupIndexColumns();
         }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void settings_propertyGrid_PropertyValueChanged(object sender, PropertyValueChangedEventArgs e)
         {
+            
+            Options.settings_propertyGrid_PropertyValueChanged(sender, e);    
 
-            Options.settings_propertyGrid_PropertyValueChanged(sender, e);
         }
 
         #endregion
@@ -1056,9 +951,7 @@ namespace PSM.Viewer
 
             Options.StartIndex = Options.StartIndex;
             Options.EndIndex = Options.EndIndex;
-
-            RefreshGraph();
-                                    
+                        
         }
 
         /// <summary>
@@ -1067,36 +960,12 @@ namespace PSM.Viewer
         /// <param name="obj">The object to reload</param>
         void OnReload(IReload obj)
         {
-            if (obj == DataContext)
-                RefreshGraph();
-
             Extensions.OnReload(this, obj);
         }
 
         /// <summary>
-        /// Refreshes the graph when it has multiple keys in the main window
+        /// 
         /// </summary>
-        private void RefreshGraph()
-        {
-
-            if (_graph != null)
-            {
-
-                MultiControl ctrl = (MultiControl)DataContext;
-
-                foreach (MultiControl c in _graph.Controls)
-                {
-                    if (c.Entries == ctrl.Entries)
-                        continue;
-
-                    c.Get((Enum)Enum.Parse(Store.Get(Dispatcher).Index, Options.IndexField), ctrl.Get((Enum)Enum.Parse(Store.Get(Dispatcher).Index, Options.IndexField)).Count).Reload();
-
-                }
-
-
-            }
-        }
-
         public void Dispose()
         {
             Store.Get().Dispose();

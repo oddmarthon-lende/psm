@@ -37,7 +37,7 @@ namespace PSM.Viewer.Models
             }
         }
 
-        public ObservableCollection<EntryItem> Entries { get; set; }
+        public ObservableCollection<Entry> Entries { get; set; }
 
         public Dispatcher Dispatcher { get; protected set; } = Dispatcher.CurrentDispatcher;
 
@@ -83,22 +83,19 @@ namespace PSM.Viewer.Models
         /// </summary>
         /// <param name="key">The <typeparamref name="KeyItem"/> this <typeparamref name="MultiControl"/> is for</param>
         /// <param name="Entries">An alternate collection for the data. Used to share a collection between different controls.</param>
-        public MultiControl(KeyItem key = null, LoadHandler load = null, ObservableCollection<EntryItem> Entries = null)
+        public MultiControl(KeyItem key = null, LoadHandler load = null, ObservableCollection<Entry> Entries = null)
         {
                        
-            this.Entries = Entries ?? new ObservableCollection<EntryItem>();
+            this.Entries = Entries ?? new ObservableCollection<Entry>();
 
             _indexIdentifier = PSM.Store.Get(Dispatcher).Default;
 
-            Controls.Add(PSM.Stores.DB.IndexType.Index, new Controls<long, long>(this.Entries, 1));
-            Controls.Add(PSM.Stores.DB.IndexType.Id, new Controls<long, long>(this.Entries, 1));
-            Controls.Add(PSM.Stores.DB.IndexType.Value, new Controls<long, long>(this.Entries, 1));
+            Controls.Add(PSM.Stores.DB.IndexType.Descending, new Controls<long, long>(this.Entries, 1));
             Controls.Add(PSM.Stores.DB.IndexType.Timestamp, new Controls<DateTime, TimeSpan>(this.Entries, new TimeSpan(1, 0, 0)));
             Controls.Add(PSM.Stores.Advantage.IndexType.Time, new Controls<DateTime, TimeSpan>(this.Entries, new TimeSpan()));
             Controls.Add(PSM.Stores.Advantage.IndexType.Depth, new Controls<long, long>(this.Entries, 100));
-            Controls.Add(PSM.Stores.Advantage.IndexType.Index, new Controls<long, long>(this.Entries, 1));
-            Controls.Add(PSM.Stores.Dummy.IndexType.Dummy, new Controls<long, long>(this.Entries, 1));
-            
+            Controls.Add(PSM.Stores.Advantage.IndexType.Descending, new Controls<long, long>(this.Entries, 1));
+
             foreach (var pair in Controls)
             {
                 

@@ -1,5 +1,5 @@
-﻿<local:OxyBase x:Class="PSM.Viewer.Visualizations.StairStep" 
-               x:TypeArguments="o:StairStepSeries"
+﻿<local:OxyBase x:Class="PSM.Viewer.Visualizations.Pie" 
+               x:TypeArguments="o:PieSeries"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -9,6 +9,6 @@
              xmlns:o="clr-namespace:OxyPlot.Series;assembly=OxyPlot"
              mc:Ignorable="d">
 
-    <oxy:PlotView Model="{Binding Model}" Controller="{Binding Controller}" x:Name="plotView" Background="Transparent" />
+    <oxy:PlotView Model="{Binding Model}" Controller="{Binding Controller}" x:Name="plotView" Background="Transparent"  />
 
 </local:OxyBase>

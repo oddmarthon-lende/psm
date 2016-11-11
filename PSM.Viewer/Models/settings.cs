@@ -13,13 +13,26 @@ using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 namespace PSM.Viewer.Models
 {
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class StoreOption
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public string Key { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public object Value { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
         public StoreOption(string key, object value)
         {
 
@@ -28,10 +41,10 @@ namespace PSM.Viewer.Models
 
         }
 
-        public StoreOption()
-        {
-
-        }
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public StoreOption() { }
     }
 
     public class StoreOptionsList : List<StoreOption> { }
@@ -57,26 +70,6 @@ namespace PSM.Viewer.Models
             if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
         }
         
-        /// <summary>
-        /// A list of chart types for the <see cref="ChartType"/> property.
-        /// </summary>
-        public sealed class ChartTypes : ItemCollection, IItemsSource
-        {
-            public ItemCollection GetValues()
-            {
-                return this;
-            }
-
-            public ChartTypes()
-            {
-                foreach(var info in VisualizationControl.List)
-                {
-                    Add(info.Type, info.DisplayName);
-                }
-                
-            }
-        }
-
         private Window _window;
         /// <summary>
         /// References the main window.
@@ -97,16 +90,7 @@ namespace PSM.Viewer.Models
                     EndIndex = _endindex;
             }
         }
-        
-
-        /// <summary>
-        /// The type of chart to display in the main window.
-        /// </summary>
-        [Category("Application")]
-        [ItemsSource(typeof(ChartTypes))]
-        [Description("Gets/Sets the type of chart to display in the main window")]
-        public Type ChartType { get; set; }
-
+                
         private string _indexfield;
 
         [Category("Controls")]
@@ -150,7 +134,7 @@ namespace PSM.Viewer.Models
             }
         }      
 
-        private object _startindex;
+        private IComparable _startindex;
         [Category("Controls")]
         [PropertyOrder(0)]
         [Description("Gets/Sets the start index")]
@@ -174,17 +158,17 @@ namespace PSM.Viewer.Models
                 try
                 {
 
-                    ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).Start = value;
+                    ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).Start = (IComparable)value;
                     OnPropertyChanged();
                 }
                 catch (Exception)
                 {
-                    _startindex = value;
+                    _startindex = (IComparable)value;
                 }
             }
         }
 
-        private object _endindex;
+        private IComparable _endindex;
 
         [Category("Controls")]
         [PropertyOrder(1)]
@@ -207,11 +191,11 @@ namespace PSM.Viewer.Models
             set
             {
                 try {
-                    ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).End = value;
+                    ((MultiControl)Window.DataContext).Get((Enum)Enum.Parse(_index, IndexField)).End = (IComparable)value;
                     OnPropertyChanged();
                 }
                 catch(Exception) {
-                    _endindex = value;
+                    _endindex = (IComparable)value;
                 }
 
                 

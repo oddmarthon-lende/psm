@@ -22,10 +22,10 @@ namespace PSM.Viewer.Converters
 
             if (key != null && value != null)
             {
-                return key.Convert<string>(value is EntryItem ? ((EntryItem)value).Value : value);
+                return key.Convert<string>((object)(value is Entry ? ((Entry)value).Value : value));
             }
             else if (value != null)
-                return (value is EntryItem ? ((EntryItem)value).Value : value);
+                return (value is Entry ? ((Entry)value).Value : value);
 
             return null;
         }

@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OxyPlot;
-using OxyPlot.Series;
 using OxyPlot.Axes;
 using PSM.Viewer.Models;
 using System.Collections;
@@ -20,9 +19,40 @@ using PSM.Viewer.Converters;
 using System.Windows;
 using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 using PSM.Viewer.Commands;
+using System.Windows.Controls;
 
 namespace PSM.Viewer.Visualizations
 {
+
+    /// <summary>
+    /// PlotView with a new default tracker that only shows lines
+    /// </summary>
+    public class OxyPlotView : OxyPlot.Wpf.PlotView
+    {
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public OxyPlotView()
+        {
+
+            FrameworkElementFactory factory = new FrameworkElementFactory(typeof(OxyPlot.Wpf.TrackerControl));
+
+            factory.SetBinding(OxyPlot.Wpf.TrackerControl.PositionProperty, new Binding("Position"));
+            factory.SetBinding(OxyPlot.Wpf.TrackerControl.LineExtentsProperty, new Binding("PlotModel.PlotArea"));
+            factory.SetBinding(OxyPlot.Wpf.TrackerControl.LineStrokeProperty, new Binding("Foreground")
+            {
+                RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(VisualizationControl), 1)
+            });
+            factory.SetValue(OxyPlot.Wpf.TrackerControl.ShowPointerProperty, false);
+
+            DefaultTrackerTemplate = new ControlTemplate()
+            {
+                VisualTree = factory
+            };
+                                    
+        }
+    }
 
     /// <summary>
     /// Base class used when creating widgets using <see cref="OxyPlot"/>
@@ -30,63 +60,86 @@ namespace PSM.Viewer.Visualizations
     /// <typeparam name="T">The oxyplot chart type</typeparam>
     public class OxyBase<T> : VisualizationControl, IDisposable
     {
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="control"></param>
+        /// <param name="series"></param>
         public delegate void SeriesAddedEventHandler(MultiControl control, T series);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="control"></param>
+        /// <param name="series"></param>
         public delegate void SeriesRemovedEventHandler(MultiControl control, T series);
 
+        /// <summary>
+        /// 
+        /// </summary>
         public event SeriesAddedEventHandler SeriesAdded;
+
+        /// <summary>
+        /// 
+        /// </summary>
         public event SeriesRemovedEventHandler SeriesRemoved;
         
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="control"></param>
+        /// <param name="series"></param>
         protected void OnSeriesRemoved(KeyItem key, MultiControl control, T series)
         {
             if (SeriesRemoved != null)
                 SeriesRemoved(control, series);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="control"></param>
+        /// <param name="series"></param>
         protected void OnSeriesAdded(KeyItem key, MultiControl control, T series)
         {
             if (SeriesAdded != null)
                 SeriesAdded(control, series);
         }
 
-        public PlotModel Model { get; private set; } = new PlotModel() { Title = "" };
-        public PlotController Controller { get; private set; } = new PlotController();
+        /// <summary>
+        /// 
+        /// </summary>
+        public PlotModel Model { get; protected set; } = new PlotModel() { Title = "" };
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public PlotController Controller { get; protected set; } = new PlotController();
         
+        /// <summary>
+        /// 
+        /// </summary>
         public override void Refresh()
         {
             
-            FrameworkElement Parent = (FrameworkElement)this.Parent;
-
-            // Had to add styling for the TrackerControl like this, because i could not find a better way to set the style for the TrackerControl.
-            // The Resources property is not a dependency property and is always serialized, so add it to the parent and it will propagate down the tree and style applied.
-            //
-            if (Parent != null)
-            {
-
-                Style TrackerControlStyle = new Style() { TargetType = typeof(OxyPlot.Wpf.TrackerControl) };
-
-                Parent.Resources.Remove(TrackerControlStyle.TargetType);
-
-                Setter setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.BackgroundProperty, Value = ToolTipBackground };
-                TrackerControlStyle.Setters.Add(setter);
-
-                setter = new Setter() { Property = OxyPlot.Wpf.TrackerControl.ForegroundProperty, Value = ToolTipForeground };
-                TrackerControlStyle.Setters.Add(setter);
-
-                Parent.Resources.Add(TrackerControlStyle.TargetType, TrackerControlStyle);
-
-            }            
+            FrameworkElement Parent = (FrameworkElement)this.Parent;      
 
             Model.InvalidatePlot(true);
 
             foreach (KeyValuePair<KeyItem, T> s in Series)
             {
-                ((Series)(object)s.Value).Title = s.Key.Title.ToString();
+                ((OxyPlot.Series.Series)(object)s.Value).Title = s.Key.Title.ToString();
             }
 
             base.Refresh();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
         protected void DataChanged(object sender)
         {
             //Refresh();
@@ -96,7 +149,7 @@ namespace PSM.Viewer.Visualizations
 
                 if (c.Entries.Count > 0)
                 {
-                    SetAxis(AxisPosition.Bottom, c.Entries[0].Index.GetType());
+                    SetAxis(AxisPosition.Bottom, c.Entries[0].Index[c.Get().Selected.IndexIdentifier].GetType());
                     break;
                 }
 
@@ -108,6 +161,9 @@ namespace PSM.Viewer.Visualizations
 
         #region Dependency Properties
 
+        /// <summary>
+        /// 
+        /// </summary>
         public LineStyle MinorGridlineStyle
         {
             get { return (LineStyle)GetValue(MinorGridlineStyleProperty); }
@@ -116,6 +172,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MinorGridlineStyleProperty =
             DependencyProperty.Register("MinorGridlineStyle", typeof(LineStyle), typeof(OxyBase<T>), new FrameworkPropertyMetadata(LineStyle.Dot, FrameworkPropertyMetadataOptions.AffectsRender));
         
+        /// <summary>
+        /// 
+        /// </summary>
         [ExpandableObject]
         public SolidColorBrush MinorGridLineColor
         {
@@ -125,7 +184,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MinorGridLineColorProperty =
             DependencyProperty.Register("MinorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 0)), FrameworkPropertyMetadataOptions.AffectsRender));
         
-
+        /// <summary>
+        /// 
+        /// </summary>
         public double MinorGridlineThickness
         {
             get { return (double)GetValue(MinorGridlineThicknessProperty); }
@@ -134,7 +195,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MinorGridlineThicknessProperty =
             DependencyProperty.Register("MinorGridlineThickness", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(1D, FrameworkPropertyMetadataOptions.AffectsRender));
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public double MinorStep
         {
             get { return (double)GetValue(MinorStepProperty); }
@@ -143,7 +206,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MinorStepProperty =
             DependencyProperty.Register("MinorStep", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(double.NaN, FrameworkPropertyMetadataOptions.AffectsRender));
         
-
+        /// <summary>
+        /// 
+        /// </summary>
         public double MinorTickSize
         {
             get { return (double)GetValue(MinorTickSizeProperty); }
@@ -152,7 +217,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MinorTickSizeProperty =
             DependencyProperty.Register("MinorTickSize", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(4D, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
         public LineStyle MajorGridlineStyle
         {
             get { return (LineStyle)GetValue(MajorGridlineStyleProperty); }
@@ -161,6 +228,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MajorGridlineStyleProperty =
             DependencyProperty.Register("MajorGridlineStyle", typeof(LineStyle), typeof(OxyBase<T>), new FrameworkPropertyMetadata(LineStyle.Solid, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        /// <summary>
+        /// 
+        /// </summary>
         [ExpandableObject]
         public SolidColorBrush MajorGridLineColor
         {
@@ -170,7 +240,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MajorGridLineColorProperty =
             DependencyProperty.Register("MajorGridLineColor", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 0)), FrameworkPropertyMetadataOptions.AffectsRender));
         
-
+        /// <summary>
+        /// 
+        /// </summary>
         public double MajorGridlineThickness
         {
             get { return (double)GetValue(MajorGridlineThicknessProperty); }
@@ -179,7 +251,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MajorGridlineThicknessProperty =
             DependencyProperty.Register("MajorGridlineThickness", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(1D, FrameworkPropertyMetadataOptions.AffectsRender));
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public double MajorStep
         {
             get { return (double)GetValue(MajorStepProperty); }
@@ -188,7 +262,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MajorStepProperty =
             DependencyProperty.Register("MajorStep", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(double.NaN, FrameworkPropertyMetadataOptions.AffectsRender));
         
-
+        /// <summary>
+        /// 
+        /// </summary>
         public double MajorTickSize
         {
             get { return (double)GetValue(MajorTickSizeProperty); }
@@ -197,7 +273,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty MajorTickSizeProperty =
             DependencyProperty.Register("MajorTickSize", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(7D, FrameworkPropertyMetadataOptions.AffectsRender));
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public OxyThickness PlotAreaBorderThickness
         {
             get { return (OxyThickness)GetValue(PlotAreaBorderThicknessProperty); }
@@ -206,6 +284,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty PlotAreaBorderThicknessProperty =
             DependencyProperty.Register("PlotAreaBorderThickness", typeof(OxyThickness), typeof(OxyBase<T>), new FrameworkPropertyMetadata(new OxyThickness(0), FrameworkPropertyMetadataOptions.AffectsRender));
 
+        /// <summary>
+        /// 
+        /// </summary>
         [ExpandableObject]
         public SolidColorBrush LegendBackground
         {
@@ -215,7 +296,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty LegendBackgroundProperty =
             DependencyProperty.Register("LegendBackground", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public LineStyle LineStyle
         {
             get { return (LineStyle)GetValue(LineStyleProperty); }
@@ -225,17 +308,20 @@ namespace PSM.Viewer.Visualizations
             DependencyProperty.Register("LineStyle", typeof(LineStyle), typeof(OxyBase<T>), new FrameworkPropertyMetadata(LineStyle.Solid, FrameworkPropertyMetadataOptions.AffectsRender));
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public double StrokeThickness
         {
             get { return (double)GetValue(StrokeThicknessProperty); }
             set { SetValue(StrokeThicknessProperty, value); }
         }
-
         public static readonly DependencyProperty StrokeThicknessProperty =
             DependencyProperty.Register("StrokeThickness", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(1D, FrameworkPropertyMetadataOptions.AffectsRender));
 
-                
+        /// <summary>
+        /// 
+        /// </summary>
         public double LegendBorderThickness
         {
             get { return (double)GetValue(LegendBorderThicknessProperty); }
@@ -244,7 +330,9 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty LegendBorderThicknessProperty =
             DependencyProperty.Register("LegendBorderThickness", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(0D, FrameworkPropertyMetadataOptions.AffectsRender));
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public bool IsLegendVisible
         {
             get { return Model.IsLegendVisible; }
@@ -252,7 +340,9 @@ namespace PSM.Viewer.Visualizations
 
         }
         
-
+        /// <summary>
+        /// 
+        /// </summary>
         public LegendOrientation LegendOrientation
         {
             get { return (LegendOrientation)GetValue(LegendOrientationProperty); }
@@ -262,7 +352,9 @@ namespace PSM.Viewer.Visualizations
             DependencyProperty.Register("LegendOrientation", typeof(LegendOrientation), typeof(OxyBase<T>), new FrameworkPropertyMetadata(LegendOrientation.Vertical, FrameworkPropertyMetadataOptions.AffectsRender));
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public LegendPlacement LegendPlacement
         {
             get { return (LegendPlacement)GetValue(LegendPlacementProperty); }
@@ -272,7 +364,9 @@ namespace PSM.Viewer.Visualizations
             DependencyProperty.Register("LegendPlacement", typeof(LegendPlacement), typeof(OxyBase<T>), new FrameworkPropertyMetadata(LegendPlacement.Inside, FrameworkPropertyMetadataOptions.AffectsRender));
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public LegendPosition LegendPosition
         {
             get { return (LegendPosition)GetValue(LegendPositionProperty); }
@@ -282,26 +376,9 @@ namespace PSM.Viewer.Visualizations
             DependencyProperty.Register("LegendPosition", typeof(LegendPosition), typeof(OxyBase<T>), new FrameworkPropertyMetadata(LegendPosition.TopRight, FrameworkPropertyMetadataOptions.AffectsRender));
 
 
-        [ExpandableObject]
-        public SolidColorBrush ToolTipBackground
-        {
-            get { return (SolidColorBrush)GetValue(ToolTipBackgroundProperty); }
-            set { SetValue(ToolTipBackgroundProperty, value); }
-        }public static readonly DependencyProperty ToolTipBackgroundProperty =
-            DependencyProperty.Register("ToolTipBackground", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
-
-        [ExpandableObject]
-        public SolidColorBrush ToolTipForeground
-        {
-            get { return (SolidColorBrush)GetValue(ToolTipForegroundProperty); }
-            set { SetValue(ToolTipForegroundProperty, value); }
-        }
-        public static readonly DependencyProperty ToolTipForegroundProperty =
-           DependencyProperty.Register("ToolTipForeground", typeof(SolidColorBrush), typeof(OxyBase<T>), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
-
-
-
-
+        /// <summary>
+        /// 
+        /// </summary>
         public string YAxisLabel
         {
             get { return (string)GetValue(YAxisLabelProperty); }
@@ -311,7 +388,9 @@ namespace PSM.Viewer.Visualizations
             DependencyProperty.Register("YAxisLabel", typeof(string), typeof(OxyBase<T>), new PropertyMetadata(null));
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public string XAxisLabel
         {
             get { return (string)GetValue(XAxisLabelProperty); }
@@ -354,7 +433,25 @@ namespace PSM.Viewer.Visualizations
 
         #endregion
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected static SolidColorBrushToOxyColorConverter OxyColorConverter = new SolidColorBrushToOxyColorConverter();
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected static DoubleToOxyThicknessConverter OxyThicknessConverter = new DoubleToOxyThicknessConverter();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected List<KeyValuePair<KeyItem, T>> Series = new List<KeyValuePair<KeyItem, T>>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pos"></param>
         protected void RemoveAxis(AxisPosition pos)
         {
             foreach(Axis axis in Model.Axes.ToArray())
@@ -366,6 +463,11 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
         protected Axis GetAxis(AxisPosition pos)
         {
             foreach (Axis axis in Model.Axes)
@@ -377,6 +479,11 @@ namespace PSM.Viewer.Visualizations
             return null;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="type"></param>
         protected virtual void SetAxis(AxisPosition pos, Type type = null)
         {
 
@@ -408,18 +515,21 @@ namespace PSM.Viewer.Visualizations
 
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public OxyBase() : base()
         {
 
-            ToolTipBackground  = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
-            ToolTipForeground  = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MajorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             MinorGridLineColor = new SolidColorBrush(Color.FromRgb(0, 0, 0));
             IsLegendVisible = false;
 
             SetAxis(AxisPosition.Bottom, typeof(double));
             SetAxis(AxisPosition.Left, typeof(double));
-            
+
+            Model.TrackerChanged += Model_TrackerChanged;
+
             Model.InvalidatePlot(false);
 
             Model.Background = OxyColor.FromArgb(0, 0, 0, 0);
@@ -787,7 +897,7 @@ namespace PSM.Viewer.Visualizations
                
                 Category = "Plot",
                 TargetProperties = new List<object>(new string[] {
-                    "Colors", "ToolTipBackground", "ToolTipForeground",
+                    "Colors",
                     "MinorGridlineStyle", "MinorGridLineColor", "MinorGridlineThickness", "MinorStep", "MinorTickSize",
                     "MajorGridlineStyle", "MajorGridLineColor", "MajorGridlineThickness", "MajorStep", "MajorTickSize",
                     "IsLegendVisible", "LegendBackground", "LegendBorderThickness", "LegendOrientation", "LegendPlacement", "LegendPosition"
@@ -823,12 +933,53 @@ namespace PSM.Viewer.Visualizations
             RegisterUserCommand("Reset View", new RelayCommand(ExecuteCommand, canExecute, CommandType.RESET));
 
         }
+
+        /// <summary>
+        /// Updates the statusbar text when the tracker changes
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected virtual void Model_TrackerChanged(object sender, TrackerEventArgs e)
+        {
+
+            TrackerHitResult hit = e.HitResult;
+
+            if(hit != null && hit.Item != null)
+            {
+                Index index = ((IEntry)hit.Item).Index;
                 
+                StatusBarText = FormatStatusBarText(hit.Series.Title, ((IEntry)hit.Item).Value, index, hit);
+            }
+            else
+                StatusBarText = "";
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="value"></param>
+        /// <param name="index"></param>
+        /// <param name="hit"></param>
+        /// <returns></returns>
+        protected virtual string FormatStatusBarText(string title, object value, object index, TrackerHitResult hit)
+        {
+            return String.Format("{0} ( X = {2}, Y = {1} )", title, value, index);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         private new enum CommandType
         {
             RESET = 100
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="parameter"></param>
         protected override void ExecuteCommand(object sender, object parameter)
         {
 
@@ -845,9 +996,11 @@ namespace PSM.Viewer.Visualizations
 
         }
                  
-        protected static SolidColorBrushToOxyColorConverter OxyColorConverter = new SolidColorBrushToOxyColorConverter();
-        protected static DoubleToOxyThicknessConverter OxyThicknessConverter = new DoubleToOxyThicknessConverter();
+        
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override void Dispose()
         {
 
@@ -863,8 +1016,12 @@ namespace PSM.Viewer.Visualizations
             base.Dispose();
         }
 
-        protected List<KeyValuePair<KeyItem, T>> Series = new List<KeyValuePair<KeyItem, T>>();        
-
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         protected virtual void Controls_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
 
@@ -876,7 +1033,7 @@ namespace PSM.Viewer.Visualizations
                 {
                     Series.RemoveAll(s => {
 
-                        if (s.Key.Path == m.Key.Path && Model.Series.Remove((Series)(object)s.Value))
+                        if (s.Key.Path == m.Key.Path && Model.Series.Remove((OxyPlot.Series.Series)(object)s.Value))
                         {
 
                             m.DataChanged  -= DataChanged;
@@ -901,15 +1058,16 @@ namespace PSM.Viewer.Visualizations
 
                     if (this.Series.Count(s => { return s.Key.Path == m.Key.Path; }) == 0)
                     {
-                        Series series = CreateInstance(m);
+                        OxyPlot.Series.Series series = CreateInstance(m);
 
                         if (series == null) return;
                                       
-                        if (typeof(T).IsSubclassOf(typeof(DataPointSeries)))
-                            ((DataPointSeries)series).Mapping = (obj) => {
+                        if (typeof(T).IsSubclassOf(typeof(OxyPlot.Series.DataPointSeries)))
+                            ((OxyPlot.Series.DataPointSeries)series).Mapping = (obj) => {
+                                
+                                Entry entry = (Entry)obj;
+                                return new DataPoint(DateTimeAxis.ToDouble(entry.Index[m.Get().Selected.IndexIdentifier]), m.Key.Convert<double>(entry));
 
-                                EntryItem entry = (EntryItem)obj;
-                                return new DataPoint(DateTimeAxis.ToDouble(entry.Index), m.Key.Convert<double>((Entry)entry));
                             };
 
                         this.Series.Add(new KeyValuePair<KeyItem, T>(m.Key, (T)(object)series));
@@ -924,15 +1082,23 @@ namespace PSM.Viewer.Visualizations
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override void Reload()
         {
             base.Reload();
         }
 
-        protected virtual Series CreateInstance(MultiControl control)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="control"></param>
+        /// <returns></returns>
+        protected virtual OxyPlot.Series.Series CreateInstance(MultiControl control)
         {
 
-            XYAxisSeries s = (XYAxisSeries)Activator.CreateInstance(typeof(T));
+            OxyPlot.Series.XYAxisSeries s = (OxyPlot.Series.XYAxisSeries)Activator.CreateInstance(typeof(T));
             
             s.Title = control.Key.Title.ToString();
             s.ItemsSource = control.Entries;

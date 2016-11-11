@@ -38,6 +38,9 @@ namespace PSM.Viewer.Models
         /// </summary>
         private static ConcurrentDictionary<string, Key[]> _subKeyCache = new ConcurrentDictionary<string, Key[]>();
 
+        /// <summary>
+        /// 
+        /// </summary>
         private static ConcurrentDictionary<string, Key[]> Cache
         {
             get
@@ -55,6 +58,9 @@ namespace PSM.Viewer.Models
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private static System.Timers.Timer _clearSubkeyCacheTimer;
 
         /// <summary>
@@ -163,7 +169,7 @@ namespace PSM.Viewer.Models
                 {
                     string parent = _parent != null ? _parent.Path : "";
 
-                    Key[] keys = Cache.ContainsKey(parent) ? Cache[parent] : Store.Get(Dispatcher).Keys(parent);
+                    Key[] keys = Cache.ContainsKey(parent) ? Cache[parent] : Store.Get(Dispatcher).Keys(parent).ToArray();
 
                     foreach (Key k in keys)
                     {
@@ -550,7 +556,7 @@ namespace PSM.Viewer.Models
 
                 string parent = item._parent != null ? item._parent.Path : "";
 
-                Key[] keys = Cache.ContainsKey(parent) ? Cache[parent] : Store.Get(ctx).Keys(parent);
+                Key[] keys = Cache.ContainsKey(parent) ? Cache[parent] : Store.Get(ctx).Keys(parent).ToArray();
 
                 if (!Cache.ContainsKey(parent))
                     while(!Cache.TryAdd(parent, keys));

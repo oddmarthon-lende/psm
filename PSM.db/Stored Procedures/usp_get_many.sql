@@ -20,7 +20,7 @@ AS
 	begin
 		return 0;
 	end
-	else if(@IndexColumn = 'Index')
+	else if(@IndexColumn = 'Descending')
 	begin		
 
 		if(@End is not null)
@@ -31,7 +31,7 @@ AS
 		end
 						
 		set @q = @q + ')
-				  select p.Id as [Index], t.Value, t.Timestamp from [tbl_' + @basetype + '] t
+				  select p.Id as [Index], p.Id, t.Value, t.Timestamp from [tbl_' + @basetype + '] t
 						inner join p on (t.Id = p.Id) ';
 
 		if(@End is null)
@@ -50,7 +50,7 @@ AS
 	begin
 
 		set @q = @q + ')
-				select t.[' + @IndexColumn + '] as [Index], t.[Value], t.[Timestamp] from [tbl_' + @basetype + '] t
+				select t.[' + @IndexColumn + '] as [Index], p.[Id], t.[Value], t.[Timestamp] from [tbl_' + @basetype + '] t
 					inner join p on (t.Id = p.Id)  
 					where [KeyId] = @keyid and (t.[' + @IndexColumn + '] ';
 		

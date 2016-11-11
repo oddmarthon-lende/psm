@@ -6,7 +6,6 @@
 /// 
 using System;
 using System.Runtime.Serialization;
-using System.Text;
 
 namespace PSM
 {
@@ -19,21 +18,16 @@ namespace PSM
     [KnownType(typeof(Entry[]))]
     public sealed class Envelope : ISerializable
     {
-
+        
         /// <summary>
         /// The namespace path containing the <see cref="Entry"/> values
         /// </summary>
-        public string Path;
+        public string Path { get; set; }
 
         /// <summary>
         /// Data
         /// </summary>
-        public Entry[] Entries;
-
-        /// <summary>
-        /// The time the object was created
-        /// </summary>
-        public DateTime Timestamp;
+        public Entry[] Entries { get; set; }        
         
         /// <summary>
         /// Constructor
@@ -42,7 +36,6 @@ namespace PSM
         {
             Path = "";
             Entries = new Entry[0];
-            Timestamp = DateTime.Now;
         }
 
         /// <summary>
@@ -53,7 +46,6 @@ namespace PSM
         {
             Path = envelope.Path;
             Entries = envelope.Entries;
-            Timestamp = envelope.Timestamp;
         }
 
         /// <summary>
@@ -65,7 +57,6 @@ namespace PSM
         {
 
             Path      = info.GetString("path");
-            Timestamp = (DateTime)info.GetValue("timestamp", typeof(DateTime));
             Entries   = (Entry[])info.GetValue("entries", typeof(Entry[]));
             
         }
@@ -77,7 +68,6 @@ namespace PSM
             
             info.AddValue("path", Path);
             info.AddValue("entries", Entries, typeof(Entry[]));
-            info.AddValue("timestamp", Timestamp, typeof(DateTime));
         }
 
         /// <summary>
@@ -86,9 +76,7 @@ namespace PSM
         /// <returns>The <c>string</c> representation</returns>
         public override string ToString()
         {
-
-            return Path;
-           
+            return Path;           
         }
     }
 }

@@ -47,7 +47,7 @@ namespace PSM.HttpApi
             /// <summary>
             /// The last index. Only data with a higher index is sent.
             /// </summary>
-            public object Index { get; private set; }
+            public Index Index { get; private set; }
 
             /// <summary>
             /// The data path
@@ -59,7 +59,7 @@ namespace PSM.HttpApi
             /// </summary>
             /// <param name="data"></param>
             /// <returns></returns>
-            public object Handler(Envelope data)
+            public Index Handler(Envelope data)
             {
                 
                 dynamic client  = _hub.Clients.Client(ConnectionId);
@@ -74,7 +74,7 @@ namespace PSM.HttpApi
                     Unregister(this);
                 }
 
-                Index = data.Entries.Max((entry) => { return entry.Timestamp; });
+                Index = data.Entries.Max((entry) => { return entry.Index; });
 
                 return Index;
             }
@@ -90,7 +90,7 @@ namespace PSM.HttpApi
             /// <param name="Context">The context of the currently executing HTTP action</param>
             /// <param name="Path">The data path</param>
             /// <param name="StartingIndex">The index from which to begin loading data.</param>
-            public Receiver(HttpActionContext Context, string Path, object StartingIndex) : this(GetConnectionId(Context), Path, StartingIndex)
+            public Receiver(HttpActionContext Context, string Path, Index StartingIndex) : this(GetConnectionId(Context), Path, StartingIndex)
             { }
 
             /// <summary>
@@ -99,7 +99,7 @@ namespace PSM.HttpApi
             /// <param name="ConnectionId">The SignalR connection Id</param>
             /// <param name="Path">The data path</param>
             /// <param name="StartingIndex">The index from which to begin loading data.</param>
-            public Receiver(string ConnectionId, string Path, object StartingIndex)
+            public Receiver(string ConnectionId, string Path, Index StartingIndex)
             {
 
                 if (ConnectionId == null)
@@ -210,14 +210,14 @@ namespace PSM.HttpApi
         /// <param name="end">The end index</param>
         /// <param name="context">The currently executing HTTP action context</param>
         /// <returns><see cref="IStore.Get(string, long, long)"/></returns>
-        public static IEnumerable<Entry> Read(string path, object start, object end, Enum indexIdentifier, HttpActionContext context)
+        public static IEnumerable<Entry> Read(string path, IComparable start, IComparable end, Enum indexIdentifier, HttpActionContext context)
         {
-                        
-            Receiver receiver = new Receiver(context, path, DateTime.Now);
+            
+            Receiver receiver = new Receiver(context, path, new Index(new KeyValuePair<Enum, IComparable>(indexIdentifier, DateTime.Now)));
             
             if (!_receivers.Contains(receiver))
             {                
-                Register(receiver, path, receiver.Index, indexIdentifier, receiver.Handler);
+                Register(receiver, path, receiver.Index[indexIdentifier], indexIdentifier, receiver.Handler);
             }
             
             return PSM.Store.Get().Read(path, start, end, indexIdentifier);
@@ -231,7 +231,7 @@ namespace PSM.HttpApi
         /// <returns><see cref="IStore.Keys(string)"/></returns>
         public static Key[] GetKeys(string path)
         {
-            return PSM.Store.Get().Keys(path);
+            return PSM.Store.Get().Keys(path).ToArray();
         }
 
         /// <summary>
@@ -247,7 +247,7 @@ namespace PSM.HttpApi
         /// <see cref="IStore.Register(object, string, object, RealTimeData)"/>
         /// Also adds the <paramref name="context"/> to the <see cref="_receivers"/> stack.
         /// </summary>
-        private static void Register(object context, string path, object startingIndex, Enum indexIdentifier, RealTimeData handler)
+        private static void Register(object context, string path, IComparable startingIndex, Enum indexIdentifier, RealTimeData handler)
         {
 
             PSM.Store.Get().Register(context, path, startingIndex, indexIdentifier, handler);
