@@ -75,32 +75,6 @@ namespace PSM.Viewer.Models
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        public override Color Color
-        {
-            get
-            {
-                return base.Color;
-            }
-
-            set
-            {
-
-                base.Color = value;
-
-                foreach(KeyItem k in Children)
-                {
-                    if(!k._color.HasValue)
-                    {
-                        k.OnPropertyChanged("Color");
-                        k.OnPropertyChanged("Brush");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         ///
         /// </summary>
         public override string StaticPath
@@ -392,7 +366,6 @@ namespace PSM.Viewer.Models
         {
             this.Conversion.CopyTo(other.Conversion);
             this.Title.CopyTo(other.Title);
-            other.Color = this.Color;
 
         }
 

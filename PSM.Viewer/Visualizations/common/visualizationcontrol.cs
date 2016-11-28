@@ -22,113 +22,15 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Xceed.Wpf.Toolkit.PropertyGrid;
-using System.Collections;
 using PSM.Viewer.Commands;
 using PSM.Viewer.Dialogs;
+using System.Windows.Media;
 
 namespace PSM.Viewer.Visualizations
 {
 
-    /// <summary>
-    /// Used to specify the name that will displayed in the UI.
-    /// </summary>
-    class DisplayNameAttribute : Attribute
-    {
-        private string _name;
 
-        public DisplayNameAttribute(string name)
-        {
-            _name = name;
-        }
 
-        public static explicit operator string(DisplayNameAttribute d)
-        {
-            return d == null ? "" : d._name;
-        }
-
-        public override bool IsDefaultAttribute()
-        {
-            return false;
-        }
-
-    }
-
-    /// <summary>
-    /// Used to specify the icon that will displayed for the class
-    /// </summary>
-    class IconAttribute : Attribute
-    {
-        private string _path;
-
-        public IconAttribute(string path)
-        {
-            _path = path;
-        }
-
-        public static explicit operator string(IconAttribute i)
-        {
-            return i == null ? "" : i._path;
-        }
-
-        public override bool IsDefaultAttribute()
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Mark classes with this attribute to hide in the UI
-    /// </summary>
-    class VisibleAttribute : Attribute
-    {
-        private bool _visible = false;
-
-        public VisibleAttribute(bool Visible)
-        {
-            _visible = Visible;
-        }
-        
-        public static explicit operator bool(VisibleAttribute v)
-        {
-            return v == null ? true : v._visible;
-        }
-
-        public override bool IsDefaultAttribute()
-        {
-            return false;
-        }
-
-    }
-
-    /// <summary>
-    /// Used to attach a widget to a category or subcategories in the menu
-    /// </summary>
-    class SubCategoryAttribute : Attribute, IEnumerable<string>
-    {
-
-        private List<string> _categories;
-        
-        public SubCategoryAttribute(params string[] categories)
-        {
-            _categories = new List<string>(categories);
-        }
-
-        public IEnumerator<string> GetEnumerator()
-        {
-            return _categories.GetEnumerator();
-        }
-
-        public override bool IsDefaultAttribute()
-        {
-            return false;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return _categories.GetEnumerator();
-        }
-    }
-        
     /// <summary>
     /// 
     /// </summary>
@@ -140,7 +42,7 @@ namespace PSM.Viewer.Visualizations
     [Icon("../icons/application_view_gallery.png")]
     public class VisualizationControl : ContentControl, IDisposable, IReload, INotifyPropertyChanged
     {
-
+        
         /// <summary>
         /// <see cref="IReload.CancellationTokenSource"/>
         /// </summary>
@@ -152,9 +54,42 @@ namespace PSM.Viewer.Visualizations
         public static readonly DependencyProperty CancellationTokenSourceProperty =
             DependencyProperty.Register("CancellationTokenSource", typeof(CancellationTokenSource), typeof(VisualizationControl), new PropertyMetadata(new CancellationTokenSource()));
 
-
-
         #region Static Properties and Methods
+
+        /// <summary>
+        /// The <see cref="KeyItem"/> color property descriptor with getter, setter
+        /// </summary>
+        protected static PropertyDescriptor KeyColorPropertyDescriptor = KeyItem.RegisterProperty<Color?>(typeof(VisualizationControl), "Color",
+            /// Getter
+            (descriptor, key) =>
+            {
+
+                Color? color = descriptor.GetValue(key);
+
+                if (!color.HasValue)
+                {
+                    if (key.W != null)
+                        return (Color?)descriptor.GetValue((object)key.W);
+
+                    return RandomizeColor(key);
+                }
+
+                return color;
+
+            },
+            /// Setter
+            (descriptor, key, value) =>
+            {
+
+                if (key.W != null && descriptor.GetValue(key.W) == value)
+                {
+                    value = null;
+                }
+
+                return value;
+            },
+            /// Default value
+            null);
 
         /// <summary>
         /// This class is used to hold information about the types that inherits from VisualizationControl
@@ -235,6 +170,30 @@ namespace PSM.Viewer.Visualizations
 
                 }).ToList();
             }
+        }
+
+        /// <summary>
+        /// Randomize the color of a key
+        /// </summary>
+        /// <returns>The color</returns>
+        public static Color RandomizeColor(KeyItem key)
+        {
+
+            Random random = new Random(Guid.NewGuid().GetHashCode());
+            Color color = Color.FromArgb(255, (byte)(random.NextDouble() * 255D), (byte)(random.NextDouble() * 255D), (byte)(random.NextDouble() * 255D));
+
+            KeyColorPropertyDescriptor.SetValue(key, color);
+
+            return color;
+
+        }
+
+        /// <summary>
+        /// Set the color back default for a key
+        /// </summary>
+        public static void ResetColor(KeyItem key)
+        {
+            KeyColorPropertyDescriptor.SetValue(key, null);
         }
 
         #endregion
@@ -776,6 +735,9 @@ namespace PSM.Viewer.Visualizations
         
         #endregion
 
+        /// <summary>
+        /// A default delegate that always turns true, can be used as the command <see cref="ICommand.CanExecute(object)"/> delegate
+        /// </summary>
         protected Func<object, object, bool> canExecute = delegate { return true; };
         
         /// <summary>
@@ -1045,7 +1007,9 @@ namespace PSM.Viewer.Visualizations
             bool[] results = new bool[key.Children.Count];
             int i = 0;
 
-            if(!_groups.ContainsKey(key.StaticPath) && key.HasWildcards)
+            key.Context = GetType();
+
+            if (!_groups.ContainsKey(key.StaticPath) && key.HasWildcards)
             {
                 key.Children.CollectionChanged += Key_Children_CollectionChanged;
 
@@ -1123,6 +1087,8 @@ namespace PSM.Viewer.Visualizations
         {
 
             if (key == null || key.Type == null) return false;
+
+            key.Context = GetType();
 
             MultiControl control = GetControl(key);
 

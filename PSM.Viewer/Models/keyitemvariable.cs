@@ -18,7 +18,7 @@ namespace PSM.Viewer.Models
     /// <summary>
     /// 
     /// </summary>
-    public partial class KeyItem : Key, IReload, INotifyPropertyChanged, IKeyItem
+    public partial class KeyItem
     {
 
         /// <summary>

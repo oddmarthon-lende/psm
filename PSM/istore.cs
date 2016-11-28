@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ServiceModel;
 
 namespace PSM.Stores
 {
@@ -44,24 +45,30 @@ namespace PSM.Stores
     /// Defines the interface that is used when accessing the data store.
     /// <typeparam name="T">The type </typeparam>
     /// </summary>
+    [ServiceContract(Namespace = "http://www.bakerhughes.com/psm/store")]
     public interface IStore : IDisposable
     {
 
         /// <summary>
         /// The default index field
         /// </summary>
-        Enum Default { get; }
+        Enum Default { [OperationContract] get; }
         
         /// <summary>
         /// The enum type with index identifiers
         /// </summary>
-        Type Index { get; }
+        Type Index { [OperationContract] get; }
                 
         /// <summary>
         /// Gets an object that contains properties that can be used to configure the store and be exposed to the user.
         /// </summary>
         IOptions Options { get; }
-        
+
+        /// <summary>
+        /// Should output data here after it is stored in the interface implementation, so that it can be fetched and piped into another object.
+        /// </summary>
+        event RealTimeData Output;
+
         /// <summary>
         /// Get data
         /// </summary>
@@ -70,12 +77,14 @@ namespace PSM.Stores
         /// <param name="end">The end index</param>
         /// <param name="index">The index identifier</param>
         /// <returns>An <see cref="IEnumerable{Entry}"/> of the data</returns>
+        [OperationContract]
         IEnumerable<Entry> Read(string path, IComparable start, IComparable end, Enum index);
-        
+
         /// <summary>
         /// Add data to the store
         /// </summary>
         /// <param name="envelope">The data <see cref="Envelope"/> that will be added. </param>
+        [OperationContract]
         void Write(string path, params Entry[] entries);
 
         /// <summary>
@@ -83,6 +92,7 @@ namespace PSM.Stores
         /// </summary>
         /// <param name="path">The key path</param>
         /// <returns>The number of deleted entries</returns>
+        [OperationContract]
         void Delete(string path);
 
         /// <summary>
@@ -90,8 +100,9 @@ namespace PSM.Stores
         /// </summary>
         /// <param name="ns">The namespace</param>
         /// <returns>An array that contains the <see cref="Key"/>'s</returns>
+        [OperationContract]
         IEnumerable<Key> Keys(string ns);
-        
+
         /// <summary>
         /// Register for retrieval of realtime data.
         /// </summary>
@@ -100,12 +111,14 @@ namespace PSM.Stores
         /// <param name="startingIndex">The starting index</param>
         /// <param name="indexIdentifier">The index used when fetching data</param>
         /// <param name="handler">The delegate that will receive the data <see cref="Envelope"/></param>
+        [OperationContract]
         void Register(object context, string path, IComparable startingIndex, Enum indexIdentifier, RealTimeData handler);
 
         /// <summary>
         /// Unregister the context and stop the data transfer for all keys that was <see cref="Register(object, string, object, RealTimeData)"/>d with this context.
         /// </summary>
         /// <param name="context">The context to unregister.</param>
+        [OperationContract]
         void Unregister(object context);
 
         /// <summary>
@@ -113,6 +126,7 @@ namespace PSM.Stores
         /// </summary>
         /// <param name="context">The context that was used when the key was <see cref="Register(object, string, object, RealTimeData)"/></param>d.
         /// <param name="path">The key path</param>
+        [OperationContract]
         void Unregister(object context, string path);
 
     }

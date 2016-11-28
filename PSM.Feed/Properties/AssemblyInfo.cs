@@ -8,15 +8,15 @@ using System.Windows.Markup;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PSM.Control")]
+[assembly: AssemblyTitle("PSM.Feed")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Baker Hughes Incorporated")]
-[assembly: AssemblyProduct("PSM.Control")]
+[assembly: AssemblyProduct("PSM.Feed")]
 [assembly: AssemblyCopyright("Copyright © Baker Hughes Incorporated 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: XmlnsDefinition("http://www.bakerhughes.com/wpf/psm/control", "PSM.Control")]
+[assembly: XmlnsDefinition("http://www.bakerhughes.com/wpf/psm/feed", "PSM.Feed")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

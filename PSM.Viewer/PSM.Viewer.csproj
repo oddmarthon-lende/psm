@@ -102,6 +102,7 @@
     <Compile Include="extensions.cs" />
     <Compile Include="iundo.cs" />
     <Compile Include="Models\keyitempath.cs" />
+    <Compile Include="Models\keyitemtypedescriptor.cs" />
     <Compile Include="Models\keyitemvalueconversion.cs" />
     <Compile Include="Models\layoutanchorablestate.cs" />
     <Compile Include="Models\mainwindowstate.cs" />
@@ -121,10 +122,11 @@
     <None Include="Visualizations\template.xaml.cs">
       <DependentUpon>template.xaml</DependentUpon>
     </None>
-    <Compile Include="Visualizations\keyvalue_list.xaml.cs">
+    <Compile Include="Visualizations\common\attributes.cs" />
+    <Compile Include="Visualizations\text\keyvalue_list.xaml.cs">
       <DependentUpon>keyvalue_list.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\replicator.cs" />
+    <Compile Include="Visualizations\replicator\replicator.cs" />
     <Compile Include="Utilities\tracker.cs" />
     <Compile Include="Dialogs\tree.xaml.cs">
       <DependentUpon>tree.xaml</DependentUpon>
@@ -132,8 +134,8 @@
     <Compile Include="Models\ireload.cs" />
     <EmbeddedResource Include="Shaders\gauge.fs" />
     <EmbeddedResource Include="Shaders\gauge.vs" />
-    <Compile Include="Visualizations\barBase.cs" />
-    <Compile Include="Visualizations\bar.xaml.cs">
+    <Compile Include="Visualizations\oxyplot\barBase.cs" />
+    <Compile Include="Visualizations\oxyplot\bar.xaml.cs">
       <DependentUpon>bar.xaml</DependentUpon>
     </Compile>
     <None Include="Visualizations\experiments\vtkBase.cs" />
@@ -151,23 +153,23 @@
       <DependentUpon>vtkLine.xaml</DependentUpon>
     </None>
     <None Include="Visualizations\experiments\sciChartBase.cs" />
-    <Compile Include="Visualizations\pie.xaml.cs">
+    <Compile Include="Visualizations\oxyplot\pie.xaml.cs">
       <DependentUpon>pie.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\column.xaml.cs">
+    <Compile Include="Visualizations\oxyplot\column.xaml.cs">
       <DependentUpon>column.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\linearbarseries.xaml.cs">
+    <Compile Include="Visualizations\oxyplot\linearbarseries.xaml.cs">
       <DependentUpon>linearbarseries.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\stairstep.xaml.cs">
+    <Compile Include="Visualizations\oxyplot\stairstep.xaml.cs">
       <DependentUpon>stairstep.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\line.xaml.cs">
+    <Compile Include="Visualizations\oxyplot\line.xaml.cs">
       <DependentUpon>line.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\base.cs" />
-    <Compile Include="Visualizations\oxyBase.cs" />
+    <Compile Include="Visualizations\common\visualizationcontrol.cs" />
+    <Compile Include="Visualizations\oxyplot\oxyBase.cs" />
     <None Include="Visualizations\experiments\glGauge.cs">
       <Generator>MSBuild:Compile</Generator>
     </None>
@@ -175,14 +177,14 @@
     <None Include="Visualizations\experiments\line_scichart.xaml.cs">
       <DependentUpon>line_scichart.xaml</DependentUpon>
     </None>
-    <Compile Include="Visualizations\logview.xaml.cs">
+    <Compile Include="Visualizations\text\logview.xaml.cs">
       <DependentUpon>logview.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\tableBase.cs" />
-    <Compile Include="Visualizations\tableview.xaml.cs">
+    <Compile Include="Visualizations\text\tableBase.cs" />
+    <Compile Include="Visualizations\text\tableview.xaml.cs">
       <DependentUpon>tableview.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Visualizations\image.xaml.cs">
+    <Compile Include="Visualizations\image\image.xaml.cs">
       <DependentUpon>image.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utilities\wildcard.cs" />
@@ -209,7 +211,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\bar.xaml">
+    <Page Include="Visualizations\oxyplot\bar.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <None Include="Visualizations\experiments\vtkBar.xaml">
@@ -244,40 +246,40 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\pie.xaml">
+    <Page Include="Visualizations\oxyplot\pie.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\column.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Visualizations\linearbarseries.xaml">
+    <Page Include="Visualizations\oxyplot\column.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\keyvalue_list.xaml">
+    <Page Include="Visualizations\oxyplot\linearbarseries.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\stairstep.xaml">
+    <Page Include="Visualizations\text\keyvalue_list.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Visualizations\oxyplot\stairstep.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Visualizations\line.xaml">
+    <Page Include="Visualizations\oxyplot\line.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <None Include="Visualizations\experiments\line_scichart.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
-    <Page Include="Visualizations\logview.xaml">
+    <Page Include="Visualizations\text\logview.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\tableview.xaml">
+    <Page Include="Visualizations\text\tableview.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Visualizations\image.xaml">
+    <Page Include="Visualizations\image\image.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

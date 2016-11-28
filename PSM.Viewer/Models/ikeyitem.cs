@@ -10,7 +10,7 @@ using System.Windows.Media;
 
 namespace PSM.Viewer.Models
 {
-    public interface IKeyItem : IReload, INotifyPropertyChanged, IDisposable
+    public interface IKeyItem : IReload, INotifyPropertyChanged, IDisposable, ICustomTypeDescriptor
     {
         /// <summary>
         /// 
@@ -31,16 +31,6 @@ namespace PSM.Viewer.Models
         /// 
         /// </summary>
         string StaticPath { get; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        Color Color { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        SolidColorBrush Brush { get; }
         
         /// <summary>
         /// 

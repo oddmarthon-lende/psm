@@ -7,7 +7,7 @@ using System.Windows.Input;
 using Hardcodet.Wpf.TaskbarNotification;
 using System.Reflection;
 
-namespace PSM.Control
+namespace PSM.Feed
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -126,7 +126,7 @@ namespace PSM.Control
             }
 
             //Set the tray icon
-            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("PSM.Control.Icons.tray.ico"))
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("PSM.Feed.Icons.tray.ico"))
             {
                 _trayicon.Icon = new System.Drawing.Icon(stream);
             }

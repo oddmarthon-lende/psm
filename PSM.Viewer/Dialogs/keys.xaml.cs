@@ -10,7 +10,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Threading;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace PSM.Viewer.Dialogs.Commands
@@ -71,12 +70,6 @@ namespace PSM.Viewer.Dialogs.Commands
                         it.Key.Conversion.Value = item.Key.Conversion.Value;
                         break;
 
-                    case 5:
-
-                        it.Key.Color = item.Key.Color;
-                        break;
-
-
                 }
 
             }
@@ -108,7 +101,7 @@ namespace PSM.Viewer.Dialogs.Commands
             foreach(KeyEditor.KeyEditorItem item in items)
             {
                 KeyItem key = item.Key as KeyItem;
-                key.RandomizeColor();
+                VisualizationControl.RandomizeColor(key);
             }
 
             
@@ -135,7 +128,7 @@ namespace PSM.Viewer.Dialogs.Commands
             foreach (KeyEditor.KeyEditorItem item in items)
             {
                 KeyItem key = item.Key as KeyItem;
-                key.ResetColor();
+                VisualizationControl.ResetColor(key);
             }
 
 
@@ -414,7 +407,7 @@ namespace PSM.Viewer.Dialogs
         }
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         public KeyEditor()
         {
@@ -431,6 +424,11 @@ namespace PSM.Viewer.Dialogs
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void keys_PreviewKeyDown(object sender, KeyEventArgs e)
         {
 
@@ -505,6 +503,9 @@ namespace PSM.Viewer.Dialogs
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void Reload()
         {
 
@@ -525,19 +526,52 @@ namespace PSM.Viewer.Dialogs
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public bool Next()
         {
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public bool Previous()
         {
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void variables_combo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             this.OnReload(this);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void keys_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            
+            
+            foreach(KeyEditorItem item in e.AddedItems)
+            {
+                
+                expandedProperties.SelectedObject = (KeyItem)item.Key;
+
+                break;
+            }
+
+            
         }
     }
 }

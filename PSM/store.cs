@@ -285,11 +285,26 @@ namespace PSM.Stores
         protected Guid _id = Guid.NewGuid();
 
         /// <summary>
+        /// <see cref="IStore.Output"/>
+        /// </summary>
+        public event RealTimeData Output;
+
+        /// <summary>
         /// Constructor
         /// </summary>
         public Store()
         {
             _queue = new ConcurrentQueue<Envelope>();
+        }
+
+        /// <summary>
+        /// Triggers the <see cref="Output"/> event
+        /// </summary>
+        /// <param name="data"></param>
+        protected virtual void OnOutput(Envelope data)
+        {
+            RealTimeData handler = Output;
+            if (handler != null) handler(data);
         }
 
         /// <summary>

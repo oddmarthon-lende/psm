@@ -265,8 +265,8 @@ namespace PSM.Stores
                     Type = v.GetType()
                 };
 
-                entry.Index.Add(IndexType.Descending, (IComparable)record.GetValue(record.GetOrdinal("Id")));
-                entry.Index.Add(IndexType.Timestamp, (IComparable)record.GetValue(record.GetOrdinal("Timestamp")));
+                entry.Index[IndexType.Descending] = (IComparable)record.GetValue(record.GetOrdinal("Id"));
+                entry.Index[IndexType.Timestamp] = (IComparable)record.GetValue(record.GetOrdinal("Timestamp"));
 
                 return entry;
 
@@ -785,14 +785,23 @@ namespace PSM.Stores
 
 
                                             Direction = ParameterDirection.Input,
-                                            SqlValue = entry.Index[IndexType.Timestamp] ?? DateTime.Now
+                                            SqlValue = entry.Index.ContainsKey(IndexType.Timestamp) ? entry.Index[IndexType.Timestamp] : DateTime.Now
 
                                         });
 
                                         try
                                         {
 
-                                            command.ExecuteNonQuery();
+                                            using(SqlDataReader reader = command.ExecuteReader())
+                                            {
+                                                while(reader.Read())
+                                                {
+
+                                                    entry.Index[IndexType.Descending] = (IComparable)reader.GetValue(reader.GetOrdinal("Id"));
+                                                    entry.Index[IndexType.Timestamp] = (IComparable)reader.GetValue(reader.GetOrdinal("Timestamp"));
+
+                                                }
+                                            }
 
                                         }
                                         catch (Exception error)
@@ -805,6 +814,7 @@ namespace PSM.Stores
                                     }
                                     
                                     context._freqOut.Mark(1);
+                                    context.OnOutput(envelope);
 
                                 }
 

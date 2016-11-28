@@ -103,7 +103,7 @@ namespace PSM.Viewer.Visualizations
             {
 
                 OxyPlot.Series.BarSeriesBase bar = (OxyPlot.Series.BarSeriesBase)(object)s.Value;
-                System.Windows.Media.Color color = s.Key.Color;
+                System.Windows.Media.Color color = (System.Windows.Media.Color)KeyColorPropertyDescriptor.GetValue(s.Key);
 
                 bar.Title = s.Key.Title.Value;
                 bar.FillColor = OxyColor.FromArgb(color.A, color.R, color.G, color.B);
@@ -205,7 +205,7 @@ namespace PSM.Viewer.Visualizations
                 {
 
                     dynamic item = typeof(TItem).New();
-                    System.Windows.Media.Color color = m.Key.Color;
+                    System.Windows.Media.Color color = (System.Windows.Media.Color)KeyColorPropertyDescriptor.GetValue(m.Key);
 
                     item.Color = OxyColor.FromArgb(color.A, color.R, color.G, color.B);
 

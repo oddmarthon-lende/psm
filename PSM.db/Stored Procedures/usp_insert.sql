@@ -47,7 +47,7 @@ AS
 
 	exec usp_create_table @basetype;
 
-	set @q = N'insert into [tbl_'+@basetype+'] ([KeyId], [Value], [Timestamp]) values (@keyid, convert(' + @basetype + (case when @basetype like '%var%' then '(max)' else '' end) + ', @Value), coalesce(@Timestamp, GETDATE()));';
+	set @q = N'insert into [tbl_'+@basetype+'] ([KeyId], [Value], [Timestamp]) output inserted.[Id], inserted.[KeyId], inserted.[Value], inserted.[Timestamp] values (@keyid, convert(' + @basetype + (case when @basetype like '%var%' then '(max)' else '' end) + ', @Value), coalesce(@Timestamp, GETDATE()));';
 
 	exec sp_executesql
 		@q,

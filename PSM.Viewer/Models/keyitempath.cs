@@ -85,40 +85,57 @@ namespace PSM.Viewer.Models
             return key;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public List<KeyItemPath> Children { get; private set; } = new List<KeyItemPath>();
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
         public KeyItemPath(KeyItemW key) : this((IKeyItem)key)
         {
             Children = key.Memory.ToList();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
         public KeyItemPath(IKeyItem key)
         {
             
             Path = key.StaticPath;
             Position = key.Title.Position;
-            Color = key.Color;
             Conversion.Mode = key.Conversion.Mode;
             Conversion.Value = key.Conversion.Value;
             Mode = key.Title.Mode;
             Alias = key.Title.Alias;
-            Children = key.Children.Select((k) => { return new KeyItemPath(k); }).ToList();
+            Children = key.Children.Select((k) => new KeyItemPath(k)).ToList();
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
         public void CopyTo(IKeyItem key)
         {
+
             if (Position.HasValue)
                 key.Title.Position = Position.Value;
 
-            key.Color = Color.Value;
             key.Conversion.Mode = Conversion.Mode;
             key.Conversion.Value = Conversion.Value;
             key.Title.Mode = Mode;
             key.Title.Alias = Alias;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public KeyItemPath() { }
 
 
@@ -130,7 +147,11 @@ namespace PSM.Viewer.Models
     /// </summary>
     public class KeyItemPathList : List<KeyItemPath>
     {
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public bool Contains(string path)
         {
 
@@ -141,6 +162,11 @@ namespace PSM.Viewer.Models
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public KeyItemPath Get(string path)
         {
 
@@ -151,6 +177,11 @@ namespace PSM.Viewer.Models
             return null;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public bool Remove(string path)
         {
 

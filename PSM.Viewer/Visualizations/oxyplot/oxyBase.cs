@@ -299,29 +299,6 @@ namespace PSM.Viewer.Visualizations
         /// <summary>
         /// 
         /// </summary>
-        public LineStyle LineStyle
-        {
-            get { return (LineStyle)GetValue(LineStyleProperty); }
-            set { SetValue(LineStyleProperty, value); }
-        }
-        public static readonly DependencyProperty LineStyleProperty =
-            DependencyProperty.Register("LineStyle", typeof(LineStyle), typeof(OxyBase<T>), new FrameworkPropertyMetadata(LineStyle.Solid, FrameworkPropertyMetadataOptions.AffectsRender));
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public double StrokeThickness
-        {
-            get { return (double)GetValue(StrokeThicknessProperty); }
-            set { SetValue(StrokeThicknessProperty, value); }
-        }
-        public static readonly DependencyProperty StrokeThicknessProperty =
-            DependencyProperty.Register("StrokeThickness", typeof(double), typeof(OxyBase<T>), new FrameworkPropertyMetadata(1D, FrameworkPropertyMetadataOptions.AffectsRender));
-
-        /// <summary>
-        /// 
-        /// </summary>
         public double LegendBorderThickness
         {
             get { return (double)GetValue(LegendBorderThicknessProperty); }

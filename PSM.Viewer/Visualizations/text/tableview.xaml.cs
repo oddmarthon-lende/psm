@@ -13,34 +13,223 @@ using System;
 using System.Windows.Media;
 using Xceed.Wpf.Toolkit.PropertyGrid;
 using PSM.Viewer.Commands;
+using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace PSM.Viewer.Visualizations
 {
-    
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class Table : ItemsControl
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        protected override DependencyObject GetContainerForItemOverride()
+        {
+            ContentPresenter container = (ContentPresenter)base.GetContainerForItemOverride();
+            if (ItemTemplate == null)
+            {
+                return container;
+            }
+
+            FrameworkElement content = (FrameworkElement)ItemTemplate.LoadContent();
+            BindingExpression rowBinding = content.GetBindingExpression(Grid.RowProperty);
+            BindingExpression columnBinding = content.GetBindingExpression(Grid.ColumnProperty);
+
+            if (rowBinding != null)
+            {
+                container.SetBinding(Grid.RowProperty, rowBinding.ParentBinding);
+            }
+
+            if (columnBinding != null)
+            {
+                container.SetBinding(Grid.ColumnProperty, columnBinding.ParentBinding);
+            }
+
+            return container;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class TableGrid : Grid
+    {
+
+        public static PropertyDescriptor ColumnVisibleProperty = KeyItem.RegisterProperty(typeof(TableView.TableColumn), "Visible", true);
+        public static PropertyDescriptor ColumnWidthProperty = KeyItem.RegisterProperty(typeof(TableView.TableColumn), "Width", "1*");
+        public static PropertyDescriptor ColumnIndexProperty = KeyItem.RegisterProperty(typeof(TableView.TableColumn), "Index", -1, new Attribute[] { new BrowsableAttribute(false) });
+        public static PropertyDescriptor RowVisibleProperty = KeyItem.RegisterProperty(typeof(TableView.TableRow), "Visible", true);
+        public static PropertyDescriptor RowIndexProperty = KeyItem.RegisterProperty(typeof(TableView.TableRow), "Index", -1, new Attribute[] { new BrowsableAttribute(false) });
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<TableView.TableColumn> Columns
+        {
+            get { return (IEnumerable<TableView.TableColumn>)GetValue(ColumnsProperty); }
+            set { SetValue(ColumnsProperty, value); }
+        }
+        // Using a DependencyProperty as the backing store for Columns.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ColumnsProperty =
+            DependencyProperty.Register("Columns", typeof(IEnumerable<TableView.TableColumn>), typeof(TableGrid), new PropertyMetadata(null, ColumnsChanged));
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<TableView.TableRow> Rows
+        {
+            get { return (IEnumerable<TableView.TableRow>)GetValue(RowsProperty); }
+            set { SetValue(RowsProperty, value); }
+        }
+        // Using a DependencyProperty as the backing store for Rows.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty RowsProperty =
+            DependencyProperty.Register("Rows", typeof(IEnumerable<TableView.TableRow>), typeof(TableGrid), new PropertyMetadata(null, RowsChanged));
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dp"></param>
+        /// <param name="e"></param>
+        private static void RowsChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
+        {
+            Grid grid = (Grid)dp;
+            int index = 1;
+
+            grid.RowDefinitions.Clear();
+            
+            foreach (TableView.TableRow row in (IEnumerable<TableView.TableRow>)e.NewValue)
+            {
+                bool visible = row.Key == null || (bool)RowVisibleProperty.GetValue(row.Key);
+
+                if (visible)
+                {
+                    grid.RowDefinitions.Add(new System.Windows.Controls.RowDefinition());
+                }
+
+                if (row.Key != null && visible)
+                {
+                    RowIndexProperty.SetValue(row.Key, index++);
+                }
+                
+            }
+
+            
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="dp"></param>
+        /// <param name="e"></param>
+        private static void ColumnsChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
+        {
+
+            Grid grid = (Grid)dp;
+            int index = 1;
+
+            grid.ColumnDefinitions.Clear();
+
+            foreach (TableView.TableColumn column in (IEnumerable<TableView.TableColumn>)e.NewValue)
+            {
+
+                bool visible = column.Key == null || (bool)ColumnVisibleProperty.GetValue(column.Key);
+
+                if(visible)
+                {
+                    System.Windows.Controls.ColumnDefinition definition = new System.Windows.Controls.ColumnDefinition();
+
+                    if(column.Key != null)
+                        definition.SetBinding(System.Windows.Controls.ColumnDefinition.WidthProperty, new Binding("Key[Width]")
+                        {
+                            Source = column,
+                            Mode = BindingMode.OneWay
+                        });
+
+                    grid.ColumnDefinitions.Add(definition);
+                }
+
+                if (column.Key != null && visible)
+                {
+                    ColumnIndexProperty.SetValue(column.Key, index++);
+                }
+
+                
+            }
+
+           
+        }
+
+        
+    }
+
+    
+    /// <summary>
+    /// 
+    /// </summary>
     [Visible(true)]
     [DisplayName("Table View")]
     [Icon("../icons/table.png")]
     [SubCategory("Built-In")]
     public sealed partial class TableView : TableBase
     {
+
+        
+
         /// <summary>
         /// 
         /// </summary>
         public class TableColumn
         {
-
+            /// <summary>
+            /// 
+            /// </summary>
             public Dictionary<KeyItem, TableRow> Rows { get; private set; }
 
+            /// <summary>
+            /// 
+            /// </summary>
             private IList<TableCell> _cells;
 
+            /// <summary>
+            /// 
+            /// </summary>
             public KeyItem Key { get; private set; }
 
+            /// <summary>
+            /// 
+            /// </summary>
             public string Header
             {
                 get
                 {
                     return Key == null ? null : Key.Title.Value;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public int Index
+            {
+                get
+                {
+                    return Key == null ? 0 : (int)TableGrid.ColumnIndexProperty.GetValue(Key);
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public bool Visible
+            {
+                get
+                {
+                    return Key == null ? true : (bool)TableGrid.ColumnVisibleProperty.GetValue(Key);
                 }
             }
 
@@ -111,6 +300,28 @@ namespace PSM.Viewer.Visualizations
                 get
                 {
                     return Key == null ? null : Key.Title.Value;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public int Index
+            {
+                get
+                {
+                    return Key == null ? 0 : (int)TableGrid.RowIndexProperty.GetValue(Key);
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public bool Visible
+            {
+                get
+                {
+                    return Key == null ? true : (bool)TableGrid.RowVisibleProperty.GetValue(Key);
                 }
             }
 
@@ -218,11 +429,20 @@ namespace PSM.Viewer.Visualizations
             /// <summary>
             /// 
             /// </summary>
+            private SolidColorBrush _brush = new SolidColorBrush();
+
+            /// <summary>
+            /// 
+            /// </summary>
             public SolidColorBrush Brush
             {
                 get
                 {
-                    return Control == null ? Row == null ? Brushes.Transparent : Row.Key.Brush : Control.Key.Brush;
+                    PropertyDescriptor d_color = TableView.KeyColorPropertyDescriptor;
+
+                    _brush.Color =  Control == null ? Row == null || Row.Key == null ? Colors.Transparent : (Color)d_color.GetValue(Row.Key) : (Color)d_color.GetValue(Control.Key);
+
+                    return _brush;
                 }
             }
 
@@ -247,6 +467,17 @@ namespace PSM.Viewer.Visualizations
 
 
                     return description;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public Visibility Visibility
+            {
+                get
+                {
+                    return (Row != null && !Row.Visible) || (Column != null && !Column.Visible) ? Visibility.Collapsed : Visibility.Visible;
                 }
             }
 
@@ -317,10 +548,7 @@ namespace PSM.Viewer.Visualizations
             {
                 
                 List<TableCell> row_header_cells = new List<TableCell>();
-                List<TableColumn> list = _columns.Select((k, i) =>
-                {
-                    return k.Value;
-                }).ToList();
+                List<TableColumn> list = _columns.Select((k, i) => k.Value).ToList();
 
                 TableColumn column = new TableColumn(null, _rows, row_header_cells);
 
@@ -345,10 +573,50 @@ namespace PSM.Viewer.Visualizations
         {
             get
             {
-                return _rows.Select((k, i) =>
+
+                List<TableCell> column_header_cells = new List<TableCell>();
+                List<TableRow> list = _rows.Select((k, i) => k.Value).ToList();
+
+                TableRow row = new TableRow(null, _columns, column_header_cells);
+
+                foreach (KeyValuePair<KeyItem, TableColumn> k in _columns)
                 {
-                    return k.Value;
-                });
+                    TableCell cell = new TableCell(null, k.Value, row);
+                    cell.SetValue(k.Value.Header);
+                    column_header_cells.Add(cell);
+
+                }
+
+                list.Insert(0, row);
+
+                return list;
+
+               
+            }
+        }
+
+        /// <summary>
+        /// The cells
+        /// </summary>
+        public IEnumerable<TableCell> Cells
+        {
+            get
+            {
+                List<TableCell> list = new List<TableCell>();
+
+                foreach(TableColumn column in Columns)
+                {
+                    list.AddRange(column.Cells);
+                }
+
+                foreach (TableRow row in Rows)
+                {
+                    foreach (TableCell cell in row.Cells)
+                        if (!list.Contains(cell))
+                            list.Add(cell);
+                }
+
+                return list;
             }
         }
 
@@ -388,6 +656,7 @@ namespace PSM.Viewer.Visualizations
                 {
 
                     KeyItem k = p.ToKeyItem();
+                    k.Context = typeof(TableRow);
                     _rowKeyCache.Add(k);
                 }
 
@@ -420,6 +689,7 @@ namespace PSM.Viewer.Visualizations
                 {
 
                     KeyItem k = p.ToKeyItem();
+                    k.Context = typeof(TableColumn);
                     _columnKeyCache.Add(p.Path, k);
                 }
 
@@ -451,17 +721,15 @@ namespace PSM.Viewer.Visualizations
             InitializeComponent();
 
             RegisterUserCommand();
-            RegisterUserCommand("Row Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_ROWS));
-            RegisterUserCommand("Column Headers", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_COL));
+            RegisterUserCommand("Rows", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_ROWS));
+            RegisterUserCommand("Columns", new RelayCommand(ExecuteCommand, canExecute, CommandType.EDIT_COL));
 
             Properties.Add(new PropertyDefinition()
             {
                 Category = "Table View",
                 TargetProperties = new List<object>(new string[] { "SplitPosition" })
             });
-
-            Foreground = Brushes.White;
-
+            
         }
 
         /// <summary>
@@ -500,7 +768,7 @@ namespace PSM.Viewer.Visualizations
 
                 case CommandType.EDIT_ROWS:
                     
-                    window = new KeyEditor(Rows.Select((r, i) =>
+                    window = new KeyEditor(Rows.Where((r) => r.Key != null).Select((r, i) =>
                     {
                         return new KeyEditor.KeyEditorItem(r.Key);
                     }).ToArray());
@@ -539,7 +807,9 @@ namespace PSM.Viewer.Visualizations
         /// </summary>
         public override void Refresh()
         {
+
             
+
             _rows.Clear();
             _columns.Clear();
             _cells.Clear();
@@ -551,16 +821,13 @@ namespace PSM.Viewer.Visualizations
 
                 int count = p.Count();
                 int pos = Math.Min(Math.Max(0, count), SplitPosition);
-
+                
                 KeyItem r = KeyItem.Create(String.Join(".", p.Components.ToArray(), 0, pos));
                 KeyItem c = KeyItem.Create(String.Join(".", p.Components.ToArray(), pos, count - pos));
 
-                r.Color = Colors.LightGray;
-                c.Color = Colors.LightGray;
-
-                string s = c.Path;
-                                
-
+                r.Context = typeof(TableRow);
+                c.Context = typeof(TableColumn);
+                
                 if (_rowKeyCache.Contains(r))
                     r = _rowKeyCache.Find((k) => { return k == r; });
                 else
@@ -584,9 +851,11 @@ namespace PSM.Viewer.Visualizations
                 _cells.Add(new TableCell(control, _columns[c], _rows[r]));                
 
             }
-            
+
+
             OnPropertyChanged("Columns");
             OnPropertyChanged("Rows");
+            OnPropertyChanged("Cells");
 
             base.Refresh();
 

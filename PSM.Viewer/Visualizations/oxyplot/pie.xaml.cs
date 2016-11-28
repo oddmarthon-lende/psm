@@ -107,7 +107,7 @@ namespace PSM.Viewer.Visualizations
 
             s.ItemsSource = Enumerable.SelectMany<MultiControl, PieSliceItem>(Controls, m => {
                 return m.Entries.Select(entryitem => {
-                    Color c = m.Key.Color;
+                    Color c = (Color)KeyColorPropertyDescriptor.GetValue(m.Key);
                     return new PieSliceItem(m.Key, entryitem, this) { Color = OxyColor.FromArgb(c.A, c.R, c.G, c.B) };
                 });
             });

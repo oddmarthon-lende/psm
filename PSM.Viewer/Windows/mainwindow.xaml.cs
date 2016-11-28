@@ -13,7 +13,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Collections.ObjectModel;
 using PSM.Viewer.Models;
-using PSM.Viewer.Visualizations;
 using System.Windows.Markup;
 using System.IO;
 using System.IO.IsolatedStorage;
@@ -32,7 +31,7 @@ using Xceed.Wpf.DataGrid.Converters;
 namespace PSM.Viewer
 {
 
-    public partial class MainWindow : Theme.Window, INotifyPropertyChanged, IReload, IDisposable, IFormatProvider
+    public partial class MainWindow : Theme.Window, INotifyPropertyChanged, IReload, IDisposable
     {
         
         
@@ -308,27 +307,14 @@ namespace PSM.Viewer
 
             SetupIndexColumns();
         }
-
-        /// <summary>
-        /// <see cref="IFormatProvider.GetFormat(Type)"/>
-        /// </summary>
-        /// <param name="formatType"></param>
-        /// <returns></returns>
-        public object GetFormat(Type formatType)
-        {
-            if (formatType == typeof(DateTime))
-                return "o";
-
-            return null;
-        }
-
+               
         /// <summary>
         /// Generates columns for the data indexes
         /// </summary>
         private void SetupIndexColumns()
         {
-            
-            StringFormatConverter converter = new StringFormatConverter() { FormatProvider = this };
+
+            StringFormatConverter converter = new StringFormatConverter();
             string[] names = Enum.GetNames(PSM.Store.Get(Dispatcher.CurrentDispatcher).Index);
 
             dataGrid.Columns.Clear();
@@ -349,13 +335,14 @@ namespace PSM.Viewer
 
                 dataGrid.Columns.Add(new DataGridTextColumn()
                 {
-                    Header = name,
+                    Header = String.Format("IDX:{0}", name),
                     Width = new DataGridLength((int)(50 / names.Length), DataGridLengthUnitType.Star),
                     IsReadOnly = true,
                     Binding = new Binding(String.Format("Index[{0}]", name))
                     {
                         Converter = converter
                     }
+
                 });
 
             }

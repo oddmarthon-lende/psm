@@ -26,8 +26,98 @@ namespace PSM.Viewer.Models
     /// </summary>
     public partial class KeyItem : Key, IReload, INotifyPropertyChanged, IKeyItem, IDisposable
     {
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        private static Dictionary<object, Dictionary<string, PropertyDescriptor>> _property = new Dictionary<object, Dictionary<string, PropertyDescriptor>>();
 
-                
+        /// <summary>
+        /// 
+        /// </summary>
+        private Dictionary<PropertyDescriptor, object> _properties = new Dictionary<PropertyDescriptor, object>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="name"></param>
+        /// <param name="defaultValue"></param>
+        public static PropertyDescriptor RegisterProperty<T>(object context, string name, T defaultValue, Attribute[] attributes = null)
+        {
+            
+            context = context ?? typeof(KeyItem);
+
+            if (!_property.ContainsKey(context))
+                _property.Add(context, new Dictionary<string, PropertyDescriptor>());
+
+            _property[context].Add(name, new KeyItemDynamicPropertyDescriptor<T>(name, defaultValue, attributes));
+
+            return _property[context][name];
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="context"></param>
+        /// <param name="name"></param>
+        /// <param name="get"></param>
+        /// <param name="set"></param>
+        /// <param name="defaultValue"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        public static PropertyDescriptor RegisterProperty<T>(object context, string name, Getter<T> get, Setter<T> set, T defaultValue, Attribute[] attributes = null)
+        {
+
+            context = context ?? typeof(KeyItem);
+
+            RegisterProperty<T>(context, name, defaultValue, attributes);
+
+            _property[context][name] = new KeyItemDynamicPropertyDescriptor<T>(name, get, set, defaultValue, attributes);
+
+            return _property[context][name];
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="name"></param>
+        public static void UnRegisterProperty(object context, string name)
+        {
+
+            context = context ?? typeof(KeyItem);
+
+            if (!_property.ContainsKey(context))
+                return;
+
+            _property[context].Remove(name);
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public object this[string name]
+        {
+            get
+            {
+                if (!_property.ContainsKey(_context))
+                    return null;
+                else if (!_property[_context].ContainsKey(name))
+                    return null;
+
+                PropertyDescriptor descriptor = _property[_context][name];
+
+                return descriptor.GetValue(this);
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -45,7 +135,8 @@ namespace PSM.Viewer.Models
         {
             get
             {
-                if(_clearSubkeyCacheTimer == null)
+                
+                if (_clearSubkeyCacheTimer == null)
                 {
                     _clearSubkeyCacheTimer = new System.Timers.Timer(10000) { AutoReset = false };
                     _clearSubkeyCacheTimer.Elapsed += ClearCache;
@@ -75,12 +166,7 @@ namespace PSM.Viewer.Models
         /// 
         /// </summary>
         public KeyItemW W { get; internal set; } = null;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected static Random _random = new Random((int)DateTime.Now.Ticks);
-
+        
         /// <summary>
         /// 
         /// </summary>
@@ -102,59 +188,15 @@ namespace PSM.Viewer.Models
                 base.Conversion = (KeyValueConversion)_conversion;
             }
         }
-
+        
         /// <summary>
         /// 
         /// </summary>
-        internal Color? _color;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public virtual Color Color
-        {
-            get
-            {
-
-                if (!_color.HasValue)
-                {
-                    if (W != null)
-                        return W.Color;
-
-                    RandomizeColor();
-                }
-
-                return _color.Value;
-            }
-
-            set
-            {
-
-                _color = value;
-
-                if (W != null && W._color == _color)
-                {
-                    _color = null;
-                }
-
-                OnPropertyChanged("Color");
-                OnPropertyChanged("Brush");
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public SolidColorBrush Brush
-        {
-            get
-            {
-                return new SolidColorBrush(Color);
-            }
-        }
-
         private bool _typeConfirmed = false;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private Type _type = null;
 
         /// <summary>
@@ -188,7 +230,7 @@ namespace PSM.Viewer.Models
 
             set
             {
-                _type = value;
+                base.Type = _type = value;
             }
         }
 
@@ -444,7 +486,7 @@ namespace PSM.Viewer.Models
             }
 
             set {
-                _context = value;
+                SetField(ref _context, value);
             }
 
         }
@@ -454,6 +496,7 @@ namespace PSM.Viewer.Models
         /// </summary>
         private void _init()
         {
+
             Title = new KeyItemTitle(this);
             Conversion = new KeyItemValueConversion(this);
         }
@@ -598,7 +641,6 @@ namespace PSM.Viewer.Models
         {
             this.Conversion.CopyTo(other.Conversion);
             this.Title.CopyTo(other.Title);
-            other.Color = this.Color;
            
         }
 
@@ -615,26 +657,6 @@ namespace PSM.Viewer.Models
                 _children.Add(new KeyItem(k) { _parent = this });
             }
 
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public Color RandomizeColor()
-        {
-            Color = Color.FromArgb(255, (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D), (byte)(_random.NextDouble() * 255D));
-            return Color;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public void ResetColor()
-        {
-            _color = null;
-            OnPropertyChanged("Color");
-            OnPropertyChanged("Brush");
         }
 
         /// <summary>

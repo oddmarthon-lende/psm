@@ -1,5 +1,4 @@
-﻿
-    <theme:Window x:Class="PSM.Viewer.Dialogs.KeyEditor"
+﻿<theme:Window x:Class="PSM.Viewer.Dialogs.KeyEditor"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -12,6 +11,7 @@
         xmlns:t="http://schemas.xceed.com/wpf/xaml/toolkit"
         xmlns:s="clr-namespace:PSM.Stores;assembly=PSM"
         xmlns:theme="clr-namespace:PSM.Theme;assembly=PSM.Theme"
+        xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
         mc:Ignorable="d"
         Title="Metrics" Height="600" Width="800" x:Name="_window">
 
@@ -35,16 +35,11 @@
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
 
-        
+
 
     </Window.Resources>
 
     <Grid>
-
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="25*" />
-            <ColumnDefinition Width="75*" />
-        </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -78,216 +73,254 @@
                 </ToolBar>
 
                 <ToolBar Visibility="{Binding TreeVisibility, ElementName=_window}" >
-                    <Label>Path : </Label>
+                    <Label>Path :</Label>
                     <TextBox Text="{Binding Key.Path, Mode=OneWay, ElementName=treeView}" MinWidth="200" Width="auto" x:Name="path_field"/>
                     <Button Height="20" Width="20" Grid.Column="1" Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Click="Add" IsEnabled="{Binding CanAdd, ElementName=_window}" Content="{StaticResource PlusIcon}" />
-                </ToolBar>               
+                </ToolBar>
 
             </ToolBarTray>
         </DockPanel>
 
-        <GroupBox Header="Keys" Margin="10" Visibility="{Binding TreeVisibility, ElementName=_window}" Grid.Row="1" Grid.Column="0" >
-            <p:Tree x:Name="treeView" Grid.Column="0" />
-        </GroupBox>
+        <xcad:DockingManager Grid.RowSpan="1" Grid.Row="1" Background="{DynamicResource MainColor}" Foreground="{DynamicResource TextIconColor}" BorderBrush="Transparent" >
+
+            <xcad:LayoutRoot x:Name="_layoutRoot" >
+
+                <xcad:LayoutPanel Orientation="Horizontal"  >
+
+                    <xcad:LayoutAnchorablePaneGroup DockWidth="*">
+                        <xcad:LayoutAnchorablePane DockWidth="*" >
+
+                            <xcad:LayoutAnchorable ContentId="navigation" Title="Keys" CanHide="False" CanClose="False" AutoHideWidth="240" >
+
+                                <p:Tree x:Name="treeView" />
+
+                            </xcad:LayoutAnchorable>
 
 
-        <DataGrid ItemsSource="{Binding Source={StaticResource viewSource}}" PreviewKeyDown="keys_PreviewKeyDown" 
-                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserReorderColumns="True" CanUserDeleteRows="True" Grid.Row="1" Grid.Column="1" x:Name="keys">
+                        </xcad:LayoutAnchorablePane>
 
-            <DataGrid.GroupStyle>
-                <!-- Style for groups at top level. -->
-                <GroupStyle>
-                    <GroupStyle.ContainerStyle>
-                        <Style TargetType="{x:Type GroupItem}">
-                            <Setter Property="Width" Value="auto"/>
-                            <Setter Property="Margin" Value="0,0,0,5"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type GroupItem}">
-                                        <Expander IsExpanded="True">
-                                            <Expander.Header>
+                        <xcad:LayoutAnchorablePane >
 
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock FontWeight="Bold" Text="{Binding Path=Name}" Margin="5,0,0,0" Width="auto" VerticalAlignment="Center"/>
-                                                    <Expander IsExpanded="False" ToolTip="Options" ExpandDirection="Right" VerticalAlignment="Center">
-                                                        <Expander.Content>
-                                                            <ToolBarTray>
-                                                                <ToolBar>
-                                                                    <Label>
-                                                                        Colors :
-                                                                    </Label>
-                                                                    <Button Command="{StaticResource RandomColorCommand}" CommandParameter="{Binding Items}" ToolTip="Randomize the colors">Random</Button>
-                                                                    <Button Command="{StaticResource ResetColorCommand}" CommandParameter="{Binding Items}" ToolTip="Set color back to group color or default if not belonging to a group">Reset</Button>
-                                                                </ToolBar>
-                                                            </ToolBarTray>
-                                                        </Expander.Content>
-                                                    </Expander>
-                                                </StackPanel>
-                                                                                                    
-                                            </Expander.Header>
-                                            <Expander.Content>
-                                                <ItemsPresenter />
-                                            </Expander.Content>
-                                        </Expander>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </GroupStyle.ContainerStyle>
-                </GroupStyle>
-                <!-- Style for groups under the top level. -->
-                <GroupStyle>
-                    <GroupStyle.HeaderTemplate>
-                        <DataTemplate>
-                            <DockPanel Background="{DynamicResource AccentColor}">
-                                <TextBlock Text="{Binding Path=Name}" Margin="30,0,0,0" Width="auto"/>
-                            </DockPanel>
-                        </DataTemplate>
-                    </GroupStyle.HeaderTemplate>
-                </GroupStyle>
-            </DataGrid.GroupStyle>
+                            <xcad:LayoutAnchorable ContentId="datagrid" Title="Metrics"  CanHide="False" CanClose="False">
 
-            <DataGrid.Resources>
-                
-                <ControlTemplate x:Key="CellMouseOverTemplate" TargetType="{x:Type DataGridCell}">
-                    <Grid>
-                        
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100*" />
-                            <ColumnDefinition Width="auto" />
-                        </Grid.ColumnDefinitions>
+                                <DataGrid ItemsSource="{Binding Source={StaticResource viewSource}}" PreviewKeyDown="keys_PreviewKeyDown" SelectionChanged="keys_SelectionChanged"
+                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserReorderColumns="True" CanUserDeleteRows="True" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="keys">
 
-                        <ContentPresenter Grid.Column="0" />
-                        <Button Grid.Column="1" ToolTip="Copy To All" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" 
+                                    <DataGrid.GroupStyle>
+                                        <!-- Style for groups at top level. -->
+                                        <GroupStyle>
+                                            <GroupStyle.ContainerStyle>
+                                                <Style TargetType="{x:Type GroupItem}">
+                                                    <Setter Property="Width" Value="auto"/>
+                                                    <Setter Property="Margin" Value="0,0,0,5"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                                <Expander IsExpanded="True">
+                                                                    <Expander.Header>
+
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <TextBlock FontWeight="Bold" Text="{Binding Path=Name}" Margin="5,0,0,0" Width="auto" VerticalAlignment="Center"/>
+                                                                            <Expander IsExpanded="False" ToolTip="Options" ExpandDirection="Right" VerticalAlignment="Center">
+                                                                                <Expander.Content>
+                                                                                    <ToolBarTray>
+                                                                                        <ToolBar>
+                                                                                            <Label>
+                                                                                                Colors :
+                                                                                            </Label>
+                                                                                            <Button Command="{StaticResource RandomColorCommand}" CommandParameter="{Binding Items}" ToolTip="Randomize the colors">Random</Button>
+                                                                                            <Button Command="{StaticResource ResetColorCommand}" CommandParameter="{Binding Items}" ToolTip="Set color back to group color or default if not belonging to a group">Reset</Button>
+                                                                                        </ToolBar>
+                                                                                    </ToolBarTray>
+                                                                                </Expander.Content>
+                                                                            </Expander>
+                                                                        </StackPanel>
+
+                                                                    </Expander.Header>
+                                                                    <Expander.Content>
+                                                                        <ItemsPresenter />
+                                                                    </Expander.Content>
+                                                                </Expander>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </GroupStyle.ContainerStyle>
+                                        </GroupStyle>
+                                        <!-- Style for groups under the top level. -->
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Background="{DynamicResource AccentColor}">
+                                                        <TextBlock Text="{Binding Path=Name}" Margin="30,0,0,0" Width="auto"/>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </DataGrid.GroupStyle>
+
+                                    <DataGrid.Resources>
+
+                                        <ControlTemplate x:Key="CellMouseOverTemplate" TargetType="{x:Type DataGridCell}">
+                                            <Grid>
+
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100*" />
+                                                    <ColumnDefinition Width="auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <ContentPresenter Grid.Column="0" />
+                                                <Button Grid.Column="1" ToolTip="Copy To All" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" 
                                 BorderBrush="Transparent" Command="{StaticResource CopyCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type DataGridCell}}}" Content="{StaticResource CopyIcon}" />
-                    </Grid>
-                </ControlTemplate>
+                                            </Grid>
+                                        </ControlTemplate>
 
-                <Style TargetType="{x:Type DataGridCell}">
+                                        <Style TargetType="{x:Type DataGridCell}">
 
-                    <Style.Triggers>
+                                            <Style.Triggers>
 
-                        <MultiTrigger >
+                                                <MultiTrigger >
+
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsMouseOver" Value="True" />
+                                                        <Condition Property="IsEditing" Value="False" />
+                                                    </MultiTrigger.Conditions>
+
+                                                    <MultiTrigger.Setters>
+                                                        <Setter Property="Template" Value="{StaticResource CellMouseOverTemplate}" />
+                                                    </MultiTrigger.Setters>
+
+                                                </MultiTrigger>
+
+                                            </Style.Triggers>
+
+                                        </Style>
+                                    </DataGrid.Resources>
+
+                                    <DataGrid.Columns>
+
+                                        <DataGridTemplateColumn Width="6*" Header="Path">
+
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate>
+                                                    <ItemsControl ItemsSource="{Binding Components}" >
+
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Horizontal" />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid Margin="3">
+                                                                    <Rectangle RadiusX="3" RadiusY="3" Fill="{Binding Background, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Padding="2" Text="{Binding Name, Mode=OneWay}" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown" />
+                                                                    </StackPanel>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Key.StaticPath}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Width="1*" Header="Title: Mode">
+
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock  Text="{Binding Key.Title.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox  ItemsSource="{Binding Source={StaticResource KeyItemTitleMode}}" SelectedValue="{Binding Key.Title.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="Alias" Width="1*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock  Text="{Binding Key.Title.Alias, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate>
+                                                    <TextBox  Text="{Binding Key.Title.Alias, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="Conversion: Mode"  Width="1*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Key.Conversion.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding Source={StaticResource KeyValueConversionMode}}" SelectedValue="{Binding Key.Conversion.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="Value" Width="1*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Key.Conversion.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate>
+                                                    <TextBox Text="{Binding Key.Conversion.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        
+
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+
+                            </xcad:LayoutAnchorable>
+
+                        </xcad:LayoutAnchorablePane>
+
+                        <xcad:LayoutAnchorablePane>
+
+                            <xcad:LayoutAnchorable ContentId="properties" Title="Properties"  CanHide="False" CanClose="False" CanAutoHide="True"  >
+
+                                <t:PropertyGrid x:Name="expandedProperties" Background="Transparent" BorderBrush="Transparent"
+                                    AutoGenerateProperties="True"
+                                    ShowDescriptionByTooltip="True"
+                                    ShowSearchBox="False"
+                                    ShowSortOptions="False"
+                                    ShowPreview="False"
+                                    ShowSummary="False"
+                                    ShowTitle="False"
+                                    ShowAdvancedOptions="False" />
+
+                            </xcad:LayoutAnchorable>
                             
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsMouseOver" Value="True" />
-                                <Condition Property="IsEditing" Value="False" />
-                            </MultiTrigger.Conditions>
-
-                            <MultiTrigger.Setters>
-                                <Setter Property="Template" Value="{StaticResource CellMouseOverTemplate}" />
-                            </MultiTrigger.Setters>
-                            
-                        </MultiTrigger>
+                        </xcad:LayoutAnchorablePane>
                         
-                    </Style.Triggers>
+                    </xcad:LayoutAnchorablePaneGroup>
+
                     
-                </Style>
-            </DataGrid.Resources>
-            
-            <DataGrid.Columns>
+                </xcad:LayoutPanel>
 
-                <DataGridTemplateColumn Width="50*" Header="Path">
-
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <ItemsControl ItemsSource="{Binding Components}" >
-
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="3">
-                                            <Rectangle RadiusX="3" RadiusY="3" Fill="{Binding Background, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Padding="2" Text="{Binding Name, Mode=OneWay}" MouseLeftButtonDown="TextBlock_MouseLeftButtonDown" />
-                                            </StackPanel>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Key.StaticPath}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Width="10*" Header="Title: Mode">
-
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock  Text="{Binding Key.Title.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <ComboBox  ItemsSource="{Binding Source={StaticResource KeyItemTitleMode}}" SelectedValue="{Binding Key.Title.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="Alias" Width="10*">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock  Text="{Binding Key.Title.Alias, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox  Text="{Binding Key.Title.Alias, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="Conversion: Mode"  Width="10*">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Key.Conversion.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <ComboBox ItemsSource="{Binding Source={StaticResource KeyValueConversionMode}}" SelectedValue="{Binding Key.Conversion.Mode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="Value" Width="10*">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Key.Conversion.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox Text="{Binding Key.Conversion.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
-
-                <DataGridTemplateColumn Header="Color" Width="10*">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Rectangle Fill="{Binding Key.Brush, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Width="auto" Height="auto" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <t:ColorPicker SelectedColor="{Binding Key.Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ColorMode="ColorCanvas"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
-
-            </DataGrid.Columns>
-        </DataGrid>
+                
+            </xcad:LayoutRoot>
+        </xcad:DockingManager>
 
     </Grid>
 
